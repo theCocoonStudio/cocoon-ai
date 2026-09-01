@@ -1,0 +1,83 @@
+{
+  "name": "cocoon-ai",
+  "version": "0.0.1",
+  "description": "Components and utilities for the Cocoon creative tech studio site (React 19 + react-three-fiber).",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "peerDependencies": {
+    "@pmndrs/assets": "^1.7.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/postprocessing": "^3.0.4",
+    "maath": "^0.10.8",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "three": "^0.184.0",
+    "tunnel-rat": "^0.1.2"
+  },
+  "peerDependenciesMeta": {
+    "@pmndrs/assets": {
+      "optional": true
+    },
+    "@react-three/drei": {
+      "optional": true
+    },
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "@react-three/postprocessing": {
+      "optional": true
+    },
+    "maath": {
+      "optional": true
+    },
+    "three": {
+      "optional": true
+    },
+    "tunnel-rat": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/css": "^1.4.0",
+    "@eslint/js": "^9.39.5",
+    "@pmndrs/assets": "^1.7.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/postprocessing": "^3.0.4",
+    "@vitejs/plugin-react": "^6.1.1",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "maath": "^0.10.8",
+    "prettier": "^3.9.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "three": "^0.184.0",
+    "tunnel-rat": "^0.1.2",
+    "vite": "^8.2.2"
+  }
+}
