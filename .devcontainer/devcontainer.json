@@ -1,0 +1,38 @@
+{
+  "name": "cocoon-ai sandbox",
+  "build": { "dockerfile": "Dockerfile" },
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+  "remoteUser": "node",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=cocoon-ai-node-modules,target=/workspace/node_modules,type=volume",
+    "source=cocoon-ai-claude-config,target=/home/node/.claude,type=volume"
+  ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "DISABLE_AUTOUPDATER": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "GIT_AUTHOR_NAME": "Izzy Erlich",
+    "GIT_COMMITTER_NAME": "Izzy Erlich",
+    "GIT_AUTHOR_EMAIL": "izzy@thecocoon.studio",
+    "GIT_COMMITTER_EMAIL": "izzy@thecocoon.studio"
+  },
+  "remoteEnv": { "GH_TOKEN": "${localEnv:GH_TOKEN}" },
+  "overrideCommand": true,
+  "postStartCommand": "/usr/local/bin/entrypoint.sh true",
+  "waitFor": "postStartCommand",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  }
+}
