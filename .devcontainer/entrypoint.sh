@@ -13,7 +13,7 @@ else
   echo "gh: no GH_TOKEN set; git push / gh pr will not work this session"
 fi
 
-# Linux needs its own node_modules (host copy has darwin-arm64 binaries).
+# node_modules lives in a named volume, not the bind-mounted repo: installed once, persists across runs.
 if [ -f package-lock.json ] && [ ! -f node_modules/.package-lock.json ]; then
   echo "npm ci (first run in this volume)..."
   npm ci --no-audit --no-fund

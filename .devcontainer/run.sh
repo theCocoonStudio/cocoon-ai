@@ -1,17 +1,18 @@
 #!/bin/bash
-# Build (if needed) and drop into the sandbox. Usage:
-#   GH_TOKEN=$(pbpaste) .devcontainer/run.sh          # with GitHub access (macOS)
-#   read -rs GH_TOKEN && export GH_TOKEN && .devcontainer/run.sh   # Linux: type/paste token, no echo
-#   .devcontainer/run.sh                              # without
-#   .devcontainer/run.sh claude                       # straight into Claude
+# Build (if needed) and drop into the sandbox. Rootless podman. Usage:
+#   .devcontainer/run.sh                                 # shell, no GitHub access
+#   .devcontainer/run.sh claude                          # straight into Claude
+#   env $(cat ~/.tokens) .devcontainer/run.sh claude     # with GH_TOKEN from a 600-mode file
+#   read -rs GH_TOKEN && export GH_TOKEN && .devcontainer/run.sh claude   # or typed, no echo
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 IMAGE=cocoon-ai-sandbox
-docker build -q -t "$IMAGE" .devcontainer >/dev/null
+podman build -q -t "$IMAGE" .devcontainer >/dev/null
 
-exec docker run -it --rm \
+exec podman run -it --rm \
   --name cocoon-ai-sandbox \
+  --userns=keep-id:uid=1000,gid=1000 \
   --cap-add NET_ADMIN --cap-add NET_RAW \
   -v "$PWD":/workspace \
   -v cocoon-ai-node-modules:/workspace/node_modules \
