@@ -11,6 +11,10 @@ IMAGE=cocoon-ai-sandbox
 # Always show the build log. Cached runs print one short line per step; a real rebuild shows everything.
 podman build -t "$IMAGE" .devcontainer
 
+# The node_modules volume mounts INSIDE the bind-mounted repo. Under keep-id the runtime
+# (container root, not you) cannot create that mountpoint in a directory you own, so make it here.
+mkdir -p node_modules
+
 exec podman run -it --rm \
   --name cocoon-ai-sandbox \
   --userns=keep-id:uid=1000,gid=1000 \

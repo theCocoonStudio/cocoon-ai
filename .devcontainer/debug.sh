@@ -15,7 +15,8 @@ IMAGE=cocoon-ai-sandbox
   podman run --rm --entrypoint true --userns=keep-id:uid=1000,gid=1000 "$IMAGE" && echo OK
   echo; echo "== 4. + caps =="
   podman run --rm --entrypoint true --userns=keep-id:uid=1000,gid=1000 --cap-add NET_ADMIN --cap-add NET_RAW "$IMAGE" && echo OK
-  echo; echo "== 5. + volumes =="
+  echo; echo "== 5. + volumes (after mkdir -p node_modules) =="
+  mkdir -p node_modules
   podman run --rm --entrypoint true --userns=keep-id:uid=1000,gid=1000 --cap-add NET_ADMIN --cap-add NET_RAW \
     -v "$PWD":/workspace -v cocoon-ai-node-modules:/workspace/node_modules -v cocoon-ai-claude-config:/home/node/.claude "$IMAGE" && echo OK
   echo; echo "== debug log of the full flag set =="
