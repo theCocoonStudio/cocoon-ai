@@ -44,4 +44,6 @@ Neither layer limits what Claude can do to the code: it has the full repo, the f
 
 Security here isn't only about trusting the sandbox or the OS. It's about knowing they're not foolproof and can be broken. Containers escape, VMs have bugs, and an agent reading untrusted content (packages, web pages) can be steered. The layers above exist so that when one fails, the next one limits what's reachable: a scoped token instead of an account, a mounted repo instead of a home directory, a PR instead of a push. Review is the last layer, and it's the one that isn't automated.
 
+The security incident log and per-session transcript exports live in the private [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records) repo.
+
 These points shouldn't need be said. They should be salient. But they're often not, even at the Enterprise level, let alone a home office.
