@@ -8,13 +8,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 IMAGE=cocoon-ai-sandbox
-# Quiet when the image is cached, full build log when it is not.
-if podman image exists "$IMAGE"; then
-  podman build -q -t "$IMAGE" .devcontainer >/dev/null
-else
-  echo "Building $IMAGE (first run, a few minutes)..."
-  podman build -t "$IMAGE" .devcontainer
-fi
+# Always show the build log. Cached runs print one short line per step; a real rebuild shows everything.
+podman build -t "$IMAGE" .devcontainer
 
 exec podman run -it --rm \
   --name cocoon-ai-sandbox \
