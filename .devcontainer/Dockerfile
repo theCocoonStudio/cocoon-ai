@@ -1,6 +1,6 @@
 # Sandbox for running Claude Code against this repo.
 # Based on anthropics/claude-code/.devcontainer, trimmed to what we need.
-FROM node:20
+FROM node:22
 
 ARG TZ=America/New_York
 ENV TZ="$TZ"
