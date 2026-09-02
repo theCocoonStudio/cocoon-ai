@@ -2,9 +2,6 @@
 set -euo pipefail  # Exit on error, undefined vars, and pipeline failures
 IFS=$'\n\t'       # Stricter word splitting
 
-# 1. Extract Docker DNS info BEFORE any flushing
-DOCKER_DNS_RULES=$(iptables-save -t nat | grep "127\.0\.0\.11" || true)
-
 # Flush existing rules and delete existing ipsets
 iptables -F
 iptables -X
@@ -13,16 +10,6 @@ iptables -t nat -X
 iptables -t mangle -F
 iptables -t mangle -X
 ipset destroy allowed-domains 2>/dev/null || true
-
-# 2. Selectively restore ONLY internal Docker DNS resolution
-if [ -n "$DOCKER_DNS_RULES" ]; then
-    echo "Restoring Docker DNS rules..."
-    iptables -t nat -N DOCKER_OUTPUT 2>/dev/null || true
-    iptables -t nat -N DOCKER_POSTROUTING 2>/dev/null || true
-    echo "$DOCKER_DNS_RULES" | xargs -L 1 iptables -t nat
-else
-    echo "No Docker DNS rules to restore"
-fi
 
 # First allow DNS and localhost before any restrictions
 # Allow outbound DNS
@@ -60,20 +47,15 @@ while read -r cidr; do
     ipset add allowed-domains "$cidr"
 done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 
-# Resolve and add other allowed domains.
-# npm + Anthropic API/auth only. The three *visualstudio* hosts exist solely so the
-# VS Code Dev Containers extension can install its server; delete them if you only
-# use run.sh. Telemetry hosts (sentry, statsig) are deliberately absent;
+# Resolve and add other allowed domains: npm + Anthropic API/auth only.
+# Telemetry hosts (sentry, statsig) are deliberately absent;
 # CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 stops Claude trying.
 for domain in \
     "registry.npmjs.org" \
     "api.anthropic.com" \
     "claude.ai" \
     "platform.claude.com" \
-    "console.anthropic.com" \
-    "marketplace.visualstudio.com" \
-    "vscode.blob.core.windows.net" \
-    "update.code.visualstudio.com"; do
+    "console.anthropic.com"; do
     echo "Resolving $domain..."
     ips=$(dig +noall +answer A "$domain" | awk '$4 == "A" {print $5}')
     if [ -z "$ips" ]; then
