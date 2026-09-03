@@ -35,8 +35,8 @@ A separate Debian machine that exists only to run the agent. The container above
 - nothing of mine on the box except a clone of this repo and one scoped token
 - Claude Code runs only inside the `.devcontainer/` sandbox, started with `.devcontainer/run.sh claude`
 - non-sudo login user; Docker is the only privileged thing installed
-- reached from my Mac over Tailscale with ACLs (only my Mac can connect), Wake-on-LAN from an always-on LAN device, remote desktop via the Windows App
-- branch protection on `main`: PRs only, I am the reviewer
+- reached from my Mac over Tailscale with ACLs (only my Mac can connect), Wake-on-LAN from an always-on LAN device, ssh or remote desktop via the Windows App
+- branch protection on `main`: PRs only, I am the reviewer. Claude is set up with a Github App for auth.
 
 Neither layer limits what Claude can do to the code: it has the full repo, the full toolchain, and GitHub. What it doesn't have is anything else.
 
