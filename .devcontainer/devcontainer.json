@@ -6,7 +6,6 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
   "mounts": [
-    "source=/home/izzy/cocoon-claude.2026-09-03.private-key.pem,target=/etc/github/bot.pem",
     "source=cocoon-ai-node-modules,target=/workspace/node_modules,type=volume",
     "source=cocoon-ai-claude-config,target=/home/node/.claude,type=volume"
   ],
@@ -14,11 +13,13 @@
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
     "DISABLE_AUTOUPDATER": "1",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "CLAUDE_APP_ID": "4819921",
-    "GIT_AUTHOR_NAME": "claude-sandbox-bot[bot]",
-    "GIT_COMMITTER_NAME": "claude-sandbox-bot[bot]",
-    "GIT_AUTHOR_EMAIL": "${CLAUDE_APP_ID}+claude-sandbox-bot[bot]@://github.com",
-    "GIT_COMMITTER_EMAIL": "${CLAUDE_APP_ID}+claude-sandbox-bot[bot]@://github.com"
+    "GIT_AUTHOR_NAME": "cocoon-claude[bot]",
+    "GIT_COMMITTER_NAME": "cocoon-claude[bot]",
+    "GIT_AUTHOR_EMAIL": "324573615+cocoon-claude[bot]@users.noreply.github.com",
+    "GIT_COMMITTER_EMAIL": "324573615+cocoon-claude[bot]@users.noreply.github.com"
+  },
+  "remoteEnv": {
+    "GH_TOKEN": "${localEnv:GH_TOKEN}"
   },
   "overrideCommand": true,
   "postStartCommand": "/usr/local/bin/entrypoint.sh true",
