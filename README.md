@@ -36,7 +36,7 @@ A separate Debian machine that exists only to run the agent. The container above
 - Claude Code runs only inside the `.devcontainer/` sandbox, started with `.devcontainer/run.sh claude`
 - non-sudo login user; Docker is the only privileged thing installed
 - reached from my Mac over Tailscale with ACLs (only my Mac can connect), Wake-on-LAN from an always-on LAN device, ssh or remote desktop via the Windows App
-- `main` ruleset: PRs only, one approving review, no force-push, no bypass. I am the reviewer.
+- `main` ruleset: PRs only, one approving review, no force-push, no bypass. Authors can't approve their own PRs, so Claude reviews mine and I review Claude's.
 
 ### Auth: a GitHub App, not a PAT
 
