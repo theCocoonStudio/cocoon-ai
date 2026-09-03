@@ -32,11 +32,19 @@ This was the bridge while the dedicated machine came online. Same sandbox, weake
 
 A separate Debian machine that exists only to run the agent. The container above runs there too; the box is the outer wall, the container is the inner one.
 
-- nothing of mine on the box except a clone of this repo and one scoped token
+- nothing of mine on the box except a clone of this repo and the GitHub App's private key
 - Claude Code runs only inside the `.devcontainer/` sandbox, started with `.devcontainer/run.sh claude`
 - non-sudo login user; Docker is the only privileged thing installed
 - reached from my Mac over Tailscale with ACLs (only my Mac can connect), Wake-on-LAN from an always-on LAN device, ssh or remote desktop via the Windows App
-- branch protection on `main`: PRs only, I am the reviewer. Claude is set up with a Github App for authentication.
+- `main` ruleset: PRs only, one approving review, no force-push, no bypass. Authors can't approve their own PRs, so Claude reviews mine and I review Claude's.
+
+### Auth: a GitHub App, not a PAT
+
+Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHub App installed on this org for `cocoon-ai` and `cocoon-ai-records` only. The App's private key stays on the box; it is never mounted into the container.
+
+`run.sh` signs a short-lived JWT with the key, exchanges it for a 1-hour installation token, and passes only that token into the container as `GH_TOKEN`. A session that outlives the token loses push/PR access until `run.sh` is started again. Nothing is written to disk inside the sandbox.
+
+Commits, branches, and PRs made by Claude are attributed to the bot, so I can review and approve them as a different user, which the old PAT on my own account never allowed. `COCOON_NO_GITHUB=1` starts a session with no credential at all.
 
 Neither layer limits what Claude can do to the code: it has the full repo, the full toolchain, and GitHub. What it doesn't have is anything else.
 
