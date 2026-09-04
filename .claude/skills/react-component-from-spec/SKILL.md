@@ -1,6 +1,6 @@
 ---
 name: react-component-from-spec
-description: "Build a React 19 component and its RTL tests from a structured spec input, validating the spec before writing any code."
+description: "Build a React 19 component and its tests from a structured spec input, validating the spec before writing any code. Covers DOM output with RTL and react-three-fiber output (frame loop, ref inputs, imperative handles, disposables, cross-renderer bridges) with @react-three/test-renderer."
 ---
 
 # React Component From Spec
@@ -17,7 +17,8 @@ A wrong guess that breaks the build or a test costs one cycle. A wrong guess tha
 
 - **React 19.** Later 19.x is fine — the API is additive. Do not apply this skill to React 18.
 - **JavaScript with JSDoc.** No TypeScript, no `propTypes`. React 19 removed `propTypes` checking entirely and ignores it silently, so JSDoc plus tests is the whole enforcement story.
-- **Tests with React Testing Library.** Runner-agnostic.
+- **react-three-fiber 9 for anything rendered inside a `<Canvas>`.** The DOM rules apply unchanged to the DOM side — a site that runs two React renderers has plenty of markup, event handlers, and state on both sides of the canvas. The scene side adds four things the DOM model has no field for: a frame loop, inputs that arrive as refs and change without rendering, objects that must be disposed, and output that crosses into the other renderer. Each has its own spec section below.
+- **Tests with React Testing Library for DOM output and `@react-three/test-renderer` for scene output and the frame loop.** Runner-agnostic.
 - **Conformance to an existing codebase is out of scope.** Do not read neighboring components to infer house style. Everything that matters is in the spec input — most importantly the imports block, which resolves aliases and dependencies without any file reading.
 - **Never edit the spec input.** Report; the user amends; re-run. The tempting resolution to most problems is to quietly weaken a requirement, which produces working code and a spec that no longer describes it.
 
@@ -58,7 +59,7 @@ props.1: label — string, required
 props.2: variant — 'default' | 'danger', optional, default 'default'
 props.3: onSelect — (id) => void, required, referentially stable
 props.passthrough: yes → spread onto root <button>
-props.ref: accepted → root DOM node
+props.ref: accepted → root DOM node    # root DOM node | root Object3D | handle (see handle.*) | none
 
 ## slots
 slots.mechanism: children
@@ -100,6 +101,42 @@ exits.handler-failures: none
 
 **Id conventions.** `markup.4`, `states.empty`, `effects.1`, `callbacks.neg.1`. Ranges are written `markup.1–4`. Ids are the user's; never renumber or rename them.
 
+### Scene sections
+
+Required whenever `imports.*` pulls in `three`, `@react-three/*`, or `tunnel-rat`; omitted entirely otherwise. `library` is required for every component, because this repo is a package. A DOM-side component never carries `none` for six sections it has no use for.
+
+```markdown
+## refs                              # inputs read imperatively — a change never renders
+refs.1: scroll — RefObject<number>, required, written by the page scroller before each frame, read by frame.1
+refs.2: mesh — internal, RefObject<Mesh>, the root mesh, set by React on mount
+
+## handle                            # what `ref` exposes when props.ref is `handle`
+handle.1: frame — (state, delta) => void, this component's frame work, same signature as a useFrame callback
+handle.2: reset — () => void, returns the ribbon to its rest pose
+
+## frame
+frame.mode: handle                   # internal | handle | tunnel | none — required
+frame.args: none                     # internal only: useFrame's second argument, e.g. `priority 1`
+frame.tunnel: none                   # tunnel only: the prop that carries the tunnel, e.g. `tunnel`
+frame.1: reads refs.1, writes refs.2 position.y = scroll × amplitude, eased by delta
+frame.2: writes material uniform uTime += delta
+frame.writes-react: never            # never | what is set, under what condition, how often
+frame.invalidate: not needed         # not needed (Canvas frameloop is always) | calls invalidate after frame.1–2
+frame.sync.1: prop `size` → rebuild geometry (resources.1); not read in the loop
+frame.sync.2: prop `amplitude` → mirrored into a ref, read by frame.1
+
+## resources                         # everything with a dispose() that this component creates itself
+resources.1: geometry — built in useMemo from `size`; disposed when `size` changes and on unmount
+resources.2: material — declared in JSX; fiber disposes it on unmount
+
+## bridge                            # output that leaves this renderer
+bridge: none
+
+## library
+library.export: named `Ribbon` from src/index.js
+library.side-effects: none           # none | what runs at module scope and why it must
+```
+
 ---
 
 ## Pre-flight checklist
@@ -119,6 +156,16 @@ Each row is answerable by reading the spec input alone.
 | Ownership consistent | A rendering decision needs data the chosen slot mechanism excludes |
 | Markup lines are queryable | A markup line with no possible RTL assertion |
 | Target syntax matches target | `import.meta.env` under Next, `"use client"` under Vite |
+| Scene sections present | `three`, `@react-three/*`, or `tunnel-rat` is imported and `refs`, `handle`, `frame`, `resources`, or `bridge` is missing |
+| Frame mode decided | `frame.*` lines with no `frame.mode`; `handle` mode with no `handle.*` frame entry; `tunnel` mode with no `frame.tunnel` |
+| Loop reads through refs | A `frame.*` line reads a prop or state that no `refs.*` or `frame.sync.*` line mirrors |
+| Loop stays out of React | `frame.writes-react` missing, or a frame line that sets state without a `frame.writes-react` entry naming it |
+| Positive priority owns rendering | `frame.args` with a priority above 0 and no frame line that renders |
+| Invalidation decided | `frame.invalidate` missing |
+| Resources closed | A `resources.*` line without a disposal moment; a `frame.sync.*` line that rebuilds something with no `resources.*` line |
+| Bridges have a far end | A `bridge.*` line that does not name where the content lands |
+| Suspends match the assets | `useGLTF`, `useTexture`, `useFBX`, or `useLoader` imported with `exits.suspends: never` |
+| Library export named | `library.export` missing |
 
 ---
 
@@ -249,7 +296,7 @@ Two structural decisions with consequences elsewhere: whether the root is a sing
 A render can return, throw, or suspend. All three are specified.
 
 - **Throw** — the nearest error boundary catches it. With no boundary, React unmounts the whole tree and the user gets a blank screen. Prefer returning an error state over throwing when the spec allows.
-- **Suspend** — the nearest Suspense boundary shows its fallback; a rejected promise reaches the nearest error boundary. `use` is not a hook and may be called conditionally, but it **cannot be called inside try/catch** — suspension is implemented as a throw, so catching it would swallow React's own control flow. Per-read error handling therefore isn't available: error granularity equals boundary granularity equals component granularity. The escape hatch is to catch at promise creation so failure becomes data rather than an exception — but the chaining must not happen during render, or each pass creates a new pending promise and the component suspends forever.
+- **Suspend** — the nearest Suspense boundary shows its fallback; a rejected promise reaches the nearest error boundary. Asset hooks — `useGLTF`, `useTexture`, `useFBX`, anything built on `useLoader` — suspend on first load, so a component that imports one cannot declare `exits.suspends: never`, and the boundary owner question has to be answered. `use` is not a hook and may be called conditionally, but it **cannot be called inside try/catch** — suspension is implemented as a throw, so catching it would swallow React's own control flow. Per-read error handling therefore isn't available: error granularity equals boundary granularity equals component granularity. The escape hatch is to catch at promise creation so failure becomes data rather than an exception — but the chaining must not happen during render, or each pass creates a new pending promise and the component suspends forever.
 - **Handler failures reach no boundary at all.** Error boundaries cover render, effects, and lifecycle — not event handlers or async callbacks. An unspecified failing `onSubmit` does visibly nothing, which is the worst possible outcome and the easiest to miss.
 
 ### Effects
@@ -260,6 +307,8 @@ Most specified effects are not effects. Two gates, and only what fails both surv
 2. **Can it be expressed as something render returns?** Then it must be — a class, an attribute, an element, a conditional subtree, a `<title>`. An effect doing this by hand is a reimplementation of the reconciler, worse.
 
 The second gate is the better one because it has a yes or no answer. "Is this system external?" invites a story — and *the document* can be made to justify anything. What survives both gates is the genuinely unowned surface: `window` and `document` listeners, `IntersectionObserver`, `ResizeObserver`, `matchMedia`, timers, storage, network, History, focus and scroll, layout measurement, and third-party imperative libraries.
+
+Per-frame work is not an effect and does not go through `useEffect`; it has its own section, "Frame loop", below. The two gates still apply to it first.
 
 For each surviving effect:
 
@@ -298,9 +347,73 @@ Note the `AbortError` check — aborting rejects, so without it every cancellati
 
 Prefer `useSyncExternalStore` for external store subscriptions, `useLayoutEffect` only for measurement or DOM mutation that would otherwise flicker, and React 19's Actions — `<form action>`, `useActionState`, `useFormStatus`, `useOptimistic` — over hand-rolling pending and optimistic state from `useState` plus an effect.
 
+### Refs as inputs
+
+A ref prop is an input whose value changes without a render. Scroll distance is the canonical case: the page scroller writes it every frame, and re-rendering a scene component on every scroll would be the bug. So a ref is a third input class beside props and context, and it gets its own section, `refs.*`, because it is invisible at the call site in a way even context isn't — the call site passes an object that never changes identity.
+
+Each `refs.*` line says what the ref points at, who writes it and when, and which frame line reads it. Those three answers are the whole contract:
+
+- **The writer is never this component's render.** Reading a ref during render is a BLOCK: render cannot see the ref change, so the output goes stale silently. Refs are read in the loop, in handlers, and in effects.
+- **The writer's timing is a contract on the owner** (see "Unenforceable contracts"). A ref written after this component's frame work ran is one frame stale, and nothing reports it.
+- **Internal refs** — the mesh, the material, a scratch vector — are listed too, marked `internal`, so every frame line's reads and writes resolve to something.
+
+Props and state the loop needs are **mirrored into refs**, declared as `frame.sync.*` lines; the loop never closes over a prop or a state value. In `internal` mode fiber refreshes the callback every render, so a closure would work — but the same body must run under `handle` and `tunnel` mode, where nothing refreshes it, and one body that reads only refs is correct under all three.
+
+### Frame loop
+
+The loop is not an effect, and it is not free: whatever runs in it runs at the display's refresh rate for the life of the component. Both effect gates apply first — a user action is a handler, and anything render can express is render. What survives is continuous motion, values derived from refs that change without rendering, and uniforms.
+
+**Where the loop runs is a spec decision, `frame.mode`,** because the three options have different ordering, context, and failure behavior, and a wrong guess fails silently in every case.
+
+| Mode | Mechanism | Order of execution | Silent failure it introduces |
+|---|---|---|---|
+| `internal` | `useFrame(cb, priority)` inside the component, with `frame.args` passed exactly | Mount order among equal priorities; the spec cannot pin it | A positive priority switches off the root's automatic render |
+| `handle` | The component exposes `frame(state, delta, xrFrame)` on its ref via `useImperativeHandle`; the owner calls it from one top-level `useFrame` in the order it chooses | Explicit, decided by the owner | Nothing runs unless the owner calls it |
+| `tunnel` | The tunnel arrives as the prop named in `frame.tunnel`; the component renders `<tunnel.In>` containing a runner component that renders `null` and holds the `useFrame` | Mount order of `tunnel.Out` among that root's subscribers, then definition order among things sent into the tunnel | With `Out` unmounted, the loop never runs |
+
+Consequences by mode:
+
+- **`internal`.** Fiber sorts subscribers by priority, lowest first; equal priorities run in the order they subscribed, which is mount order. An ordering requirement under this mode is a tier ④ contract; the tier ① fix is to switch to `handle`, which is why an app-wide top-level loop exists at all. **Any subscriber with a priority above 0 disables automatic rendering for the whole root while it is mounted** — the fiber source: *"If this subscription was given a priority, it takes rendering into its own hands."* A `frame.args` priority above 0 therefore needs a frame line that calls `gl.render`, or the canvas goes black; that is a pre-flight BLOCK, not a default.
+- **`handle`.** The handle's `frame` has the same signature as a `useFrame` callback unless the spec says otherwise, so the owner can forward its own arguments untouched. The handle is created once, with an empty dependency array, and reads everything through refs — a handle recreated with dependencies can be captured stale by the owner and there is no error for that. The owner's obligation to call it is a contract, tier ④, stated in the resolved spec. Other `handle.*` methods follow the same rule: read refs, write objects, never set state unless a `frame.writes-react` line says so.
+- **`tunnel`.** The runner is rendered by whichever renderer mounts `Out`, so it does not see this component's context and receives only what it is handed as props: refs and stable values. It subscribes to the frame loop of the Canvas that hosts `Out`, not of any Canvas near this component. The runner gets `frame.args` exactly as `internal` mode would.
+
+Body rules for all three modes:
+
+- **Never set React state from the loop.** A `setState` per frame is a render per frame, and it fails as a slow site rather than as an error. `frame.writes-react: never` is the expectation; anything else is spelled out with the condition and rate, and tested for both.
+- **Read refs, write objects.** Position, rotation, scale, uniforms, buffer attributes with `needsUpdate`. The React tree is not touched.
+- **Scale by `delta` or read `state.clock`.** A per-frame increment runs twice as fast on a 120 Hz display and there is no error for that. Frame-count motion is a BLOCK unless the spec says frame-based.
+- **No allocation per frame.** Scratch vectors and matrices live at module scope, never stored between frames — the module-scope rule above still applies, so they are shared and hold nothing — or in an internal ref.
+- **Invalidation is declared, not assumed.** Under a Canvas with `frameloop="demand"`, a loop that mutates objects shows nothing until `invalidate()` is called, and the component cannot know which Canvas it is in. `frame.invalidate` says either that the Canvas is `always`, which becomes a contract on the owner, or which writes are followed by `invalidate` from `useThree`.
+- **`frame.sync.*` covers both directions.** React → loop is a ref mirror or a resource rebuild. Loop → React is `frame.writes-react`, and it is the exception.
+
+### Resources
+
+Anything with a `dispose()` is a resource: geometries, materials, textures, render targets. Missing disposal is the class of failure this skill exists for — the GPU leaks, the tab gets slower, and nothing reports it.
+
+- **Fiber disposes what JSX declared.** On unmount it calls `dispose()` on every object the component declared as an element, unless that element carries `dispose={null}`. Declaring the object in JSX is therefore the tier ① answer wherever it applies.
+- **What the component creates itself, it disposes itself.** A geometry built in `useMemo`, a `DataTexture`, a render target, an instanced buffer: each is a `resources.*` line with two moments, disposal on unmount and disposal of the previous one when it is rebuilt. The rebuild moment is the one that gets forgotten.
+- **Loader caches are shared.** `useLoader`, `useGLTF`, and `useTexture` cache by URL across the app; disposing what they return breaks the next consumer with no error here. They are never `resources.*` lines.
+- **`dispose={null}` is a spec line**, used when an object is shared with something outside this component, and the resolved spec names who disposes it instead.
+
+### Bridges
+
+Output that leaves this renderer is real output, in the same way portals and hoisted `<title>` tags are, and it is listed under `bridge.*` with its far end named.
+
+- **tunnel-rat.** `tunnel()` returns `{ In, Out }`. `In` renders nothing where it stands; `Out` renders everything sent in, in definition order, in whichever renderer `Out` is mounted in. Context does not cross; props do. Two components sending into one tunnel are ordered, not colliding, but an `Out` that is never mounted swallows the content silently — that is a contract on the owner.
+- **drei `<Html>`** puts DOM inside the scene. It is a DOM output and its markup lines are `markup.*` lines with the usual RTL assertions, run against where the `portal` prop says it lands.
+- **fiber `createPortal(children, object3d)`** renders into another `Object3D`. A portal into an object this component does not own is the scene-side version of two `<title>` tags.
+
+### Library
+
+This repo is a package, so the component's public surface is not only its props.
+
+- **`library.export`** names the export added to `src/index.js` — a named export, matching the component name, the one line outside the component's own files that this skill writes.
+- **`library.side-effects`** declares anything that runs at module scope and must run: an `extend()` registering a custom element, a `shaderMaterial` definition. `package.json` says `sideEffects: false`, so a module whose exports go unused is dropped whole, together with whatever it registered. `none` is the expected value; anything else is a NOTE in the report.
+- Imports come only from the declared peers, which are all optional. That is already covered by the imports check; it is named here because a new peer is a `package.json` change, and that is a report, not something this skill does.
+
 ### Unenforceable contracts
 
-Derived, not invented. Walk the sections above and each entry falls out: props in a dependency array produce a stability contract, required context produces a provider contract, measurement produces a layout precondition, rendering a list produces the downward key contract, throws and suspends produce boundary contracts, an external system with expensive setup produces a remount cost.
+Derived, not invented. Walk the sections above and each entry falls out: props in a dependency array produce a stability contract, required context produces a provider contract, measurement produces a layout precondition, rendering a list produces the downward key contract, throws and suspends produce boundary contracts, an external system with expensive setup produces a remount cost. On the scene side: a ref prop produces a writer contract (who writes it, and before this component's frame work), `internal` mode with an ordering need produces an ordering contract, `handle` mode produces a caller contract, `tunnel` mode produces an `Out`-mounted contract, `frame.invalidate: not needed` produces a frameloop contract, and `dispose={null}` produces a disposer contract.
 
 This section carries the most weight because these are precisely the failures nothing else catches — which is the same reason they block rather than default.
 
@@ -308,10 +421,10 @@ Every entry gets a mitigation tier. The first two are worth reaching for; if a c
 
 | Tier | Action |
 |---|---|
-| ① Remove | Change the mechanism so the contract stops existing — take an element instead of a component reference; return an error state instead of throwing; render your own Suspense boundary around a lazy child |
-| ② Throw | A missing required provider throws, naming the provider |
-| ③ Warn in dev | Measure zero height and warn; warn when a prop marked stable changes identity every render; count mounts and warn past a threshold |
-| ④ Document and test | The JS prop contract, and the keys this component assigns |
+| ① Remove | Change the mechanism so the contract stops existing — take an element instead of a component reference; return an error state instead of throwing; render your own Suspense boundary around a lazy child; switch `internal` to `handle` so ordering is the owner's explicit choice; declare a resource in JSX so fiber disposes it |
+| ② Throw | A missing required provider throws, naming the provider; a required ref prop that is not a ref object throws at mount |
+| ③ Warn in dev | Measure zero height and warn; warn when a prop marked stable changes identity every render; count mounts and warn past a threshold; warn when a required ref is still `undefined` on the first frame |
+| ④ Document and test | The JS prop contract, the keys this component assigns, the owner's call to `handle.frame`, the mounted `Out` |
 
 **Tier ③ only works if the guard matches the target,** or the warnings ship to users:
 
@@ -350,6 +463,8 @@ Suppressing pragmas are prohibited: no `eslint-disable`, no `@ts-expect-error`. 
 
 Derived from the spec, not written from intuition. Roughly half the list is negative tests — doesn't fire, doesn't re-sync, stale response loses, cleanup left nothing behind — and those are exactly the ones that go missing otherwise.
 
+Scene output is tested with `@react-three/test-renderer`: `create(element)` renders into a headless root, `renderer.scene` exposes the graph, `advanceFrames(frames, delta)` inside `act` runs the loop with a chosen delta, `unmount()` triggers disposal — and in that environment fiber disposes immediately rather than at idle, so disposal is assertable synchronously. It is a devDependency to add, alongside the runner, and until it is present the scene rows below are reported as untested rather than skipped. DOM output that crosses a bridge is tested with RTL at the far end.
+
 | Spec source | Generates |
 |---|---|
 | `markup.*` role + accessible name | `getByRole('button', { name: 'Save' })` |
@@ -367,6 +482,18 @@ Derived from the spec, not written from intuition. Roughly half the list is nega
 | `exits.throws` / `exits.suspends` | Rendered inside a boundary, the fallback appears |
 | `exits.handler-failures` | The specified behavior — nothing else covers this |
 | `effects.*` | Cleanup removed it; mounting twice doesn't duplicate; out-of-order resolution lets the stale one lose; changing an unrelated value **doesn't** re-sync |
+| `refs.*` | Set `ref.current`, advance one frame, the specified write reflects it; **the component did not re-render** |
+| `frame.*` under `internal` | `advanceFrames(1, delta)` produces each write; two deltas produce proportionally different results when scaled by delta; `frame.args` reached `useFrame` |
+| `frame.*` under `handle` | `ref.current.frame(state, delta)` produces each write; **advancing frames without calling it produces nothing** |
+| `frame.*` under `tunnel` | With `Out` mounted in a root, advancing that root's frames produces the writes; **with `Out` unmounted, nothing moves** |
+| `frame.writes-react` | `never`: render count unchanged across N frames; otherwise the stated condition sets it and nothing else does |
+| `frame.args` priority above 0 | The callback renders — `gl.render` is called once per frame |
+| `frame.invalidate` | `invalidate` called after the stated writes; **not called** by anything else |
+| `frame.sync.*` | Changing the prop changes the next frame's result; changing an unrelated prop **doesn't** rebuild |
+| `handle.*` | Each named method exists and does what its line says |
+| `resources.*` | `dispose` called on unmount, and on the old object when rebuilt; **not called** on an unrelated re-render; a `dispose={null}` object is untouched |
+| `bridge.*` | Content appears at the far end, in the stated order; gone after unmount |
+| `library.export` | The name is importable from `src/index.js` |
 | Tier ② and ③ mitigations | The throw throws with its message; the dev warning fires |
 
 Unenforceable contracts aren't testable — testing them means testing the parent — but their *mitigations* are, which is another reason to prefer tiers ② and ③.
@@ -380,9 +507,12 @@ it('[markup.1] renders a button named Save', ...)
 it('[states.empty] renders the empty message, not the zero-results message', ...)
 it('[callbacks.neg.1] does not fire onSelect while disabled', ...)
 it('[effects.1] removes the resize listener on unmount', ...)
+it('[frame.1] moves the mesh by scroll × amplitude after one frame', ...)
+it('[frame.1] does not move the mesh when handle.frame is not called', ...)
+it('[resources.1] disposes the previous geometry when size changes', ...)
 ```
 
-Test through the public interface — render and interact, never assert on internal state. Query by role and label, which re-tests the semantics for free. No whole-tree snapshots: a snapshot asserts everything and specifies nothing, so every intentional change looks like a failure and gets approved without being read. And don't test React itself.
+Test through the public interface — render and interact, never assert on internal state. Query by role and label, which re-tests the semantics for free. On the scene side the public interface is the scene graph and the handle: assert object properties after a frame, never the closure that produced them. No whole-tree snapshots: a snapshot asserts everything and specifies nothing, so every intentional change looks like a failure and gets approved without being read. And don't test React itself.
 
 ---
 
@@ -391,7 +521,7 @@ Test through the public interface — render and interact, never assert on inter
 Traceability in both directions, plus a green suite.
 
 - **Forward** — every spec input id appears in a test name, as does every `contracts.*` entry at tier ② or ③. A missing id is a missing test.
-- **Reverse** — every element a user or assistive technology can perceive traces to a spec line. An unspecified wrapper `<div>` is an implementation detail; an unspecified *label* is a finding. Report it as either a spec gap or an overreach on your part, and don't guess which.
+- **Reverse** — every element a user or assistive technology can perceive traces to a spec line, and on the scene side every object in the graph and every write the loop makes traces to a `markup.*`, `frame.*`, or `resources.*` line. An unspecified wrapper `<div>` is an implementation detail; an unspecified *label* is a finding. Report it as either a spec gap or an overreach on your part, and don't guess which.
 
 The reverse check is the more valuable of the two, because it's the only thing that catches output nobody asked for. Untested markup is the signal for unrequested markup.
 
@@ -403,6 +533,7 @@ Coverage percentages are not the target. The spec defines completeness, which is
 - `Button.test.jsx` — the tests
 - `Button.spec.md` — the spec input, authored by the user. Kept beside the component so the ids in the tests are navigable and the reasoning survives. Never edited by this skill.
 - `Button.resolved.md` — the resolved spec, written by this skill
+- `src/index.js` — one named export line added, per `library.export`
 - The run report — in conversation, not a file. It's about this run, not about the code.
 
 ### The resolved spec
@@ -418,6 +549,8 @@ Derived entries get their own id namespaces so tests can reference them the same
 contracts.1: onSelect must be referentially stable — owner caller — tier ③ — effect re-runs every render
 contracts.2: ThemeProvider must exist above — owner ancestor — tier ② — throws naming the provider
 contracts.3: keys for the option list — owner self — tier ④ — options remount and lose focus
+contracts.4: `scroll` ref written before this frame's handle call — owner caller — tier ③ — one frame stale, warns if undefined on first frame
+contracts.5: owner calls handle.frame every frame — owner caller — tier ④ — nothing moves
 
 ## defaults            # taken because a wrong guess fails loudly
 defaults.1: root = single element — required as the passthrough target by props.passthrough
@@ -442,3 +575,16 @@ Facts this skill depends on, all confirmed against react.dev:
 - `use` may be called in loops and conditionals, and cannot be called inside try/catch.
 - `<title>`, `<meta>`, and `<link>` rendered anywhere are hoisted into `<head>`.
 - Actions: `useActionState`, `useFormStatus`, `useOptimistic`, and `action` / `formAction` props on forms.
+
+## react-three-fiber reference
+
+Facts this skill depends on, confirmed against the installed packages (`@react-three/fiber` 9.7.0, `@react-three/drei` 10.7.8, `tunnel-rat` 0.1.2) and the `@react-three/test-renderer` 9.x API document:
+
+- `useFrame(callback, renderPriority = 0)`; the callback is `(state, delta, xrFrame?) => void`. Fiber stores the latest callback in a ref on every render, so an `internal` loop never runs a stale closure.
+- Subscribers are sorted by priority, lowest first; equal priorities run in subscription order. While any subscriber has a priority above 0, the root's own `gl.render(scene, camera)` does not run — the source comment: *"As long as this flag is positive there can be no internal rendering at all."*
+- `frameloop` is `'always' | 'demand' | 'never'`. `invalidate(frames = 1)` from `useThree` requests frames under `demand`; under `never` nothing runs, and under `always` it is a no-op.
+- On unmount fiber calls `dispose()` on every object declared in JSX, scheduled at idle priority, unless the element has `dispose={null}`. In a test environment (`IS_REACT_ACT_ENVIRONMENT` defined) disposal is immediate.
+- `createPortal(children, object3d)` renders children into another `Object3D`.
+- `tunnel()` returns `{ In, Out }`; `In` renders `null`; `Out` renders everything sent in, in definition order, in the renderer that mounts it.
+- drei `useGLTF`, `useTexture`, `useFBX` are built on `useLoader` and suspend on first load; results are cached by URL. drei `useFBO` disposes its render target on unmount. drei `<Html>` takes `portal`, `transform`, and `occlude`.
+- `@react-three/test-renderer`: `create(element)`, `renderer.scene`, `getInstance()`, `toTree()`, `toGraph()`, `fireEvent()`, `advanceFrames(frames, delta)`, `update(element)`, `unmount()`, and `act()`. Peer requirement: fiber 9 or later, React 19.
