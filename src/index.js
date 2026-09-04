@@ -2,3 +2,5 @@
 // Everything the website consumes gets re-exported from here.
 
 export const VERSION = '0.0.1'
+
+export { MorphTargets } from './MorphTargets/index.jsx'
