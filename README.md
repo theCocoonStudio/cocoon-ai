@@ -31,6 +31,24 @@ docs/
 .claude/skills/               the skill that builds components from specs
 ```
 
+## To reproduce
+
+Some files are local to a machine and never committed, like an env file. Recreate them after a fresh clone:
+
+- `.claude/settings.local.json` — per-machine Claude Code permissions. The committed `.claude/settings.json` carries the shared config (model, hooks); this file adds the read paths Claude needs inside the container without a prompt each time:
+
+  ```json
+  {
+    "permissions": {
+      "allow": ["Read(//proc/1/**)", "Read(//home/node/**)"]
+    }
+  }
+  ```
+
+  `/proc/1` is the container's PID 1, which the token-expiry hook reads for the start time. `/home/node` holds Claude's memory and session logs.
+
+This list is not complete yet; add to it as more local files turn up.
+
 ## How Claude and I work together
 
 Claude does most of the typing; I direct, review, and merge. The rule is that Claude never runs with more access than the task needs, and every change lands through git so it can be read before it counts.
