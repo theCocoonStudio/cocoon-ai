@@ -113,6 +113,7 @@ refs.2: mesh — internal, RefObject<Mesh>, the root mesh, set by React on mount
 ## handle                            # what `ref` exposes when props.ref is `handle`
 handle.1: frame — (state, delta) => void, this component's frame work, same signature as a useFrame callback
 handle.2: reset — () => void, returns the ribbon to its rest pose
+handle.3: dispose — () => void, releases every dispose.* object; idempotent; the component is inert afterwards
 
 ## frame
 frame.mode: handle                   # internal | handle | tunnel | none — required
@@ -122,12 +123,14 @@ frame.1: reads refs.1, writes refs.2 position.y = scroll × amplitude, eased by 
 frame.2: writes material uniform uTime += delta
 frame.writes-react: never            # never | what is set, under what condition, how often
 frame.invalidate: not needed         # not needed (Canvas frameloop is always) | calls invalidate after frame.1–2
-frame.sync.1: prop `size` → rebuild geometry (resources.1); not read in the loop
+frame.sync.1: prop `size` → rebuild geometry (dispose.geometry); not read in the loop
 frame.sync.2: prop `amplitude` → mirrored into a ref, read by frame.1
 
-## resources                         # everything with a dispose() that this component creates itself
-resources.1: geometry — built in useMemo from `size`; disposed when `size` changes and on unmount
-resources.2: material — declared in JSX; fiber disposes it on unmount
+## dispose                           # every memory-holding object this component creates, keyed by name
+dispose.geometry: BufferGeometry built in useMemo from `size` — on `size` change and on unmount
+dispose.texture.noise: DataTexture built once in useMemo — on unmount
+dispose.material: declared in JSX — fiber, on unmount
+dispose.after: mesh.visible = false, frame.1–2 no-op   # what handle.dispose leaves behind; required when handle.dispose exists
 
 ## bridge                            # output that leaves this renderer
 bridge: none
@@ -156,13 +159,13 @@ Each row is answerable by reading the spec input alone.
 | Ownership consistent | A rendering decision needs data the chosen slot mechanism excludes |
 | Markup lines are queryable | A markup line with no possible RTL assertion |
 | Target syntax matches target | `import.meta.env` under Next, `"use client"` under Vite |
-| Scene sections present | `three`, `@react-three/*`, or `tunnel-rat` is imported and `refs`, `handle`, `frame`, `resources`, or `bridge` is missing |
+| Scene sections present | `three`, `@react-three/*`, or `tunnel-rat` is imported and `refs`, `handle`, `frame`, `dispose`, or `bridge` is missing |
 | Frame mode decided | `frame.*` lines with no `frame.mode`; `handle` mode with no `handle.*` frame entry; `tunnel` mode with no `frame.tunnel` |
 | Loop reads through refs | A `frame.*` line reads a prop or state that no `refs.*` or `frame.sync.*` line mirrors |
 | Loop stays out of React | `frame.writes-react` missing, or a frame line that sets state without a `frame.writes-react` entry naming it |
 | Positive priority owns rendering | `frame.args` with a priority above 0 and no frame line that renders |
 | Invalidation decided | `frame.invalidate` missing |
-| Resources closed | A `resources.*` line without a disposal moment; a `frame.sync.*` line that rebuilds something with no `resources.*` line |
+| Disposal keyed | An object the component creates (`useMemo`, `new`, a render target) with no `dispose.<name>` line; a `dispose.*` line without its moment; a `frame.sync.*` rebuild with no `dispose.*` line; `handle.dispose` present with no `dispose.after` |
 | Bridges have a far end | A `bridge.*` line that does not name where the content lands |
 | Suspends match the assets | `useGLTF`, `useTexture`, `useFBX`, or `useLoader` imported with `exits.suspends: never` |
 | Library export named | `library.export` missing |
@@ -386,14 +389,20 @@ Body rules for all three modes:
 - **Invalidation is declared, not assumed.** Under a Canvas with `frameloop="demand"`, a loop that mutates objects shows nothing until `invalidate()` is called, and the component cannot know which Canvas it is in. `frame.invalidate` says either that the Canvas is `always`, which becomes a contract on the owner, or which writes are followed by `invalidate` from `useThree`.
 - **`frame.sync.*` covers both directions.** React → loop is a ref mirror or a resource rebuild. Loop → React is `frame.writes-react`, and it is the exception.
 
-### Resources
+### Disposal
 
-Anything with a `dispose()` is a resource: geometries, materials, textures, render targets. Missing disposal is the class of failure this skill exists for — the GPU leaks, the tab gets slower, and nothing reports it.
+Anything that holds GPU or heap memory is listed under `dispose.*`, **keyed by object name** — `dispose.geometry`, `dispose.texture.noise`, `dispose.target.blur` — one line per object, each with its disposal moments. Missing disposal is the class of failure this skill exists for: the GPU leaks, the tab gets slower, and nothing reports it. Keying by name is what makes the check mechanical: every object the component creates must have a line, and every line must have a moment.
 
-- **Fiber disposes what JSX declared.** On unmount it calls `dispose()` on every object the component declared as an element, unless that element carries `dispose={null}`. Declaring the object in JSX is therefore the tier ① answer wherever it applies.
-- **What the component creates itself, it disposes itself.** A geometry built in `useMemo`, a `DataTexture`, a render target, an instanced buffer: each is a `resources.*` line with two moments, disposal on unmount and disposal of the previous one when it is rebuilt. The rebuild moment is the one that gets forgotten.
-- **Loader caches are shared.** `useLoader`, `useGLTF`, and `useTexture` cache by URL across the app; disposing what they return breaks the next consumer with no error here. They are never `resources.*` lines.
+- **Fiber disposes what JSX declared.** On unmount it calls `dispose()` on every object the component declared as an element, unless that element carries `dispose={null}`. Those objects still get a line, with `fiber, on unmount` as the moment, so the list is complete and the reverse check has nothing to guess about. Declaring an object in JSX is the tier ① answer wherever it applies.
+- **What the component creates itself, it disposes itself.** A geometry built in `useMemo`, a `DataTexture`, a render target, an instanced buffer: two moments each, disposal on unmount and disposal of the previous one when it is rebuilt. The rebuild moment is the one that gets forgotten.
+- **Loader caches are shared.** `useLoader`, `useGLTF`, and `useTexture` cache by URL across the app; disposing what they return breaks the next consumer with no error here. They never get a `dispose.*` line.
 - **`dispose={null}` is a spec line**, used when an object is shared with something outside this component, and the resolved spec names who disposes it instead.
+
+**`handle.dispose()`** exists so the owner can free a component on demand the same way it drives its frame: unmounting is not always when the memory should go. When the spec lists it:
+
+- It releases every `dispose.*` object, and it is idempotent: three.js `dispose()` calls are safe to repeat, and unmount still runs the normal disposal afterwards, so a second release must be a no-op rather than a second `new`.
+- **A disposed object that is still rendered comes back.** three.js re-uploads a geometry or texture the next time a visible mesh references it, so calling `dispose()` on a live object frees nothing and shows nothing. `dispose.after` states what the component does to stop referencing them — hide the mesh, skip the frame lines, drop the material — and it is required whenever `handle.dispose` exists. That line is where the silent failure lives.
+- After `handle.dispose()`, `handle.frame` and the other handle methods are no-ops. Calling them is not an error, because the owner's loop runs on.
 
 ### Bridges
 
@@ -413,7 +422,7 @@ This repo is a package, so the component's public surface is not only its props.
 
 ### Unenforceable contracts
 
-Derived, not invented. Walk the sections above and each entry falls out: props in a dependency array produce a stability contract, required context produces a provider contract, measurement produces a layout precondition, rendering a list produces the downward key contract, throws and suspends produce boundary contracts, an external system with expensive setup produces a remount cost. On the scene side: a ref prop produces a writer contract (who writes it, and before this component's frame work), `internal` mode with an ordering need produces an ordering contract, `handle` mode produces a caller contract, `tunnel` mode produces an `Out`-mounted contract, `frame.invalidate: not needed` produces a frameloop contract, and `dispose={null}` produces a disposer contract.
+Derived, not invented. Walk the sections above and each entry falls out: props in a dependency array produce a stability contract, required context produces a provider contract, measurement produces a layout precondition, rendering a list produces the downward key contract, throws and suspends produce boundary contracts, an external system with expensive setup produces a remount cost. On the scene side: a ref prop produces a writer contract (who writes it, and before this component's frame work), `internal` mode with an ordering need produces an ordering contract, `handle` mode produces a caller contract, `tunnel` mode produces an `Out`-mounted contract, `frame.invalidate: not needed` produces a frameloop contract, `dispose={null}` produces a disposer contract, and `handle.dispose` produces a caller contract in the cases where unmount is too late.
 
 This section carries the most weight because these are precisely the failures nothing else catches — which is the same reason they block rather than default.
 
@@ -491,7 +500,8 @@ Scene output is tested with `@react-three/test-renderer`: `create(element)` rend
 | `frame.invalidate` | `invalidate` called after the stated writes; **not called** by anything else |
 | `frame.sync.*` | Changing the prop changes the next frame's result; changing an unrelated prop **doesn't** rebuild |
 | `handle.*` | Each named method exists and does what its line says |
-| `resources.*` | `dispose` called on unmount, and on the old object when rebuilt; **not called** on an unrelated re-render; a `dispose={null}` object is untouched |
+| `dispose.<name>` | That object's `dispose` called on unmount, and on the old one when rebuilt; **not called** on an unrelated re-render; a `dispose={null}` object is untouched |
+| `handle.dispose` / `dispose.after` | One call disposes every listed object; a second call disposes nothing new; after it, frames write nothing and the after-state holds; unmount afterwards does not throw |
 | `bridge.*` | Content appears at the far end, in the stated order; gone after unmount |
 | `library.export` | The name is importable from `src/index.js` |
 | Tier ② and ③ mitigations | The throw throws with its message; the dev warning fires |
@@ -509,7 +519,8 @@ it('[callbacks.neg.1] does not fire onSelect while disabled', ...)
 it('[effects.1] removes the resize listener on unmount', ...)
 it('[frame.1] moves the mesh by scroll × amplitude after one frame', ...)
 it('[frame.1] does not move the mesh when handle.frame is not called', ...)
-it('[resources.1] disposes the previous geometry when size changes', ...)
+it('[dispose.geometry] disposes the previous geometry when size changes', ...)
+it('[handle.3] disposes nothing new on a second call', ...)
 ```
 
 Test through the public interface — render and interact, never assert on internal state. Query by role and label, which re-tests the semantics for free. On the scene side the public interface is the scene graph and the handle: assert object properties after a frame, never the closure that produced them. No whole-tree snapshots: a snapshot asserts everything and specifies nothing, so every intentional change looks like a failure and gets approved without being read. And don't test React itself.
@@ -521,7 +532,7 @@ Test through the public interface — render and interact, never assert on inter
 Traceability in both directions, plus a green suite.
 
 - **Forward** — every spec input id appears in a test name, as does every `contracts.*` entry at tier ② or ③. A missing id is a missing test.
-- **Reverse** — every element a user or assistive technology can perceive traces to a spec line, and on the scene side every object in the graph and every write the loop makes traces to a `markup.*`, `frame.*`, or `resources.*` line. An unspecified wrapper `<div>` is an implementation detail; an unspecified *label* is a finding. Report it as either a spec gap or an overreach on your part, and don't guess which.
+- **Reverse** — every element a user or assistive technology can perceive traces to a spec line, and on the scene side every object in the graph and every write the loop makes traces to a `markup.*`, `frame.*`, or `dispose.*` line. An unspecified wrapper `<div>` is an implementation detail; an unspecified *label* is a finding. Report it as either a spec gap or an overreach on your part, and don't guess which.
 
 The reverse check is the more valuable of the two, because it's the only thing that catches output nobody asked for. Untested markup is the signal for unrequested markup.
 
