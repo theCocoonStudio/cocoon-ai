@@ -16,8 +16,8 @@ RUN mkdir -p /usr/local/share/npm-global && chown -R node:node /usr/local/share
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 ENV PATH=$PATH:/usr/local/share/npm-global/bin
 
-RUN mkdir -p /workspace /home/node/.claude \
-  && chown -R node:node /workspace /home/node/.claude
+RUN mkdir -p /workspace /home/node/.claude /home/node/cocoon-ai-records \
+  && chown -R node:node /workspace /home/node/.claude /home/node/cocoon-ai-records
 WORKDIR /workspace
 
 ENV DEVCONTAINER=true
