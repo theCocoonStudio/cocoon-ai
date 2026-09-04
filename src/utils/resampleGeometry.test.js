@@ -69,6 +69,38 @@ describe('resampleGeometry', () => {
     }
   })
 
+  it('accepts a non-indexed base: one sample per vertex, in base order', () => {
+    const base = new BoxGeometry().toNonIndexed() // 36 vertices, no index
+    const target = new SphereGeometry(1, 8, 6)
+    const { position, normal } = resampleGeometry(base, target)
+    expect(base.index).toBeNull()
+    expect(position.count).toBe(36)
+    expect(normal.count).toBe(36)
+    const tp = target.attributes.position
+    const q = new Vector3()
+    const got = new Vector3()
+    for (let i = 0; i < 36; i++) {
+      q.fromBufferAttribute(base.attributes.position, i)
+      got.fromBufferAttribute(position, i)
+      const j = bruteNearest(tp, q)
+      expect(got.distanceToSquared(q)).toBeCloseTo(
+        q.distanceToSquared(new Vector3().fromBufferAttribute(tp, j)),
+        10,
+      )
+    }
+  })
+
+  it('gives the same result for an indexed and a non-indexed target', () => {
+    const base = new BoxGeometry()
+    const indexed = new SphereGeometry(1, 8, 6)
+    const nonIndexed = indexed.clone().toNonIndexed()
+    expect(nonIndexed.index).toBeNull()
+    const a = resampleGeometry(base, indexed)
+    const b = resampleGeometry(base, nonIndexed)
+    expect(Array.from(b.position.array)).toEqual(Array.from(a.position.array))
+    expect(Array.from(b.normal.array)).toEqual(Array.from(a.normal.array))
+  })
+
   it('omits normals when asked', () => {
     const out = resampleGeometry(
       new BoxGeometry(),
