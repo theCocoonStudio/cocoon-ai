@@ -7,8 +7,28 @@ Built with Vite in library mode. Plain JavaScript, ESM output. Every runtime dep
 ```bash
 npm run build         # emit dist/index.js (minified, sourcemaps carry source)
 npm run dev           # rebuild on change
+npm test              # vitest, once (npm run test:watch to keep it running)
 npm run lint          # eslint
 npm run format        # prettier
+```
+
+Components are general React 19: nothing in `src/` assumes a bundler. Anything a bundler would normally supply (env values, asset URLs, lazy imports) arrives as an input. The build stamps `"use client"` onto `dist/index.js` so a Next consumer gets a client boundary and a Vite consumer ignores it.
+
+## Layout
+
+```
+src/
+  index.js                    public entry; one named export per component
+  <Component>/
+    index.jsx                 the component
+    <Component>.spec.md       the spec it was built from
+    <Component>.resolved.md   what was derived from the spec: contracts, defaults, notes, gaps
+    <Component>.test.jsx      tests, named by spec id
+    *.js                      helpers used only by this component
+  utils/                      reusable, React-free functions with their own tests; not exported unless something outside needs them
+docs/
+  <Component>.md              API doc: props, handle, dispose rules, limits
+.claude/skills/               the skill that builds components from specs
 ```
 
 ## How Claude and I work together
