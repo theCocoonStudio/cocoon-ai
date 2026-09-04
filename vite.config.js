@@ -22,7 +22,12 @@ export default defineConfig({
       formats: ['es'],
       fileName: 'index',
     },
-    rollupOptions: { external },
+    rollupOptions: {
+      external,
+      // Source files carry no directive (portable target); the single bundle gets it here so
+      // a Next consumer sees a client boundary and a Vite consumer ignores it.
+      output: { banner: "'use client';" },
+    },
     sourcemap: true,
     minify: true,
   },
