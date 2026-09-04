@@ -7,7 +7,8 @@
   "workspaceFolder": "/workspace",
   "mounts": [
     "source=cocoon-ai-node-modules,target=/workspace/node_modules,type=volume",
-    "source=cocoon-ai-claude-config,target=/home/node/.claude,type=volume"
+    "source=cocoon-ai-claude-config,target=/home/node/.claude,type=volume",
+    "source=cocoon-ai-records,target=/home/node/cocoon-ai-records,type=volume"
   ],
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",

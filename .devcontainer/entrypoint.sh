@@ -26,4 +26,12 @@ if [ -f package-lock.json ] && [ ! -f node_modules/.package-lock.json ]; then
   npm ci --no-audit --no-fund
 fi
 
+# The cocoon-ai-records clone (session exports, incident log) lives in its own named volume
+# so it survives container rebuilds. Cloned once, on the first start that has a token.
+RECORDS=/home/node/cocoon-ai-records
+if [ -n "${GH_TOKEN:-}" ] && [ ! -d "$RECORDS/.git" ]; then
+  echo "cloning cocoon-ai-records (first run in this volume)..."
+  gh repo clone theCocoonStudio/cocoon-ai-records "$RECORDS" -- -q || echo "clone failed; will retry next start"
+fi
+
 exec "$@"
