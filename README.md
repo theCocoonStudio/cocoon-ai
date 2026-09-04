@@ -34,8 +34,8 @@ A separate Debian machine that exists only to run the agent. The container above
 
 - nothing of mine on the box except a clone of this repo and the GitHub App's private key
 - Claude Code runs only inside the `.devcontainer/` sandbox, started with `.devcontainer/run.sh claude`
-- non-sudo login user, no Docker on the box; the container runs under rootless podman, so there is no privileged daemon in the path and container root is an unprivileged subordinate uid on the host
-- reached from my Mac over Tailscale with ACLs (only my Mac can connect), Wake-on-LAN from an always-on LAN device, ssh or remote desktop via the Windows App
+- non-sudo login user that only runs the container; a separate account, used only for maintenance, is the sole sudoer. No Docker on the box: the container runs under rootless podman, so there is no privileged daemon in the path and container root is an unprivileged subordinate uid on the host
+- reached from my Mac over ssh, or remote desktop via the Windows App: directly on the LAN at home, and from outside through Tailscale, which terminates on the NAS and routes to the box locally. The box itself runs no Tailscale. Wake-on-LAN from an always-on LAN device
 - `main` ruleset: PRs only, one approving review, no force-push, no bypass. Authors can't approve their own PRs, so Claude reviews mine and I review Claude's.
 
 ### Auth: a GitHub App, not a PAT
