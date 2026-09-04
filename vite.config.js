@@ -31,4 +31,8 @@ export default defineConfig({
     sourcemap: true,
     minify: true,
   },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.{js,jsx}'],
+  },
 })
