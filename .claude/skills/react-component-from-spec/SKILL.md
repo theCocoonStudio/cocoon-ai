@@ -45,7 +45,7 @@ Required sections must be present with an explicit `none` rather than omitted. A
 # Button spec
 
 ## meta
-meta.target: vite                 # next | vite | portable — required
+meta.target: portable             # next | vite | portable — required; this repo builds portable components
 meta.runtime: client              # client | server | shared
 meta.file: Button.jsx
 
@@ -231,7 +231,7 @@ Three detectors, all mechanical:
 
 Everything above the function is spec, not incidental.
 
-- `"use client"` as the literal first line when the target is Next and the runtime is client. Under Vite it is inert — do not emit it.
+- `"use client"` as the literal first line when the target is Next and the runtime is client. Under Vite it is inert — do not emit it. Under portable it is not written in source either: Vite 8 strips module directives from the lib bundle, so `vite.config.js` stamps it onto `dist/index.js` at build time (`build.rollupOptions.output.banner`), where a Next consumer sees it and a Vite consumer ignores it.
 - Imports exactly as the spec input declares them. Static and analyzable: no `require`, no `eval`, no computed paths. Nothing gets added; a needed import that isn't declared is a BLOCK.
 - Named exports over default. A default export gets renamed freely at each import site, which makes the component unsearchable.
 - `lazy()` only at module scope. Created inside the component body it produces a new component type every render, remounting the subtree every time.
@@ -441,14 +441,14 @@ Every entry gets a mitigation tier. The first two are worth reaching for; if a c
 |---|---|
 | Next | `process.env.NODE_ENV !== 'production'` |
 | Vite | `import.meta.env.DEV` |
-| portable | none available — tier ③ is off the table, those contracts fall to ④ |
+| portable | `process.env.NODE_ENV !== 'production'` — the one bundler convention every consumer replaces; this repo's lib build leaves it in place for the consumer (verified), so the guard survives to the consumer's build and is resolved there |
 
 ### Target differences
 
 | | Next | Vite | portable |
 |---|---|---|---|
 | Public env | `process.env.NEXT_PUBLIC_*` | `import.meta.env.VITE_*` | none |
-| `"use client"` | emit | omit | omit |
+| `"use client"` | emit | omit | omit in source; the build banner stamps it on `dist/index.js` |
 | `runtime` field | real | always client | always client |
 | Assets | static import / `next/image` | `?url`, `?raw` | `new URL(..., import.meta.url)` |
 | Lazy without SSR | `next/dynamic` with `ssr: false` | `lazy` | `lazy` |
@@ -457,7 +457,8 @@ Every entry gets a mitigation tier. The first two are worth reaching for; if a c
 
 - PascalCase component names — JSX treats a lowercase tag as a host element.
 - `.jsx` for any file containing JSX. Under Vite, JSX in a `.js` file isn't transformed and fails at parse, so this is a build fact rather than a preference.
-- `Button.jsx`, flat — not `Button/index.jsx`. Index files make every editor tab say "index," and barrel re-exports quietly defeat tree-shaking.
+- One folder per component: `src/Button/index.jsx` holds the component, beside `Button.spec.md`, `Button.resolved.md`, `Button.test.jsx`, and any helper used only by this component. A helper that is reusable and React-free goes to `src/utils/` as a plain function with its own test, and is not exported from the package until something outside needs it.
+- `src/index.js` is the only barrel, and it is the package entry by design, so tree-shaking is unaffected. No other index file re-exports anything; `src/Button/index.jsx` defines the component, it does not gather.
 - **No silent renaming.** Names in the code match the spec input exactly — no pluralization fixes, no normalizing a handler to an `on` prefix, no tidying. Completeness is checked by tracing spec ids, so a rename breaks the trace. A wrong name in the spec is a report, not a correction.
 
 ### Pragmas
@@ -540,10 +541,11 @@ Coverage percentages are not the target. The spec defines completeness, which is
 
 ## Artifacts
 
-- `Button.jsx` — the component
-- `Button.test.jsx` — the tests
-- `Button.spec.md` — the spec input, authored by the user. Kept beside the component so the ids in the tests are navigable and the reasoning survives. Never edited by this skill.
-- `Button.resolved.md` — the resolved spec, written by this skill
+- `src/Button/index.jsx` — the component
+- `src/Button/Button.test.jsx` — the tests
+- `src/Button/Button.spec.md` — the spec input, authored by the user. Kept beside the component so the ids in the tests are navigable and the reasoning survives. Never edited by this skill.
+- `src/Button/Button.resolved.md` — the resolved spec, written by this skill
+- `docs/Button.md` — the API doc: props, handle, dispose rules, limits. Written for the consumer, so it repeats nothing about the run.
 - `src/index.js` — one named export line added, per `library.export`
 - The run report — in conversation, not a file. It's about this run, not about the code.
 
