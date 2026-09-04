@@ -1,6 +1,6 @@
 ---
 name: react-component-from-spec
-description: 'Build a React 19 component and its RTL tests from a structured spec input, validating the spec before writing any code.'
+description: "Build a React 19 component and its RTL tests from a structured spec input, validating the spec before writing any code."
 ---
 
 # React Component From Spec
@@ -29,7 +29,8 @@ A wrong guess that breaks the build or a test costs one cycle. A wrong guess tha
 4. Write the resolved spec — the input plus everything derived from it.
 5. Verify — run the tests, check traceability both directions.
 6. Report.
-   Pre-flight needs no code and catches most problems. Run it fully before writing anything.
+
+Pre-flight needs no code and catches most problems. Run it fully before writing anything.
 
 ---
 
@@ -43,19 +44,16 @@ Required sections must be present with an explicit `none` rather than omitted. A
 # Button spec
 
 ## meta
-
-meta.target: vite # next | vite | portable — required
-meta.runtime: client # client | server | shared
+meta.target: vite                 # next | vite | portable — required
+meta.runtime: client              # client | server | shared
 meta.file: Button.jsx
 
 ## imports
-
 imports.1: import { useState } from 'react'
 imports.2: import { cn } from '@/lib/cn'
 imports.lazy.1: const Editor = lazy(() => import('./Editor'))
 
 ## props
-
 props.1: label — string, required
 props.2: variant — 'default' | 'danger', optional, default 'default'
 props.3: onSelect — (id) => void, required, referentially stable
@@ -63,29 +61,24 @@ props.passthrough: yes → spread onto root <button>
 props.ref: accepted → root DOM node
 
 ## slots
-
 slots.mechanism: children
 slots.1: children — rendered inside the label span
 
 ## context
-
 context.consumed: none
 context.provided: none
 
 ## state
-
 state.1: open — boolean, initial false
 state.reset: none
 
 ## markup
-
 markup.1: root <button type="button">, accessible name from `label`
 markup.2: aria-expanded reflects `open`
 markup.3: chevron <svg aria-hidden="true">
 markup.4: children render inside <span class="label">
 
 ## states
-
 states.default: markup.1–4
 states.disabled: markup.1 with disabled; onSelect never fires
 states.pending: none
@@ -93,16 +86,13 @@ states.empty: none
 states.error: none
 
 ## callbacks
-
 callbacks.1: onSelect — fires on click, payload `id`, after `open` toggles
 callbacks.neg.1: does not fire while disabled
 
 ## effects
-
 effects: none
 
 ## exits
-
 exits.throws: never
 exits.suspends: never
 exits.handler-failures: none
@@ -116,19 +106,19 @@ exits.handler-failures: none
 
 Each row is answerable by reading the spec input alone.
 
-| Check                         | Fails when                                                         |
-| ----------------------------- | ------------------------------------------------------------------ |
-| Required fields present       | `meta.target`, `meta.runtime`, slots, or props missing entirely    |
-| Explicit `none`               | A required section omitted rather than set to `none`               |
-| Every render state has markup | A state enumerated with nothing to render                          |
-| Callbacks complete            | A callback missing its trigger, payload, or ordering               |
-| Effects survive both gates    | See "Effects" below                                                |
-| Dep-array props marked stable | An effect depends on a prop with no stability contract             |
-| Exits have boundary decisions | A throw or suspend with no owner named                             |
-| Imports closed both ways      | Something used but not declared, or declared but not used          |
-| Ownership consistent          | A rendering decision needs data the chosen slot mechanism excludes |
-| Markup lines are queryable    | A markup line with no possible RTL assertion                       |
-| Target syntax matches target  | `import.meta.env` under Next, `"use client"` under Vite            |
+| Check | Fails when |
+|---|---|
+| Required fields present | `meta.target`, `meta.runtime`, slots, or props missing entirely |
+| Explicit `none` | A required section omitted rather than set to `none` |
+| Every render state has markup | A state enumerated with nothing to render |
+| Callbacks complete | A callback missing its trigger, payload, or ordering |
+| Effects survive both gates | See "Effects" below |
+| Dep-array props marked stable | An effect depends on a prop with no stability contract |
+| Exits have boundary decisions | A throw or suspend with no owner named |
+| Imports closed both ways | Something used but not declared, or declared but not used |
+| Ownership consistent | A rendering decision needs data the chosen slot mechanism excludes |
+| Markup lines are queryable | A markup line with no possible RTL assertion |
+| Target syntax matches target | `import.meta.env` under Next, `"use client"` under Vite |
 
 ---
 
@@ -178,7 +168,8 @@ Three detectors, all mechanical:
 - **Ownership mismatch** — a decision is required from the side that does not hold the information.
 - **Untestable required line** — a markup line with no RTL expression.
 - **Perceivable output with no spec line** — the reverse traceability check.
-  **If more than about five things BLOCK, say the spec isn't ready** and give the five most structural ones. Rebuilding a spec through thirty chat questions is the worst available medium for it.
+
+**If more than about five things BLOCK, say the spec isn't ready** and give the five most structural ones. Rebuilding a spec through thirty chat questions is the worst available medium for it.
 
 **Mid-write discovery gets the same treatment.** Some contradictions only appear three-quarters through. Stop and report. The urge to escape the corner with one extra prop is exactly what this rule exists to prevent.
 
@@ -221,18 +212,19 @@ Because nothing checks props at runtime or compile time, invalid states have to 
 - Name booleans positively and bare — `open`, `disabled`, `checked` — matching the platform. An `isDisabled` prop next to the DOM's own `disabled` is a collision waiting to happen, especially with passthrough on.
 - Handler props are `onX`; the implementation inside is `handleX`.
 - A handler named like a DOM event carries the event. To hand back a value instead, rename it — `onValueChange(value)`.
-  **`ref` is a plain prop in React 19.** No `forwardRef`. Ref callbacks can return a cleanup function, which is usually a better way to attach and detach an observer to a node than an effect.
+
+**`ref` is a plain prop in React 19.** No `forwardRef`. Ref callbacks can return a cleanup function, which is usually a better way to attach and detach an observer to a node than an effect.
 
 **Context consumed is an input that never appears at the call site.** List every one. When a provider is required, throw with a message naming the provider rather than returning `undefined` and crashing three lines later.
 
 **Slots.** Choose by the direction data flows:
 
-| Situation                                           | Mechanism                   |
-| --------------------------------------------------- | --------------------------- |
-| Caller supplies content                             | `children` or element props |
-| Data flows child → caller                           | render prop                 |
-| Caller swaps an implementation, child owns the data | component reference         |
-| A family of related parts                           | compound components         |
+| Situation | Mechanism |
+|---|---|
+| Caller supplies content | `children` or element props |
+| Data flows child → caller | render prop |
+| Caller swaps an implementation, child owns the data | component reference |
+| A family of related parts | compound components |
 
 An element prop gets a fresh identity every parent render, so it can never be an effect dependency. A component reference is stable, but the child then decides what prop name the data arrives under — a coupling that appears in neither file's prop list.
 
@@ -250,7 +242,7 @@ Two structural decisions with consequences elsewhere: whether the root is a sing
 
 **Keys are the one contract that points downward.** This component's identity is assigned by its parent, but its children's identity is assigned by it. A wrong key remounts subtrees that had every right to persist.
 
-**Output that escapes the subtree** is real output and can collide with siblings: portals, and React 19's metadata hoisting — _"When React renders this component, it will see the `<title>` `<link>` and `<meta>` tags, and automatically hoist them to the `<head>` section of document."_ Two components each rendering a `<title>` is last-one-wins with no error.
+**Output that escapes the subtree** is real output and can collide with siblings: portals, and React 19's metadata hoisting — *"When React renders this component, it will see the `<title>` `<link>` and `<meta>` tags, and automatically hoist them to the `<head>` section of document."* Two components each rendering a `<title>` is last-one-wins with no error.
 
 ### Exit channels
 
@@ -266,7 +258,8 @@ Most specified effects are not effects. Two gates, and only what fails both surv
 
 1. **Is it caused by a user action?** Then it's an event handler.
 2. **Can it be expressed as something render returns?** Then it must be — a class, an attribute, an element, a conditional subtree, a `<title>`. An effect doing this by hand is a reimplementation of the reconciler, worse.
-   The second gate is the better one because it has a yes or no answer. "Is this system external?" invites a story — and _the document_ can be made to justify anything. What survives both gates is the genuinely unowned surface: `window` and `document` listeners, `IntersectionObserver`, `ResizeObserver`, `matchMedia`, timers, storage, network, History, focus and scroll, layout measurement, and third-party imperative libraries.
+
+The second gate is the better one because it has a yes or no answer. "Is this system external?" invites a story — and *the document* can be made to justify anything. What survives both gates is the genuinely unowned surface: `window` and `document` listeners, `IntersectionObserver`, `ResizeObserver`, `matchMedia`, timers, storage, network, History, focus and scroll, layout measurement, and third-party imperative libraries.
 
 For each surviving effect:
 
@@ -277,33 +270,27 @@ For each surviving effect:
 ```js
 // effect-initiated — cleanup gives per-run scoping for free
 useEffect(() => {
-  let ignore = false
-  fetchUser(id).then((data) => {
-    if (!ignore) setUser(data)
-  })
-  return () => {
-    ignore = true
-  }
-}, [id])
+  let ignore = false;
+  fetchUser(id).then(data => { if (!ignore) setUser(data); });
+  return () => { ignore = true; };
+}, [id]);
 
 // better when the operation takes a signal — a flag still pays for the response
 useEffect(() => {
-  const ctrl = new AbortController()
+  const ctrl = new AbortController();
   fetch(url, { signal: ctrl.signal })
-    .then((r) => r.json())
+    .then(r => r.json())
     .then(setData)
-    .catch((e) => {
-      if (e.name !== 'AbortError') setError(e)
-    })
-  return () => ctrl.abort()
-}, [url])
+    .catch(e => { if (e.name !== 'AbortError') setError(e); });
+  return () => ctrl.abort();
+}, [url]);
 
 // handler-initiated — no cleanup exists to hang a flag on, so use a ref token
-const latest = useRef(0)
+const latest = useRef(0);
 async function onSearch(q) {
-  const token = ++latest.current
-  const results = await search(q)
-  if (token === latest.current) setResults(results)
+  const token = ++latest.current;
+  const results = await search(q);
+  if (token === latest.current) setResults(results);
 }
 ```
 
@@ -319,30 +306,30 @@ This section carries the most weight because these are precisely the failures no
 
 Every entry gets a mitigation tier. The first two are worth reaching for; if a contract sits at tier ④ it usually means a design decision hasn't been made yet.
 
-| Tier                | Action                                                                                                                                                                                                   |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ① Remove            | Change the mechanism so the contract stops existing — take an element instead of a component reference; return an error state instead of throwing; render your own Suspense boundary around a lazy child |
-| ② Throw             | A missing required provider throws, naming the provider                                                                                                                                                  |
-| ③ Warn in dev       | Measure zero height and warn; warn when a prop marked stable changes identity every render; count mounts and warn past a threshold                                                                       |
-| ④ Document and test | The JS prop contract, and the keys this component assigns                                                                                                                                                |
+| Tier | Action |
+|---|---|
+| ① Remove | Change the mechanism so the contract stops existing — take an element instead of a component reference; return an error state instead of throwing; render your own Suspense boundary around a lazy child |
+| ② Throw | A missing required provider throws, naming the provider |
+| ③ Warn in dev | Measure zero height and warn; warn when a prop marked stable changes identity every render; count mounts and warn past a threshold |
+| ④ Document and test | The JS prop contract, and the keys this component assigns |
 
 **Tier ③ only works if the guard matches the target,** or the warnings ship to users:
 
-| Target   | Dev guard                                                           |
-| -------- | ------------------------------------------------------------------- |
-| Next     | `process.env.NODE_ENV !== 'production'`                             |
-| Vite     | `import.meta.env.DEV`                                               |
+| Target | Dev guard |
+|---|---|
+| Next | `process.env.NODE_ENV !== 'production'` |
+| Vite | `import.meta.env.DEV` |
 | portable | none available — tier ③ is off the table, those contracts fall to ④ |
 
 ### Target differences
 
-|                  | Next                             | Vite                     | portable                        |
-| ---------------- | -------------------------------- | ------------------------ | ------------------------------- |
-| Public env       | `process.env.NEXT_PUBLIC_*`      | `import.meta.env.VITE_*` | none                            |
-| `"use client"`   | emit                             | omit                     | omit                            |
-| `runtime` field  | real                             | always client            | always client                   |
-| Assets           | static import / `next/image`     | `?url`, `?raw`           | `new URL(..., import.meta.url)` |
-| Lazy without SSR | `next/dynamic` with `ssr: false` | `lazy`                   | `lazy`                          |
+| | Next | Vite | portable |
+|---|---|---|---|
+| Public env | `process.env.NEXT_PUBLIC_*` | `import.meta.env.VITE_*` | none |
+| `"use client"` | emit | omit | omit |
+| `runtime` field | real | always client | always client |
+| Assets | static import / `next/image` | `?url`, `?raw` | `new URL(..., import.meta.url)` |
+| Lazy without SSR | `next/dynamic` with `ssr: false` | `lazy` | `lazy` |
 
 ### Naming and files
 
@@ -363,26 +350,26 @@ Suppressing pragmas are prohibited: no `eslint-disable`, no `@ts-expect-error`. 
 
 Derived from the spec, not written from intuition. Roughly half the list is negative tests — doesn't fire, doesn't re-sync, stale response loses, cleanup left nothing behind — and those are exactly the ones that go missing otherwise.
 
-| Spec source                       | Generates                                                                                                                                              |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `markup.*` role + accessible name | `getByRole('button', { name: 'Save' })`                                                                                                                |
-| Native element required           | Assert the tag — `getByRole('button')` matches `<div role="button">` too                                                                               |
-| Contract attributes               | `type="button"`, `href`, `disabled`. A button in a form without `type` submits it                                                                      |
-| State-reflecting attributes       | `aria-expanded`, `aria-selected` per state                                                                                                             |
-| Text content                      | Specified strings, interpolation, plural forms                                                                                                         |
-| Conditional subtrees              | Present when the condition holds, **absent when it doesn't**                                                                                           |
-| Containment and association       | Options inside the listbox; `aria-describedby` resolves to the real error text                                                                         |
-| Focus                             | Lands where specified on open, returns on close, tab order matches                                                                                     |
-| `states.*`                        | One test per enumerated state                                                                                                                          |
-| `callbacks.*`                     | Fires when specified with the specified payload; **doesn't fire when it shouldn't**                                                                    |
-| `props.passthrough` / `props.ref` | A passed `className` and `ref` land where the spec says                                                                                                |
-| `context.provided`                | A consumer below sees the specified value                                                                                                              |
-| `exits.throws` / `exits.suspends` | Rendered inside a boundary, the fallback appears                                                                                                       |
-| `exits.handler-failures`          | The specified behavior — nothing else covers this                                                                                                      |
-| `effects.*`                       | Cleanup removed it; mounting twice doesn't duplicate; out-of-order resolution lets the stale one lose; changing an unrelated value **doesn't** re-sync |
-| Tier ② and ③ mitigations          | The throw throws with its message; the dev warning fires                                                                                               |
+| Spec source | Generates |
+|---|---|
+| `markup.*` role + accessible name | `getByRole('button', { name: 'Save' })` |
+| Native element required | Assert the tag — `getByRole('button')` matches `<div role="button">` too |
+| Contract attributes | `type="button"`, `href`, `disabled`. A button in a form without `type` submits it |
+| State-reflecting attributes | `aria-expanded`, `aria-selected` per state |
+| Text content | Specified strings, interpolation, plural forms |
+| Conditional subtrees | Present when the condition holds, **absent when it doesn't** |
+| Containment and association | Options inside the listbox; `aria-describedby` resolves to the real error text |
+| Focus | Lands where specified on open, returns on close, tab order matches |
+| `states.*` | One test per enumerated state |
+| `callbacks.*` | Fires when specified with the specified payload; **doesn't fire when it shouldn't** |
+| `props.passthrough` / `props.ref` | A passed `className` and `ref` land where the spec says |
+| `context.provided` | A consumer below sees the specified value |
+| `exits.throws` / `exits.suspends` | Rendered inside a boundary, the fallback appears |
+| `exits.handler-failures` | The specified behavior — nothing else covers this |
+| `effects.*` | Cleanup removed it; mounting twice doesn't duplicate; out-of-order resolution lets the stale one lose; changing an unrelated value **doesn't** re-sync |
+| Tier ② and ③ mitigations | The throw throws with its message; the dev warning fires |
 
-Unenforceable contracts aren't testable — testing them means testing the parent — but their _mitigations_ are, which is another reason to prefer tiers ② and ③.
+Unenforceable contracts aren't testable — testing them means testing the parent — but their *mitigations* are, which is another reason to prefer tiers ② and ③.
 
 **Every markup line in the spec is required to have a test.** The filter is presence in the spec, not your judgment about what matters: the user only writes lines they mean. A line that varies by state gets one test per state; a line that doesn't is complete after one.
 
@@ -404,8 +391,9 @@ Test through the public interface — render and interact, never assert on inter
 Traceability in both directions, plus a green suite.
 
 - **Forward** — every spec input id appears in a test name, as does every `contracts.*` entry at tier ② or ③. A missing id is a missing test.
-- **Reverse** — every element a user or assistive technology can perceive traces to a spec line. An unspecified wrapper `<div>` is an implementation detail; an unspecified _label_ is a finding. Report it as either a spec gap or an overreach on your part, and don't guess which.
-  The reverse check is the more valuable of the two, because it's the only thing that catches output nobody asked for. Untested markup is the signal for unrequested markup.
+- **Reverse** — every element a user or assistive technology can perceive traces to a spec line. An unspecified wrapper `<div>` is an implementation detail; an unspecified *label* is a finding. Report it as either a spec gap or an overreach on your part, and don't guess which.
+
+The reverse check is the more valuable of the two, because it's the only thing that catches output nobody asked for. Untested markup is the signal for unrequested markup.
 
 Coverage percentages are not the target. The spec defines completeness, which is why coverage-ignore pragmas never need to appear.
 
@@ -426,22 +414,18 @@ Derived entries get their own id namespaces so tests can reference them the same
 ```markdown
 # Button — resolved
 
-## contracts # derived, one per unenforceable contract
-
+## contracts            # derived, one per unenforceable contract
 contracts.1: onSelect must be referentially stable — owner caller — tier ③ — effect re-runs every render
 contracts.2: ThemeProvider must exist above — owner ancestor — tier ② — throws naming the provider
 contracts.3: keys for the option list — owner self — tier ④ — options remount and lose focus
 
-## defaults # taken because a wrong guess fails loudly
-
+## defaults            # taken because a wrong guess fails loudly
 defaults.1: root = single element — required as the passthrough target by props.passthrough
 
 ## notes
-
 notes.1: eleven props with a component-reference slot; the injected-name coupling is now the widest part of the API
 
-## gaps # the field model had nowhere to put these
-
+## gaps                # the field model had nowhere to put these
 gaps.1: "scroll position survives a route change" — no field expresses cross-instance persistence
 ```
 
@@ -451,10 +435,10 @@ gaps.1: "scroll position survives a route change" — no field expresses cross-i
 
 Facts this skill depends on, all confirmed against react.dev:
 
-- `ref` is a regular prop for function components — _"Starting in React 19, you can now access `ref` as a prop for function components"_. `forwardRef` is unnecessary.
+- `ref` is a regular prop for function components — *"Starting in React 19, you can now access `ref` as a prop for function components"*. `forwardRef` is unnecessary.
 - Ref callbacks may return a cleanup function, called when the element leaves the DOM.
 - `<Context>` renders as a provider directly; `<Context.Provider>` is slated for deprecation.
-- `propTypes` — _"In React 19, we're removing the `propType` checks from the React package, and using them will be silently ignored."_ `defaultProps` is gone for function components; use ES6 default parameters.
+- `propTypes` — *"In React 19, we're removing the `propType` checks from the React package, and using them will be silently ignored."* `defaultProps` is gone for function components; use ES6 default parameters.
 - `use` may be called in loops and conditionals, and cannot be called inside try/catch.
 - `<title>`, `<meta>`, and `<link>` rendered anywhere are hoisted into `<head>`.
 - Actions: `useActionState`, `useFormStatus`, `useOptimistic`, and `action` / `formAction` props on forms.
