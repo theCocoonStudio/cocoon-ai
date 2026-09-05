@@ -144,7 +144,7 @@ describe('export:logo output', () => {
       want.split('\n').slice(1).join('\n'),
     )
     expect(svg).toMatch(
-      /<!-- export:logo lockup vapour: off=1.3 .* gap=[\d.]+ .* wdth=107 -->/,
+      /<!-- export:logo lockup vapour: off=1.9 .* gap=[\d.]+ .* wdth=107 -->/,
     )
     expect(values.off).toBe(CAM_OFF)
     expect(values.gap).toBe(gapFor(2, [1]))

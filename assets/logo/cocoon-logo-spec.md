@@ -206,7 +206,7 @@ All distances are in equal-side lengths, `s`.
 | ------------------------------------ | ------------------------------------------------------------------------- |
 | Camera to front triangle             | **6s**                                                                    |
 | Spacing between triangles            | **1s**                                                                    |
-| Camera offset, right of the row axis | **1.30s** (12.2° off axis)                                                |
+| Camera offset, right of the row axis | **1.90s** (17.6° off axis)                                                |
 | Camera height                        | **on the centroid line** — the row is level, neither climbing nor falling |
 | Front triangle's angular size        | 9.53° — a long lens, which is why the recession is calm                   |
 
@@ -294,7 +294,7 @@ wordmark's own units, so the rule survives any rescaling.
    to a letterform reads as a collision.
 
 They conflict because the trail's length _in stems_ scales with the icon:
-**2.221 / 2.468 / 2.714 stems** at 0.90 / 1.00 / 1.10×. Anchor on the bounding
+**4.013 / 4.459 / 4.904 stems** at 0.90 / 1.00 / 1.10×. Anchor on the bounding
 box and (2) is constant while (1) drifts; anchor on the front triangle and (1)
 is constant while (2) varies.
 
@@ -312,15 +312,15 @@ delivers it is derived, not chosen:
         cannot put a tier under its own floor
 
 `trailWorst()` is computed in `build.js` from the artwork and `SIZES`; it is
-not a constant in this document. At the sizes shipped today it is **2.714357**,
+not a constant in this document. At the sizes shipped today it is **4.904464**,
 which is why the table below reads as it does — but the table is _output_, not
 input. Add a larger icon size and every gap moves.
 
 | tier      | front-edge gap | clear air, 0.90× → 1.10× |
 | --------- | -------------- | ------------------------ |
-| **air1x** | 3.75 stems     | 1.529 → **1.036**        |
-| **air2x** | 4.75           | 2.529 → **2.036**        |
-| **air3x** | 5.75           | 3.529 → **3.036**        |
+| **air1x** | 6 stems        | 1.987 → **1.096**        |
+| **air2x** | 7              | 2.987 → **2.096**        |
+| **air3x** | 8              | 3.987 → **3.096**        |
 
 Those gaps are what `gapFor()` returns at the current `SIZES`; `build.js`
 fails if this table and the generator disagree.
@@ -542,3 +542,11 @@ out to 1.30s and onto the centroid line, so the row is level. Total haze was
 held constant while the atmosphere thinned to cover the extra gap, which is why
 the front and back triangles are unchanged. Favicons added; the lockup gap was
 recalibrated by one stem to absorb the wider, near-invisible bounding box.
+
+**2026-09-05.** The camera moved out again, from 1.30s to 1.90s, after a
+sheet of the lockup at 120 to 600 px showed the three trailing planes
+collapsing to a smudge at the small end at 1.30 and turning into an echo at
+2.20. Tones, spacing and distance are unchanged, so the tier sizes still read
+1 : 6/7 : 3/4 : 2/3; the trail is longer, and the gaps in §6.6 were
+re-derived by the same rule. The icon set moved with it, as §1 of its spec
+requires. The sheets are in `explorations/`.

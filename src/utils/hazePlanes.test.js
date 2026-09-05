@@ -68,13 +68,13 @@ describe('hazeAnalyse', () => {
     expect(a.planes.map((p) => p.scale)).toEqual([6 / 7, 3 / 4, 2 / 3])
   })
 
-  it('derives spreads -W/14, -W/8, -W/6 and offsets 13W/70, 13W/40, 13W/30', () => {
+  it('derives spreads -W/14, -W/8, -W/6 and offsets 1.9W/7, 1.9W/4, 1.9W/3', () => {
     const spreads = a.planes.map((p) => p.spread)
     const offsets = a.planes.map((p) => p.offset)
     ;[-W / 14, -W / 8, -W / 6].forEach((v, i) =>
       expect(spreads[i]).toBeCloseTo(v, 10),
     )
-    ;[(13 * W) / 70, (13 * W) / 40, (13 * W) / 30].forEach((v, i) =>
+    ;[(1.9 * W) / 7, (1.9 * W) / 4, (1.9 * W) / 3].forEach((v, i) =>
       expect(offsets[i]).toBeCloseTo(v, 10),
     )
   })
@@ -139,12 +139,12 @@ describe('hazeShadow', () => {
     expect(css.startsWith('.haze {')).toBe(true)
     expect(css).toContain('background: #141414;')
     expect(css.match(/#[0-9A-F]{6}/g)).toHaveLength(4)
-    expect(css).toMatch(/8\.9143px 0 0 -3\.4286px #C8C8C8/)
+    expect(css).toMatch(/13\.0286px 0 0 -3\.4286px #C8C8C8/)
   })
 
   it('falls back to the transform stack off square under auto', () => {
     const css = hazeShadow({ width: 240, height: 120, comment: false })
-    expect(css).toContain('transform-origin: 180% 50%')
+    expect(css).toContain('transform-origin: 240% 50%')
     expect(css.match(/transform: scale\(/g)).toHaveLength(3)
     expect(css).toContain('.haze-content')
   })
@@ -159,13 +159,13 @@ describe('hazeShadow', () => {
   it('emits calc() lengths against --haze-w when responsive', () => {
     const css = hazeShadow({ responsive: true, comment: false })
     expect(css).toContain('--haze-w: 48px;')
-    expect(css).toContain('calc(var(--haze-w) * 0.185714)')
+    expect(css).toContain('calc(var(--haze-w) * 0.271429)')
   })
 
   it('describes the scene in the header comment', () => {
     const css = hazeShadow({ width: 240, height: 120 })
     expect(css).toMatch(/^\/\* hazePlanes - transform/)
-    expect(css).toContain('4 planes, spacing 1w, distance 6w, cameraX 1.3w')
+    expect(css).toContain('4 planes, spacing 1w, distance 6w, cameraX 1.9w')
     expect(css).toContain('ramp   #141414 -> #C8C8C8 -> #EAEAEA -> #F6F6F6')
   })
 })

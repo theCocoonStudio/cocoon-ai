@@ -30,7 +30,7 @@ export const HAZE_DEFAULTS = Object.freeze({
   planes: 4,
   spacing: 1,
   distance: 6,
-  cameraX: 1.3,
+  cameraX: 1.9,
   haze: 0.275 ** 2,
   width: 48,
   height: null,

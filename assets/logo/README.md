@@ -23,7 +23,7 @@ The cocoon mark and wordmark, and every derived file. `cocoon-logo-spec.md` is t
 
 ## Recutting
 
-The mark's scene is `src/utils/hazePlanes.js`; the triangle is `mark.js`. The wordmark's instance is `WORD_WGHT` and `WORD_WDTH` in `lockup.js`, and the mark's ratios are the constants at the top of `wordmark.js`. After any change: `npm run assets:logo`, read the output, `npm test`, and look at the PNGs.
+The mark's scene is `src/utils/hazePlanes.js`; the triangle is `mark.js`. The wordmark's instance is `WORD_WGHT` and `WORD_WDTH` in `lockup.js`, and the mark's ratios are the constants at the top of `wordmark.js`. After any change: `npm run assets:logo`, read the output, `npm test`, and look at the PNGs. A change to the scene moves the four plain icon files, which the build refuses to overwrite; delete them first, and expect the icon set to move too: `npm run assets` rebuilds both.
 
 A note on fontkit: it rounds each variation delta to whole units as it applies it, where fontTools summed them in floating point. `wordmark.js` switches that rounding off while an outline decodes. That is what makes the stem come out at 71.10, as the spec states, rather than 71.
 
