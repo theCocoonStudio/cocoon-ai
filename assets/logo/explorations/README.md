@@ -11,6 +11,6 @@ Sheets made to decide something, kept as the record of what was looked at. Made 
 
   These replace a pair made on 2026-09-05 by a one-off script that took the cut from the command line for the file name only and drew the vapour cut both times, so the dense sheet it produced was the vapour sheet under another name.
 
-- `favicon.png`, from `favicon.mjs` — the favicon at 16 to 128 px, light and dark, at three settings: the old offset 1.30, the shipped 1.90 where the 10% clear-air rule shrinks the black triangle to hold the longer trail, and a candidate at 1.90 where the 10% holds for the black triangle and the pale planes may come within 4% of the edge. Front triangle scale 0.535, 0.422 and 0.485 of the tile. For a decision on the favicon rule.
+- `favicon.png`, from `favicon.mjs` — the favicon at 16 to 128 px, light and dark, at three settings: the old offset 1.30, the shipped 1.90 where the 10% clear-air rule shrinks the black triangle to hold the longer trail, and a candidate at 1.90 where the 10% holds for the black triangle and the pale planes may come within 4% of the edge. Front triangle scale 0.535, 0.422 and 0.485 of the tile. Decided 2026-09-05 (Izzy): the 10% rule holds for every plane, so the shipped tile at 0.422 stands and the candidate is not taken. The generator derives the size from the rule; no size is chosen anywhere.
 
 Output of the tool goes to `export/` here, which is not committed.
