@@ -29,6 +29,7 @@ src/
 docs/
   <Component>.md              API doc: props, handle, dispose rules, limits
   <util>.md                   API doc for a util worth reading about on its own
+  export-logo.md              the export:logo script: grammar, every parameter, output
 assets/                       the studio's marks, produced by the scripts beside them; see assets/README.md
   lib/                        the four-plane engine shared by the icons and the logo
   icons/                      the UI icon set: shapes.js in, 26 SVGs and a contact sheet out
