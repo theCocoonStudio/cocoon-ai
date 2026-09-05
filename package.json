@@ -23,7 +23,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "assets:icons": "node assets/icons/build.js"
   },
   "peerDependencies": {
     "@pmndrs/assets": "^1.7.0",
