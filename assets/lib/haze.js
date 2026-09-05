@@ -48,17 +48,27 @@ export function scales(n = N, dist = CAM_DIST, spacing = SPACING) {
 
 /**
  * Tone of plane k for a cut, hex. Reversed swaps surface and haze. `haze`
- * overrides the cut's transmittance total; the cut still names the ground.
+ * overrides the cut's transmittance total, `surface` the ink and `ground` the
+ * cut's ground; the cut still names whatever is not overridden.
  */
-export function tone(k, cut = 'vapour', reverse = false, n = N, haze = null) {
+export function tone(
+  k,
+  cut = 'vapour',
+  reverse = false,
+  n = N,
+  haze = null,
+  surface = null,
+  ground = null,
+) {
   if (!(cut in HAZE_CUTS)) throw new Error(`haze: unknown cut "${cut}"`)
-  const ground = CUT_GROUND[cut]
-  if (n < 2) return reverse ? ground : INK // a lone plane has no air in front of it
+  const ink = surface ?? INK
+  const gnd = ground ?? CUT_GROUND[cut]
+  if (n < 2) return reverse ? gnd : ink // a lone plane has no air in front of it
   return hazeTones({
     planes: n,
     haze: haze ?? HAZE_CUTS[cut],
-    surface: reverse ? ground : INK,
-    ground: reverse ? INK : ground,
+    surface: reverse ? gnd : ink,
+    ground: reverse ? ink : gnd,
   })[k]
 }
 
@@ -308,6 +318,8 @@ export function build(
     n = N,
     prec = 3,
     haze = null,
+    surface = null,
+    ground = null,
     ...place_
   } = {},
 ) {
@@ -317,7 +329,7 @@ export function build(
   planes.forEach(({ elems, scale }, k) => {
     pieces.push({
       paths: drawGroups(elems, corner * box * scale, prec),
-      fill: tone(k, cut, reverse, n, haze),
+      fill: tone(k, cut, reverse, n, haze, surface, ground),
     })
     all.push(...elems)
   })
