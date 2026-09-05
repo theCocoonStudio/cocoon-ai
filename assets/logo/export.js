@@ -14,6 +14,9 @@
  * are swept one at a time, the others held at their chosen values, so the
  * sheet has one block of rows per swept parameter with the chosen row marked.
  *
+ * `--surface` and `--ground` recolour the ink and the ground; they are colours,
+ * not sweeps, so they apply to every row.
+ *
  * Two files land in `--out`: `<name>.svg`, the artwork at the chosen values,
  * and `<name>-examples.svg` plus `.png`, the sheet. `<name>` defaults to
  * `cocoon-<view>-<cut>`.
@@ -32,7 +35,7 @@ import { HAZE_CUTS, HAZE_DEFAULTS } from '../../src/utils/hazePlanes.js'
 import { png } from '../lib/raster.js'
 import * as M from './mark.js'
 import { WORD_WDTH, WORD_WGHT, lockup } from './lockup.js'
-import { gapFor } from './build.js'
+import { SIZES, gapFor } from './build.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const OUT_DIR = join(here, 'explorations', 'export')
@@ -143,11 +146,20 @@ const usage = () => {
     `  --view <v>         lockup | icon (lockup)\n` +
     `  --cut <c>          ${Object.keys(HAZE_CUTS).join(' | ')} (vapour)\n` +
     `  --reverse          light on dark\n` +
+    `  --surface <hex>    the ink, in place of #141414\n` +
+    `  --ground <hex>     the ground, in place of the cut's\n` +
     `  --widths <a,b,..>  cell widths in px on the sheet\n` +
     `  --out <dir>        output folder (assets/logo/explorations/export)\n` +
     `  --name <n>         file stem (cocoon-<view>-<cut>)\n` +
     `  -h, --help\n`
   )
+}
+
+const colour = (s, what) => {
+  const h = String(s).trim().replace(/^#/, '')
+  if (!/^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(h))
+    throw new Error(`export:logo: ${what} wants a hex colour, got "${s}"`)
+  return `#${(h.length === 3 ? h.replace(/./g, '$&$&') : h).toUpperCase()}`
 }
 
 const num = (s, what) => {
@@ -166,6 +178,8 @@ export function parseArgs(argv) {
     view: 'lockup',
     cut: 'vapour',
     reverse: false,
+    surface: null,
+    ground: null,
     widths: null,
     out: OUT_DIR,
     name: null,
@@ -206,6 +220,12 @@ export function parseArgs(argv) {
         break
       case '--reverse':
         o.reverse = true
+        break
+      case '--surface':
+        o.surface = colour(val(), a)
+        break
+      case '--ground':
+        o.ground = colour(val(), a)
         break
       case '--widths':
         o.widths = val()
@@ -306,6 +326,8 @@ export function variants(o) {
 /** Engine and mark options for a set of values. */
 export function iconKw(values, o) {
   const kw = { cut: o.cut, reverse: o.reverse }
+  if (o.surface) kw.surface = o.surface
+  if (o.ground) kw.ground = o.ground
   if (values.off != null) kw.off = values.off
   if (values.spacing != null) kw.spacing = values.spacing * SIDE
   if (values.dist != null) kw.dist = values.dist * SIDE
@@ -323,7 +345,9 @@ export function render(values, o) {
     const { pieces, bounds } = M.build(kw)
     return { svg: M.svg(pieces, bounds), ratio: bounds[2] / bounds[3] }
   }
-  const gapStems = values.gap ?? gapFor(values.air, [values.size], kw)
+  // The shipped rule: the worst trail across the shipped sizes, and this row's
+  // size if it is larger, so the default lockup is the shipped file.
+  const gapStems = values.gap ?? gapFor(values.air, [...SIZES, values.size], kw)
   const { svg, info } = lockup({
     size: values.size,
     gapStems,
@@ -353,8 +377,10 @@ export function sheet(rows, o, widths = VIEWS[o.view].widths) {
   const PAD = 20
   const GUT = 30
   const LABEL = 24
-  const ground = o.reverse ? INK : CUT_GROUND[o.cut]
-  const ink = o.reverse ? CUT_GROUND[o.cut] : INK
+  const surface = o.surface ?? INK
+  const gnd = o.ground ?? CUT_GROUND[o.cut]
+  const ground = o.reverse ? surface : gnd
+  const ink = o.reverse ? gnd : surface
   const W = PAD + widths.reduce((a, w) => a + w + GUT, 0) - GUT + PAD
   let body = ''
   let y = PAD
@@ -400,7 +426,7 @@ export function chosenSvg(o) {
   return {
     svg: svg.replace(
       /^(<\?xml[^>]*>\n)/,
-      `$1<!-- export:logo ${o.view} ${o.cut}${o.reverse ? ' reversed' : ''}: ${note} -->\n`,
+      `$1<!-- export:logo ${o.view} ${o.cut}${o.reverse ? ' reversed' : ''}${o.surface ? ` surface=${o.surface}` : ''}${o.ground ? ` ground=${o.ground}` : ''}: ${note} -->\n`,
     ),
     values: shown,
   }

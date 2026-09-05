@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { CAM_OFF } from '../lib/haze.js'
 import { HAZE_CUTS } from '../../src/utils/hazePlanes.js'
-import { gapFor } from './build.js'
+import { SIZES, gapFor } from './build.js'
 import { lockup } from './lockup.js'
 import {
   DEFAULT_COUNT,
@@ -135,11 +135,13 @@ describe('export:logo values', () => {
 describe('export:logo output', () => {
   it('the chosen file at the shipped scene is the shipped lockup, with the values in a comment', () => {
     const { svg, values } = chosenSvg(parseArgs([]))
-    const want = lockup({
-      size: 1,
-      gapStems: gapFor(2, [1]),
-      iconKw: { cut: 'vapour' },
-    }).svg
+    const want = readFileSync(
+      new URL(
+        './lockups/cocoon-lockup-icon1.00-air2x-vapour.svg',
+        import.meta.url,
+      ),
+      'utf8',
+    )
     expect(svg.split('\n').slice(2).join('\n')).toBe(
       want.split('\n').slice(1).join('\n'),
     )
@@ -147,13 +149,18 @@ describe('export:logo output', () => {
       /<!-- export:logo lockup vapour: off=1.9 .* gap=[\d.]+ .* wdth=107 -->/,
     )
     expect(values.off).toBe(CAM_OFF)
-    expect(values.gap).toBe(gapFor(2, [1]))
+    expect(values.gap).toBe(gapFor(2))
   })
 
   it('air sets the derived gap; a given gap overrides it', () => {
     const at = (air) => chosenSvg(parseArgs(['--air', String(air)])).values.gap
-    expect(at(1)).toBe(gapFor(1, [1]))
-    expect(at(3)).toBe(gapFor(3, [1]))
+    expect(at(1)).toBe(gapFor(1))
+    expect(at(3)).toBe(gapFor(3))
+    // a size past the shipped ones widens the gap; a smaller one does not narrow it
+    expect(chosenSvg(parseArgs(['--size', '1.5'])).values.gap).toBe(
+      gapFor(2, [...SIZES, 1.5]),
+    )
+    expect(chosenSvg(parseArgs(['--size', '0.5'])).values.gap).toBe(gapFor(2))
     expect(chosenSvg(parseArgs(['--air', '3', '--gap', '2'])).values.gap).toBe(
       2,
     )
@@ -212,6 +219,29 @@ describe('export:logo output', () => {
     expect(width).toBe(
       40 + widths.reduce((a, w) => a + w, 0) + 30 * (widths.length - 1),
     )
+  })
+
+  it('surface and ground recolour every plane and the sheet', () => {
+    expect(() => parseArgs(['--ground', 'blue'])).toThrow(/hex colour/)
+    const o = parseArgs([
+      '--view',
+      'icon',
+      '--surface',
+      '#0a0a3c',
+      '--ground',
+      'fff',
+    ])
+    expect(o.surface).toBe('#0A0A3C')
+    expect(o.ground).toBe('#FFFFFF')
+    const { svg } = chosenSvg(o)
+    expect(svg).toContain('fill="#0A0A3C"')
+    expect(svg).not.toContain('fill="#141414"')
+    expect(svg).toContain('surface=#0A0A3C ground=#FFFFFF:')
+    const sh = sheet(variants(o), o).svg
+    expect(sh).toContain('fill="#FFFFFF"/>')
+    // reversed: the surface becomes the ground of the sheet
+    const r = parseArgs(['--view', 'icon', '--surface', '#0A0A3C', '--reverse'])
+    expect(sheet(variants(r), r).svg).toContain('fill="#0A0A3C"/>')
   })
 
   it('a reversed sheet stands on ink', () => {
