@@ -34,23 +34,23 @@ camera. Because the image plane is held parallel to the subjects, the whole
 projection reduces to a similarity transform about one point, and that is the
 only thing a new shape has to obey:
 
-> Put the front shape's **area centroid** at `(−1.30 W, 0)`, where `W` is the
+> Put the front shape's **area centroid** at `(−1.90 W, 0)`, where `W` is the
 > shape's own projected width.
 > Plane _k_ is the whole front shape **scaled about the origin `(0, 0)`** by
 
     S_k = D / (D + k·d)  with D = 6s, d = 1s   →   1 : 6/7 : 3/4 : 2/3
 
-The origin is the camera's principal point; the row axis sits **1.30 shape
+The origin is the camera's principal point; the row axis sits **1.90 shape
 widths** left of it. Three consequences worth stating, because they are what
 makes the set cohere:
 
 - **The recession is purely horizontal.** All four centroids share the line
-  `y = 0`, so nothing climbs or falls. The first step is `1.30 W · (1 − 6/7)`;
+  `y = 0`, so nothing climbs or falls. The first step is `1.90 W · (1 − 6/7)`;
   the steps decelerate in the ratio 186 : 139 : 108 — the signature of real
   perspective rather than a geometric series.
 - **Every plane is congruent to the front one.** Planes are never redrawn,
   restyled, or nudged. If a plane looks wrong, the front shape is wrong.
-- **The spread is always 43% of the front shape's own width.** This is the one
+- **The spread is always 63% of the front shape's own width.** This is the one
   place the system reads the shape back, and it is deliberate. A fixed offset
   in design units spreads a narrow icon's planes far wider, relative to itself,
   than a broad one's: at 1000 units the up arrow's four shafts separated into

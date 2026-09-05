@@ -23,7 +23,7 @@ Distances are in element widths, so a scene survives any resize. At the house sc
 | `planes`                    | 4                                     | more or fewer copies                                             |
 | `spacing`                   | 1                                     | too flat or too busy                                             |
 | `distance`                  | 6                                     | the first step swamps the rest                                   |
-| `cameraX`                   | 1.3                                   | copies barely peek out, or crowd. Must exceed 0.5 for box-shadow |
+| `cameraX`                   | 1.9                                   | copies barely peek out, or crowd. Must exceed 0.5 for box-shadow |
 | `haze` or `cut`             | `vapour` (0.275²), or `dense` (0.15²) | fade too fast or too slow                                        |
 | `surface`, `ground`         | `#141414`, `#FFFFFF`                  | the element and the real colour behind it                        |
 | `width`, `height`, `radius` | 48, = width, 0                        | the subject, in px                                               |
