@@ -4,11 +4,10 @@
  *
  *   node assets/logo/explorations/favicon.mjs
  *
- * Rows: the shipped tile at the old offset 1.30; the shipped tile at 1.90,
- * where the 10% clear-air rule applies to every plane and the longer trail
- * shrinks the black triangle; and a candidate at 1.90 where the 10% rule
- * holds for the black triangle and the pale planes may come to within 4% of
- * the edge.
+ * Rows: the tile before 2026-09-05, offset 1.30 and 10% clear air; the
+ * shipped tile at 1.90 and FAVI_MARGIN; and a candidate, not taken, where 10%
+ * holds for the black triangle and the pale planes may come within 4% of the
+ * edge.
  */
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -20,8 +19,8 @@ const here = dirname(fileURLToPath(import.meta.url))
 const SIZES = [16, 32, 48, 64, 128]
 const PALE_MARGIN = 0.04
 
-/** Fill that puts the black triangle 10% clear and the rest `pale` clear, whichever binds. */
-function fillFor({ front = M.FAVI_MARGIN, pale = PALE_MARGIN, ...opts }) {
+/** Fill that puts the black triangle `front` clear and the rest `pale` clear, whichever binds. */
+function fillFor({ front = 0.1, pale = PALE_MARGIN, ...opts }) {
   const [ix, iy, iw, ih] = M.build(opts).bounds
   const [fx, fy, fw, fh] = M.frontBounds(opts)
   const cx = fx + fw / 2
@@ -37,12 +36,15 @@ function fillFor({ front = M.FAVI_MARGIN, pale = PALE_MARGIN, ...opts }) {
 
 const rows = [
   {
-    label: 'shipped before: off 1.30, every plane 10% clear',
-    kw: { off: 1.3 },
+    label: 'before 2026-09-05: off 1.30, every plane 10% clear',
+    kw: { off: 1.3, margin: 0.1 },
   },
-  { label: 'shipped now: off 1.90, every plane 10% clear', kw: {} },
   {
-    label: `candidate: off 1.90, black triangle 10% clear, pale planes ${PALE_MARGIN * 100}%`,
+    label: `shipped now: off 1.90, every plane ${M.FAVI_MARGIN * 100}% clear`,
+    kw: {},
+  },
+  {
+    label: `not taken: off 1.90, black triangle 10% clear, pale planes ${PALE_MARGIN * 100}%`,
     kw: { fill: fillFor({ cut: 'dense' }), margin: PALE_MARGIN },
   },
 ]

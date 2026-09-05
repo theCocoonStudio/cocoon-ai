@@ -425,14 +425,14 @@ edited by hand.
 
 The icon centred on a rounded square, in two versions with opposite grounds.
 
-|               |                                                                                                                                                                                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Tile          | 1000 × 1000, corner radius **220** (carried over from the retired favicon)                                                                                                                                                                             |
-| Icon size     | the **front triangle's** larger dimension, centred both ways (§6.8)                                                                                                                                                                                    |
-| Clear air     | **10%** of the tile from the edge to any ink — the stated rule; the size above is **derived** from it, and comes out at **53.5%** of the tile. Was 84% of the whole four-triangle box, which put the black triangle 83 units left of the tile's centre |
-| Light version | mark as normal on a `#FFFFFF` ground. Was `#F7F6F2`, off-white so the tile kept an edge against white browser chrome; changed to white on 2026-09-05 (Izzy). The dense ramp is unchanged, so the trailing planes stay visible greys on the white tile  |
-| Dark version  | reversed mark on a `#141414` ground                                                                                                                                                                                                                    |
-| Cut           | **dense**, in both — a favicon is a small-size object by definition                                                                                                                                                                                    |
+|               |                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tile          | 1000 × 1000, corner radius **220** (carried over from the retired favicon)                                                                                                                                                                                                                                                                                                          |
+| Icon size     | the **front triangle's** larger dimension, centred both ways (§6.8)                                                                                                                                                                                                                                                                                                                 |
+| Clear air     | **15%** of the tile from the edge to any ink — the stated rule; the size above is **derived** from it, and comes out at **36.9%** of the tile at the 1.90 offset. Was 10% and 53.5% at the 1.30 offset until 2026-09-05 (Izzy: one rule for every plane, more air); before that 84% of the whole four-triangle box, which put the black triangle 83 units left of the tile's centre |
+| Light version | mark as normal on a `#FFFFFF` ground. Was `#F7F6F2`, off-white so the tile kept an edge against white browser chrome; changed to white on 2026-09-05 (Izzy). The dense ramp is unchanged, so the trailing planes stay visible greys on the white tile                                                                                                                               |
+| Dark version  | reversed mark on a `#141414` ground                                                                                                                                                                                                                                                                                                                                                 |
+| Cut           | **dense**, in both — a favicon is a small-size object by definition                                                                                                                                                                                                                                                                                                                 |
 
 Below about 24 px the fourth triangle is gone and the third is marginal; the
 mark still reads as a triangle with depth, which is the point. If a true 16 px
@@ -469,8 +469,8 @@ so a change here would break that silently.
 This is the same rule the **cocoon icon set** applies to its tiles, and for the
 same reason: at small sizes the front plane is all that survives, so it is what
 the eye checks for centring. The favicon uses the icon set's tile geometry
-exactly — 1000 × 1000, radius 220, 10% clear air — so it sits in a row of UI
-tiles without looking like a different system.
+exactly — 1000 × 1000, radius 220 — so it sits in a row of UI tiles without
+looking like a different system; its clear air is 15% since 2026-09-05.
 
 ### 6.9 Rebuilding a lockup from the two files
 
