@@ -193,7 +193,7 @@ files, and the trade is deliberate:
 receding planes under §1's scene — that is what §6's aperture ceiling is about,
 and why `launch` is a solid panel rather than a frame. A shape that only works
 flat does not belong here, even though nothing in the shipped file would reveal
-the difference. Two things keep that from becoming a slogan: `build_icons.py`
+the difference. Two things keep that from becoming a slogan: `build.js`
 checks that the shipped face is character-for-character plane 0 of the haze
 render, so the two cannot drift apart quietly, and `preview.html` renders the
 four-plane version of every icon for inspection, marked as not shipped.
@@ -240,7 +240,7 @@ shape still reads instantly.
 behind land _inside_ it — the icon fills up with its own echoes and stops
 reading. This is why `launch` is a filled panel with an arrow breaking out of
 its corner rather than the conventional external-link frame. The frame version
-is kept in `shapes.py` as `launch_frame()` and is deliberately not in `SET`.
+is kept in `shapes.js` as `launch_frame()` and is deliberately not in `SET`.
 
 Where a hollow shape is unavoidable, thicken the walls until the aperture is
 small relative to the 186-unit first step, or knock the detail out of a solid
@@ -312,23 +312,23 @@ Consequences worth stating rather than discovering later:
 
 ## 7. Verification
 
-Four guards run inside `build_icons.py`, and the build refuses rather than
+Five guards run inside `build.js`, and the build refuses rather than
 warns. Three more are separate commands, and the build **prints them as not
 run** rather than staying quiet about them — a report that lists only what was
 executed reads thorough while hiding its own gaps.
 
-| check                            | what it binds                                                                                         |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| front face == plane 0            | the shipped outline is character-for-character what the haze scene draws. Without this, §5a is a wish |
-| one stroke weight, live          | moving `BAR` must change every icon (§3)                                                              |
-| viewBox flush / square / centred | measured from the ink **after** translation against the viewBox **actually written to the file**      |
-| no two names, one picture        | caught `arrow-left-camright`                                                                          |
-| no colour in any file            | no hex anywhere; every fill `currentColor`                                                            |
-| `falsify.py`                     | every guard above, proven capable of failing                                                          |
-| `check_raster.py`                | the shipped files rendered and measured in pixels                                                     |
-| `check_cocoon.py <v3>`           | the logo, through this same engine, byte-for-byte                                                     |
+| check                              | what it binds                                                                                         |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| front face == plane 0              | the shipped outline is character-for-character what the haze scene draws. Without this, §5a is a wish |
+| one stroke weight, live            | moving `BAR` must change every icon (§3)                                                              |
+| viewBox flush / square / centred   | measured from the ink **after** translation against the viewBox **actually written to the file**      |
+| no two names, one picture          | caught `arrow-left-camright`                                                                          |
+| no colour in any file              | no hex anywhere; every fill `currentColor`                                                            |
+| `icons.test.js`                    | every guard above, proven capable of failing                                                          |
+| the raster test in `icons.test.js` | the shipped files rendered and measured in pixels                                                     |
+| `logo.test.js`                     | the logo, through this same engine, byte-for-byte                                                     |
 
-### Why `falsify.py` exists
+### Why `icons.test.js` exists
 
 A check that has never failed is not a check: a pass is equally consistent with
 the check measuring the wrong quantity, and a real guard and a fake one produce
@@ -343,7 +343,7 @@ this folder were fake when written**:
    every icon into its top-left corner **did not make it fail**. It was rewritten
    to measure the translated ink, and then it failed in 3 ms.
 
-So the guards are not trusted until each has been watched to fail. `falsify.py`
+So the guards are not trusted until each has been watched to fail. `icons.test.js`
 mutates a scratch copy of the source, once per guarded property, and requires
 the build to refuse. It reports three outcomes and only the first is acceptable:
 `fired`, `DID NOT FIRE`, and `SKIPPED` — the last meaning the mutation text no
@@ -360,7 +360,7 @@ the other still responded. A mutation has to remove the guarded property
 _entirely_, or "did not fire" is a fact about the mutation rather than about the
 guard.
 
-### Why `check_raster.py` exists
+### Why the raster test in `icons.test.js` exists
 
 Every other check reads the same geometry pipeline the artwork comes out of, so
 they can agree with each other and be wrong together — which is exactly what
@@ -378,20 +378,20 @@ is.
 
 ## 8. Files
 
-| File                      | Contents                                                                                                                                                                                |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `haze_icon.py`            | The engine — scene, tone, fillets, fill groups, outline measurement, serialiser                                                                                                         |
-| `shapes.py`               | The front shapes, and `SET`, the list that gets built                                                                                                                                   |
-| `build_icons.py`          | Renders the two files per icon, runs the four build guards, prints the ledger                                                                                                           |
-| `falsify.py`              | Proves each guard can fail — 9 mutations (§7)                                                                                                                                           |
-| `check_raster.py`         | Renders the shipped files and measures the ink (§7)                                                                                                                                     |
-| `check_cocoon.py`         | The logo regression (§7)                                                                                                                                                                |
-| `specimen.py`             | The contact sheet's page template, kept apart so the build stays readable                                                                                                               |
-| `icon-<name>.svg`         | The artwork, viewBox = ink bounding box                                                                                                                                                 |
-| `icon-<name>-square.svg`  | The same artwork in a square viewBox                                                                                                                                                    |
-| `preview.html`            | Contact sheet, self-contained: colour inheritance, both boxes side by side, the set on light and dark down to 16 px, and the four-plane haze render of every icon marked as not shipped |
-| `cocoon-icon-set-spec.md` | This document                                                                                                                                                                           |
-| `VERIFICATION.md`         | The operating procedure — what to run, the last measured numbers, and the three rules §7 exists to enforce                                                                              |
+| File                               | Contents                                                                                                                                                                                |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/haze.js`                      | The engine — scene, tone, fillets, fill groups, outline measurement, serialiser                                                                                                         |
+| `shapes.js`                        | The front shapes, and `SET`, the list that gets built                                                                                                                                   |
+| `build.js`                         | Renders the two files per icon, runs the four build guards, prints the ledger                                                                                                           |
+| `icons.test.js`                    | Proves each guard can fail — 9 mutations (§7)                                                                                                                                           |
+| the raster test in `icons.test.js` | Renders the shipped files and measures the ink (§7)                                                                                                                                     |
+| `logo.test.js`                     | The logo regression (§7)                                                                                                                                                                |
+| `specimen.js`                      | The contact sheet's page template, kept apart so the build stays readable                                                                                                               |
+| `icon-<name>.svg`                  | The artwork, viewBox = ink bounding box                                                                                                                                                 |
+| `icon-<name>-square.svg`           | The same artwork in a square viewBox                                                                                                                                                    |
+| `preview.html`                     | Contact sheet, self-contained: colour inheritance, both boxes side by side, the set on light and dark down to 16 px, and the four-plane haze render of every icon marked as not shipped |
+| `cocoon-icon-set-spec.md`          | This document                                                                                                                                                                           |
+| `README.md`                        | The operating procedure — what to run, the last measured numbers, and the three rules §7 exists to enforce                                                                              |
 
 Current set — 13 icons, 26 files: `arrow-left`, `arrow-right`, `arrow-up`,
 `scroll-top`, `menu`, `toc`, `settings`, `info`, `exit`, `launch`, `home`,
@@ -402,7 +402,7 @@ where `mirror` and any future per-icon override live.
 
 ## 9. Adding an icon
 
-1. Write a function in `shapes.py` returning the front shape in SVG coordinates
+1. Write a function in `shapes.js` returning the front shape in SVG coordinates
    on the 1000-grid. Use `rect`, `arrow`, `bars`, `_arc`, `_rot`, `_mirror_x`;
    express every dimension as a multiple of `BAR`. `_arc` is for curves the
    fillet cannot make: the fillet radius is fixed at 0.02 of the box, far too
@@ -410,15 +410,15 @@ where `mirror` and any future per-icon override live.
    points.
 2. Add it to `SET`, and add a `(role, note)` entry to `NOTES` beside it so the
    contact sheet describes it.
-3. `python3 build_icons.py` — read the whole ledger, not just the last line.
+3. `npm run assets:icons` — read the whole ledger, not just the last line.
 4. Open `preview.html` and look at **the haze section**. This is the step that
    decides whether the shape belongs in the set at all (§5a, §6): if it fills
    with its own echoes, thicken the walls or take material out of a solid mass
    instead. Nothing in the shipped file will tell you this later.
-5. `python3 check_raster.py .` where a renderer is installed.
-6. `python3 falsify.py` if any guard or any geometry code was touched — and if
+5. `npm test` where a renderer is installed.
+6. `npm test` if any guard or any geometry code was touched — and if
    you added a guard, add its mutation, or it is untested by construction.
-7. `python3 check_cocoon.py <v3 folder>` if the engine was touched.
+7. `npm test` if the engine was touched.
 
 Two habits worth keeping: put separate components in separate fill groups, and
 prefer removing material from a solid to assembling thin strokes.
