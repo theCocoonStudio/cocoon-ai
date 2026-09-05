@@ -28,6 +28,7 @@ src/
   utils/                      reusable, React-free functions with their own tests; not exported unless something outside needs them
 docs/
   <Component>.md              API doc: props, handle, dispose rules, limits
+  <util>.md                   API doc for a util worth reading about on its own
 .claude/skills/               the skill that builds components from specs
 ```
 
