@@ -50,6 +50,7 @@ export function scales(n = N, dist = CAM_DIST, spacing = SPACING) {
 export function tone(k, cut = 'vapour', reverse = false, n = N) {
   if (!(cut in HAZE_CUTS)) throw new Error(`haze: unknown cut "${cut}"`)
   const ground = CUT_GROUND[cut]
+  if (n < 2) return reverse ? ground : INK // a lone plane has no air in front of it
   return hazeTones({
     planes: n,
     haze: HAZE_CUTS[cut],
