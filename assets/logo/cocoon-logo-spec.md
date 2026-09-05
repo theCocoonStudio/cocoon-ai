@@ -104,8 +104,7 @@ instance without redrawing it:
     fillet radius  = 0.71   x a
     weave gap      = 45 units (flat)
 
-`cocoon_wordmark.py` in this folder implements exactly this; `build_wordmark(
-font, wght, wdth)` returns the composed outlines for any instance.
+`wordmark.js` in this folder implements exactly this; `buildWordmark(font, wght, wdth)` returns the composed outlines for any instance.
 
 ---
 
@@ -131,7 +130,7 @@ Single colour throughout, `#141414`. The wordmark is one filled path using the
 the mark's near plane, at the same depth, with no atmosphere between it and the
 camera — so it takes **plane 0's tone**, not a restatement of it. That is
 `#141414` for both cuts unreversed, `#FFFFFF` for vapour reversed, and
-**`#E8E8E8` for dense reversed**. `cocoon_lockup.py` reads the value off the
+**`#E8E8E8` for dense reversed**. `lockup.js` reads the value off the
 icon's own front plane so the two cannot drift apart.
 
 A wordmark set **alone** has no cut, because a cut is a property of the icon's
@@ -163,10 +162,10 @@ names its cut.
 | `lockups/cocoon-lockup-icon{0.90,1.00,1.10}-air{1,2,3}x-{vapour,dense}[-reversed].svg` | 36 combinations                                                           |
 | `cocoon-lockup.png`                                                                    | 2000 px preview of 1.00× / air2x / vapour                                 |
 | `cocoon-logo-spec.md`                                                                  | This document                                                             |
-| `cocoon_wordmark.py`                                                                   | Generator — rebuilds the wordmark at any Saira instance                   |
-| `cocoon_icon.py`                                                                       | Generator — renders the icon and favicons from the 3D scene               |
-| `cocoon_lockup.py`                                                                     | Generator — composes any size/gap lockup                                  |
-| `build_v3.py`                                                                          | Regenerates every derived file above; asserts the plain icons do not move |
+| `wordmark.js`                                                                          | Generator — rebuilds the wordmark at any Saira instance                   |
+| `mark.js`                                                                              | Generator — renders the icon and favicons from the 3D scene               |
+| `lockup.js`                                                                            | Generator — composes any size/gap lockup                                  |
+| `build.js`                                                                             | Regenerates every derived file above; asserts the plain icons do not move |
 | `Saira-VariableFont_wdth,wght.ttf`                                                     | The source font (OFL, licence included)                                   |
 
 ---
@@ -312,7 +311,7 @@ delivers it is derived, not chosen:
         rounded UP to the quarter stem — up, never down, so the rounding
         cannot put a tier under its own floor
 
-`trail_worst()` is computed in `build_v3.py` from the artwork and `SIZES`; it is
+`trailWorst()` is computed in `build.js` from the artwork and `SIZES`; it is
 not a constant in this document. At the sizes shipped today it is **2.714357**,
 which is why the table below reads as it does — but the table is _output_, not
 input. Add a larger icon size and every gap moves.
@@ -323,7 +322,7 @@ input. Add a larger icon size and every gap moves.
 | **air2x** | 4.75           | 2.529 → **2.036**        |
 | **air3x** | 5.75           | 3.529 → **3.036**        |
 
-Those gaps are what `gap_for()` returns at the current `SIZES`; `build_v3.py`
+Those gaps are what `gapFor()` returns at the current `SIZES`; `build.js`
 fails if this table and the generator disagree.
 
 Measured back out of all 36 finished files, every tier clears its floor.
@@ -414,7 +413,7 @@ So they change if:
 - **the number of planes changes.** Four planes set the trail at 0.248 of the
   mark's width; three or five would change it and `TRAIL_WORST` with it.
 
-`build_v3.py` derives the gaps from `TRAIL_WORST` and `AIR_TIERS`, so changing
+`build.js` derives the gaps from `TRAIL_WORST` and `AIR_TIERS`, so changing
 either regenerates the whole family consistently rather than needing 36 files
 edited by hand.
 
@@ -459,8 +458,8 @@ without anyone having to say so; only horizontal anchors move.
 
 **The plain icon files are untouched.** `cocoon-icon-{vapour,dense}[-reversed].svg`
 are tight to the artwork and carry no centring rule, so there is nothing in them
-for this to change. `build_v3.py` asserts that they come out byte-identical —
-they are also what the icon set's `check_cocoon.py` regression compares against,
+for this to change. `build.js` asserts that they come out byte-identical —
+they are also what the icon set's `logo.test.js` engine test compares against,
 so a change here would break that silently.
 
 This is the same rule the **cocoon icon set** applies to its tiles, and for the
@@ -481,7 +480,7 @@ tiles without looking like a different system.
    stems of clear air. Measured to the
    black triangle, not to the icon's bounding box — see §6.8.
 
-`cocoon_lockup.py` does exactly this: `lockup(size, gap_stems, reverse,
+`lockup.js` does exactly this: `lockup(size, gap_stems, reverse,
 icon_kw)` returns the composed SVG.
 
 ---
@@ -507,7 +506,7 @@ n = 3.5 tracks the real `o` closely enough that no apex blending is applied.
 **The icon.** Three triangles in a row through a shift camera, replacing the
 retired cocoon mark. The projection was checked against a full
 `PerspectiveCamera` → projection-matrix → NDC pipeline: the closed form in
-`cocoon_icon.py` agrees to 1e-13, and all three projected triangles are
+the engine agrees to 1e-13, and all three projected triangles are
 equilateral to the same tolerance.
 
 **The lockup.** Icon left of the wordmark, sized against the x-height band and
@@ -532,7 +531,7 @@ the front triangle (§6.8): the square canvas grows to 1615.75, the favicon's
 size is derived from a stated 10% clear-air floor rather than picked, and the
 lockup gaps become a constant 3× and 4× stems, replacing the 1×/2× that had been
 recalibrated to absorb the drift. The four plain icon files are unchanged and
-`build_v3.py` asserts it. This matches the rule the cocoon icon set uses for its
+`build.js` asserts it. This matches the rule the cocoon icon set uses for its
 tiles, arrived at there independently and for the same reason: at small sizes
 the front plane is all that survives.
 
