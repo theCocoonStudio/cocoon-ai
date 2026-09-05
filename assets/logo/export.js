@@ -19,9 +19,10 @@
  * `cocoon-<view>-<cut>`.
  *
  * The scene parameters are the engine's: `off`, `spacing`, `dist`, `planes`,
- * `corner`, `haze`, and the mark's `apex`. The lockup adds `size` and `gap`;
- * a `gap` left unset is derived for each scene by the tier rule at air2x, the
- * same rule the shipped lockups follow.
+ * `corner`, `haze`, and the mark's `apex`. The lockup adds `size`, `gap`,
+ * `air`, and the wordmark's `wght` and `wdth`; a `gap` left unset is derived
+ * for each scene by the tier rule at `air`, the same rule the shipped lockups
+ * follow.
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -30,7 +31,7 @@ import { CAM_OFF, CORNER_R, CUT_GROUND, INK, N, SIDE } from '../lib/haze.js'
 import { HAZE_CUTS, HAZE_DEFAULTS } from '../../src/utils/hazePlanes.js'
 import { png } from '../lib/raster.js'
 import * as M from './mark.js'
-import { lockup } from './lockup.js'
+import { WORD_WDTH, WORD_WGHT, lockup } from './lockup.js'
 import { gapFor } from './build.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -100,6 +101,27 @@ export const PARAMS = {
     buffer: 0.25,
     lockup: true,
     valid: (v) => v >= 0,
+  },
+  air: {
+    doc: 'clear air the derived gap must deliver, in stems; ignored when gap is set (lockup only)',
+    value: DEFAULT_AIR,
+    buffer: 0.5,
+    lockup: true,
+    valid: (v) => v >= 0,
+  },
+  wght: {
+    doc: "the wordmark's weight axis (lockup only)",
+    value: WORD_WGHT,
+    buffer: 50,
+    lockup: true,
+    valid: (v) => v >= 100 && v <= 900,
+  },
+  wdth: {
+    doc: "the wordmark's width axis (lockup only)",
+    value: WORD_WDTH,
+    buffer: 5,
+    lockup: true,
+    valid: (v) => v >= 50 && v <= 125,
   },
 }
 
@@ -301,12 +323,13 @@ export function render(values, o) {
     const { pieces, bounds } = M.build(kw)
     return { svg: M.svg(pieces, bounds), ratio: bounds[2] / bounds[3] }
   }
-  const gapStems = values.gap ?? gapFor(DEFAULT_AIR, [values.size], kw)
+  const gapStems = values.gap ?? gapFor(values.air, [values.size], kw)
   const { svg, info } = lockup({
     size: values.size,
     gapStems,
     reverse: o.reverse,
     iconKw: kw,
+    word: { wght: values.wght, wdth: values.wdth },
   })
   return { svg, ratio: info.ratio, gap: gapStems }
 }

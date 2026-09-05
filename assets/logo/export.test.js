@@ -144,10 +144,36 @@ describe('export:logo output', () => {
       want.split('\n').slice(1).join('\n'),
     )
     expect(svg).toMatch(
-      /<!-- export:logo lockup vapour: off=1.3 .* gap=[\d.]+ -->/,
+      /<!-- export:logo lockup vapour: off=1.3 .* gap=[\d.]+ .* wdth=107 -->/,
     )
     expect(values.off).toBe(CAM_OFF)
     expect(values.gap).toBe(gapFor(2, [1]))
+  })
+
+  it('air sets the derived gap; a given gap overrides it', () => {
+    const at = (air) => chosenSvg(parseArgs(['--air', String(air)])).values.gap
+    expect(at(1)).toBe(gapFor(1, [1]))
+    expect(at(3)).toBe(gapFor(3, [1]))
+    expect(chosenSvg(parseArgs(['--air', '3', '--gap', '2'])).values.gap).toBe(
+      2,
+    )
+  })
+
+  it('the wordmark instance is recut per row, the shipped one unchanged', () => {
+    const shipped = chosenSvg(parseArgs([])).svg
+    const wide = chosenSvg(parseArgs(['--wdth', '112'])).svg
+    const heavy = chosenSvg(parseArgs(['--wght', '400'])).svg
+    expect(chosenSvg(parseArgs(['--wdth', '107', '--wght', '350'])).svg).toBe(
+      shipped.replace(/ -->/, ' -->'),
+    )
+    expect(wide).not.toBe(shipped)
+    expect(heavy).not.toBe(shipped)
+    expect(sweep('wght', { value: 850, buffer: 50, count: 2 })).toEqual([
+      750, 800, 850, 900,
+    ])
+    expect(sweep('wdth', { value: 120, buffer: 5, count: 2 })).toEqual([
+      110, 115, 120, 125,
+    ])
   })
 
   it('a chosen gap is used as given', () => {
