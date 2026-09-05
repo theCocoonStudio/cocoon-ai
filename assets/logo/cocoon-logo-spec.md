@@ -401,6 +401,10 @@ drops and `air1x` becomes something nearer 0.5 stems. The spec takes the
 conservative side because the lockup is used small far more often than large,
 and near-miss crowding is one of the things the eye is built to flag.
 
+_Decided 2026-09-05 (Izzy): the trail must not touch a letterform. The
+conservative reading stands and the floor above is the rule. How close is too
+close short of touching is not quantified; the tiers are the answer to that._
+
 **What would move these numbers.** The gaps are `air + TRAIL_WORST` where
 `TRAIL_WORST` is the trail length in stems at the _largest_ shipped icon size.
 So they change if:
