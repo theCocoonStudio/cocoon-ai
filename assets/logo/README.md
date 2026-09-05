@@ -18,7 +18,7 @@ The cocoon mark and wordmark, and every derived file. `cocoon-logo-spec.md` is t
 | ------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `cocoon-icon-{vapour,dense}[-reversed].svg` | nothing; tight to the artwork, and the icon set's engine test compares against them      |
 | `cocoon-icon-*-square.svg`                  | the front triangle's centre                                                              |
-| `cocoon-favicon*.svg`                       | the front triangle, sized from the 10% clear-air rule                                    |
+| `cocoon-favicon*.svg`                       | the front triangle, sized from the 15% clear-air rule                                    |
 | `lockups/*.svg`                             | the front triangle's right edge, gap = air + worst trail, rounded up to the quarter stem |
 
 ## Recutting
