@@ -26,7 +26,8 @@
     "format:check": "prettier --check .",
     "assets": "npm run assets:icons && npm run assets:logo",
     "assets:icons": "node assets/icons/build.js",
-    "assets:logo": "node assets/logo/build.js"
+    "assets:logo": "node assets/logo/build.js",
+    "export:logo": "node assets/logo/export.js"
   },
   "peerDependencies": {
     "@pmndrs/assets": "^1.7.0",

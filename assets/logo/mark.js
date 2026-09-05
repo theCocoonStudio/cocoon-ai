@@ -29,9 +29,17 @@ export function triangle(e = SIDE, apexDeg = APEX_DEG) {
   ]
 }
 
-/** { pieces, bounds } for a cut, front-most first. Engine options pass through. */
-export function build({ cut = 'vapour', reverse = false, ...opts } = {}) {
-  return H.build(triangle(), { cut, reverse, ...opts })
+/**
+ * { pieces, bounds } for a cut, front-most first. `apex` is the triangle's
+ * apex angle in degrees; every other option passes to the engine.
+ */
+export function build({
+  cut = 'vapour',
+  reverse = false,
+  apex = APEX_DEG,
+  ...opts
+} = {}) {
+  return H.build(triangle(SIDE, apex), { cut, reverse, ...opts })
 }
 
 /** Bounds of the front triangle alone. Its vertical extent is the whole mark's. */

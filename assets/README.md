@@ -6,6 +6,7 @@ The studio's marks, produced here rather than stored here. Every SVG and PNG in 
 npm run assets            # rebuild everything
 npm run assets:icons      # the icon set and its contact sheet
 npm run assets:logo       # the mark, favicons, wordmark, lockups, PNG previews
+npm run export:logo -- --off 1.9 -b 0.1 -c 2   # the lockup or icon at chosen scene values, plus a sheet of neighbours
 npm test                  # the guards, the rebuild regression, the raster checks
 ```
 
