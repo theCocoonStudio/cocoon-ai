@@ -10,14 +10,14 @@ consistent scale works; only the ratios matter.
 
 ## 1. Typeface and variable-axis settings
 
-| | |
-|---|---|
-| Family | **Saira** (Google Fonts, OFL) |
-| File | `Saira-VariableFont_wdth,wght.ttf` — the variable font, not a static instance |
-| Weight axis (`wght`) | **350** |
-| Width axis (`wdth`) | **107** |
-| Axis ranges in the font | `wght` 100–900, `wdth` 50–125 — both values sit inside, no clamping |
-| Units per em | 1000 |
+|                         |                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| Family                  | **Saira** (Google Fonts, OFL)                                                 |
+| File                    | `Saira-VariableFont_wdth,wght.ttf` — the variable font, not a static instance |
+| Weight axis (`wght`)    | **350**                                                                       |
+| Width axis (`wdth`)     | **107**                                                                       |
+| Axis ranges in the font | `wght` 100–900, `wdth` 50–125 — both values sit inside, no clamping           |
+| Units per em            | 1000                                                                          |
 
 The wordmark is produced by instancing the variable font at exactly those two
 coordinates and converting to outlines. It is **not** live text — reproducing it
@@ -25,16 +25,16 @@ from the font requires the same instance, then the modifications below.
 
 Derived constants at this instance:
 
-| | |
-|---|---|
-| Stem (vertical strokes) | **71.1** |
-| Stroke (horizontals) | **60.3** |
-| x-height band | **526** (y = −518 to y = 8; the round letters overshoot 8 below the baseline) |
-| Letters | `c`, `o`, `n` unmodified; the two adjacent `o`s replaced by the infinity mark |
-| Advances | c **478**, o **601**, n **625** |
-| Side bearings | c 70, o 70, n 94; the mark carries 75 each side |
-| Total ink | **3128.56 × 526** |
-| viewBox | `70.31 −518.00 3128.56 526.00` — artwork bounds, zero padding |
+|                         |                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| Stem (vertical strokes) | **71.1**                                                                      |
+| Stroke (horizontals)    | **60.3**                                                                      |
+| x-height band           | **526** (y = −518 to y = 8; the round letters overshoot 8 below the baseline) |
+| Letters                 | `c`, `o`, `n` unmodified; the two adjacent `o`s replaced by the infinity mark |
+| Advances                | c **478**, o **601**, n **625**                                               |
+| Side bearings           | c 70, o 70, n 94; the mark carries 75 each side                               |
+| Total ink               | **3128.56 × 526**                                                             |
+| viewBox                 | `70.31 −518.00 3128.56 526.00` — artwork bounds, zero padding                 |
 
 ---
 
@@ -45,24 +45,24 @@ The two adjacent `o`s are replaced by a single self-crossing closed ribbon
 
 ### 2.1 Parameters at this instance
 
-| | |
-|---|---|
-| Loop profile | superellipse, exponent **n = 3.5** |
-| Semi-axes | a = **194.5**, b = **232.8** (the `o`'s own centreline) |
-| Loop centre separation (2D) | **501.9** (D = 250.9 each side of centre) |
-| Inner wedge (eps) | **65°** — the `o` arc covers 230° of each loop |
-| Corner fillet radius | **138.1** |
-| Straight run | through the mark centre at **69.9°** from horizontal |
-| Crossing angle | **40.2°** between the two runs |
-| Weave gap | **45** units, straight bevel cut parallel to the positive-slope stroke |
-| Mark ink width | **961.9**; advance **1111.9** (mark + 75 each side) |
+|                             |                                                                        |
+| --------------------------- | ---------------------------------------------------------------------- |
+| Loop profile                | superellipse, exponent **n = 3.5**                                     |
+| Semi-axes                   | a = **194.5**, b = **232.8** (the `o`'s own centreline)                |
+| Loop centre separation (2D) | **501.9** (D = 250.9 each side of centre)                              |
+| Inner wedge (eps)           | **65°** — the `o` arc covers 230° of each loop                         |
+| Corner fillet radius        | **138.1**                                                              |
+| Straight run                | through the mark centre at **69.9°** from horizontal                   |
+| Crossing angle              | **40.2°** between the two runs                                         |
+| Weave gap                   | **45** units, straight bevel cut parallel to the positive-slope stroke |
+| Mark ink width              | **961.9**; advance **1111.9** (mark + 75 each side)                    |
 
 The positive-slope stroke passes over unbroken; the negative-slope stroke is cut
 on both sides of it.
 
 ### 2.2 How the ribbon is drawn
 
-**The pen.** The whole ribbon is one centreline swept with an *elliptical pen*,
+**The pen.** The whole ribbon is one centreline swept with an _elliptical pen_,
 semi-axes `stem/2` horizontal by `stroke/2` vertical (35.6 × 30.2 here). That
 pen is what reproduces the `o` exactly: `a + stem/2` at the sides,
 `b + stroke/2` top and bottom, and the `o`'s own counter. Every width in the
@@ -80,7 +80,7 @@ radius is what sets the angle of the run: the run is the common tangent from the
 mark centre to the fillet circle. A straight chord between the two arc ends
 instead would sit at 59° and give the pointed corners.
 
-**The separators come last.** The weave gap is cut *after* the ribbon is
+**The separators come last.** The weave gap is cut _after_ the ribbon is
 complete — the shape is drawn as if the ribbon really crossed itself, then the
 negative-slope stroke is trimmed back on both sides of the positive-slope one.
 The two cut lines are parallel to the over-stroke, each `45 + half the
@@ -111,8 +111,8 @@ font, wght, wdth)` returns the composed outlines for any instance.
 
 ## 3. Minimum size
 
-| Asset | Holds down to | Limiting feature |
-|---|---|---|
+| Asset    | Holds down to   | Limiting feature                    |
+| -------- | --------------- | ----------------------------------- |
 | Wordmark | **~44 px wide** | the 71-unit stem falling below 1 px |
 
 The heavier cut buys real headroom here — the 217 wordmark bottomed out around
@@ -146,28 +146,28 @@ The icon ships in two cuts of the same geometry, differing only in how thick the
 atmosphere is: **vapour** (the default) and **dense** (see 6.4). Every file
 names its cut.
 
-| File | Contents |
-|---|---|
-| `cocoon-wordmark.svg` | The wordmark, 3128.56 × 526, one path |
-| `cocoon-wordmark.png` | 1800 px preview |
-| `cocoon-icon-vapour.svg` | The icon, 1247.87 × 743.14, four paths |
-| `cocoon-icon-vapour-square.svg` | Same artwork centred on a square canvas |
-| `cocoon-icon-vapour-reversed.svg` | For dark grounds |
-| `cocoon-icon-dense.svg` | The dense cut |
-| `cocoon-icon-dense-square.svg` | Dense, square canvas |
-| `cocoon-icon-dense-reversed.svg` | Dense, reversed |
-| `cocoon-icon-vapour.png`, `cocoon-icon-dense.png` | 1400 px previews |
-| `cocoon-favicon.svg` | Dark mark on a light rounded tile |
-| `cocoon-favicon-reversed.svg` | Light mark on a `#141414` rounded tile |
-| `cocoon-favicon.png` | 512 px preview |
-| `lockups/cocoon-lockup-icon{0.90,1.00,1.10}-air{1,2,3}x-{vapour,dense}[-reversed].svg` | 36 combinations |
-| `cocoon-lockup.png` | 2000 px preview of 1.00× / air2x / vapour |
-| `cocoon-logo-spec.md` | This document |
-| `cocoon_wordmark.py` | Generator — rebuilds the wordmark at any Saira instance |
-| `cocoon_icon.py` | Generator — renders the icon and favicons from the 3D scene |
-| `cocoon_lockup.py` | Generator — composes any size/gap lockup |
-| `build_v3.py` | Regenerates every derived file above; asserts the plain icons do not move |
-| `Saira-VariableFont_wdth,wght.ttf` | The source font (OFL, licence included) |
+| File                                                                                   | Contents                                                                  |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `cocoon-wordmark.svg`                                                                  | The wordmark, 3128.56 × 526, one path                                     |
+| `cocoon-wordmark.png`                                                                  | 1800 px preview                                                           |
+| `cocoon-icon-vapour.svg`                                                               | The icon, 1247.87 × 743.14, four paths                                    |
+| `cocoon-icon-vapour-square.svg`                                                        | Same artwork centred on a square canvas                                   |
+| `cocoon-icon-vapour-reversed.svg`                                                      | For dark grounds                                                          |
+| `cocoon-icon-dense.svg`                                                                | The dense cut                                                             |
+| `cocoon-icon-dense-square.svg`                                                         | Dense, square canvas                                                      |
+| `cocoon-icon-dense-reversed.svg`                                                       | Dense, reversed                                                           |
+| `cocoon-icon-vapour.png`, `cocoon-icon-dense.png`                                      | 1400 px previews                                                          |
+| `cocoon-favicon.svg`                                                                   | Dark mark on a light rounded tile                                         |
+| `cocoon-favicon-reversed.svg`                                                          | Light mark on a `#141414` rounded tile                                    |
+| `cocoon-favicon.png`                                                                   | 512 px preview                                                            |
+| `lockups/cocoon-lockup-icon{0.90,1.00,1.10}-air{1,2,3}x-{vapour,dense}[-reversed].svg` | 36 combinations                                                           |
+| `cocoon-lockup.png`                                                                    | 2000 px preview of 1.00× / air2x / vapour                                 |
+| `cocoon-logo-spec.md`                                                                  | This document                                                             |
+| `cocoon_wordmark.py`                                                                   | Generator — rebuilds the wordmark at any Saira instance                   |
+| `cocoon_icon.py`                                                                       | Generator — renders the icon and favicons from the 3D scene               |
+| `cocoon_lockup.py`                                                                     | Generator — composes any size/gap lockup                                  |
+| `build_v3.py`                                                                          | Regenerates every derived file above; asserts the plain icons do not move |
+| `Saira-VariableFont_wdth,wght.ttf`                                                     | The source font (OFL, licence included)                                   |
 
 ---
 
@@ -183,13 +183,13 @@ The two **equal sides are the top and right edges**. They meet at the top-right
 vertex, which is therefore the sharp one, so the shape points **up and to the
 right**. The remaining, shorter, left edge is the base.
 
-| | |
-|---|---|
-| Equal sides (top, right) | **1000** |
-| Base (left edge) | **813.47** — the equal sides are 22.9% longer |
-| Angle at the sharp top-right vertex | **48°** |
-| Angles at the other two vertices | **66°** each |
-| Top edge | horizontal |
+|                                     |                                               |
+| ----------------------------------- | --------------------------------------------- |
+| Equal sides (top, right)            | **1000**                                      |
+| Base (left edge)                    | **813.47** — the equal sides are 22.9% longer |
+| Angle at the sharp top-right vertex | **48°**                                       |
+| Angles at the other two vertices    | **66°** each                                  |
+| Top edge                            | horizontal                                    |
 
 At 48° the base is `2·sin(24°) = 0.8135` of a side. Setting that angle to 60°
 reproduces the earlier equilateral mark exactly, which is the regression test.
@@ -203,13 +203,13 @@ them.
 
 All distances are in equal-side lengths, `s`.
 
-| | |
-|---|---|
-| Camera to front triangle | **6s** |
-| Spacing between triangles | **1s** |
-| Camera offset, right of the row axis | **1.30s** (12.2° off axis) |
-| Camera height | **on the centroid line** — the row is level, neither climbing nor falling |
-| Front triangle's angular size | 9.53° — a long lens, which is why the recession is calm |
+|                                      |                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------- |
+| Camera to front triangle             | **6s**                                                                    |
+| Spacing between triangles            | **1s**                                                                    |
+| Camera offset, right of the row axis | **1.30s** (12.2° off axis)                                                |
+| Camera height                        | **on the centroid line** — the row is level, neither climbing nor falling |
+| Front triangle's angular size        | 9.53° — a long lens, which is why the recession is calm                   |
 
 ### 6.3 What the projection gives
 
@@ -217,12 +217,12 @@ All distances are in equal-side lengths, `s`.
 The steps are 0.857, 0.875, 0.889 — decelerating, which is the signature of real
 perspective rather than a geometric series.
 
-| k | side | centroid x | centroid y | corner r |
-|---|---|---|---|---|
-| 0 | 1000.000 | −1300.000 | 0 | 20.000 |
-| 1 | 857.143 | −1114.286 | 0 | 17.143 |
-| 2 | 750.000 | −975.000 | 0 | 15.000 |
-| 3 | 666.667 | −866.667 | 0 | 13.333 |
+| k   | side     | centroid x | centroid y | corner r |
+| --- | -------- | ---------- | ---------- | -------- |
+| 0   | 1000.000 | −1300.000  | 0          | 20.000   |
+| 1   | 857.143  | −1114.286  | 0          | 17.143   |
+| 2   | 750.000  | −975.000   | 0          | 15.000   |
+| 3   | 666.667  | −866.667   | 0          | 13.333   |
 
 Artwork bounds `viewBox="-1743.62 -247.71 1247.87 743.14"` — **1.679 : 1**.
 `cocoon-icon-*-square.svg` squares that canvas **about the front triangle's
@@ -262,12 +262,12 @@ total over three gaps instead of two:
     T = (T_old²)^(1/3)      vapour: 0.275² → T = 0.422885
                             dense:  0.15²  → T = 0.282311
 
-| cut | haze | T | k=0 | k=1 | k=2 | k=3 |
-|---|---|---|---|---|---|---|
+| cut                  | haze      | T      | k=0       | k=1       | k=2       | k=3       |
+| -------------------- | --------- | ------ | --------- | --------- | --------- | --------- |
 | **vapour** (default) | `#FFFFFF` | 0.4229 | `#141414` | `#C8C8C8` | `#EAEAEA` | `#F6F6F6` |
-| vapour reversed | | | `#FFFFFF` | `#AFAFAF` | `#777777` | `#515151` |
-| **dense** | `#E8E8E8` | 0.2823 | `#141414` | `#C9C9C9` | `#E0E0E0` | `#E6E6E6` |
-| dense reversed | | | `#E8E8E8` | `#858585` | `#4B4B4B` | `#2C2C2C` |
+| vapour reversed      |           |        | `#FFFFFF` | `#AFAFAF` | `#777777` | `#515151` |
+| **dense**            | `#E8E8E8` | 0.2823 | `#141414` | `#C9C9C9` | `#E0E0E0` | `#E6E6E6` |
+| dense reversed       |           |        | `#E8E8E8` | `#858585` | `#4B4B4B` | `#2C2C2C` |
 
 Vapour's back triangle at `#F6F6F6` is deliberately at the edge of visibility:
 it reads on a white screen and disappears anywhere else. **Use dense for print,
@@ -278,12 +278,12 @@ for off-white grounds, and below about 32 px.**
 The icon sits at the **left** of the wordmark. Both anchors are expressed in the
 wordmark's own units, so the rule survives any rescaling.
 
-| | |
-|---|---|
-| Icon size | its **total height** as a multiple of the wordmark's x-height band (526) |
-| Vertical alignment | the icon's vertical extent **centred on the x-height band** (band centre y = −255) |
-| Clear air | the least space between the **nearest ink** and the wordmark, in **wordmark stems (71.1)**. Ships at 1×, 2× and 3× |
-| Anchor | the **front triangle's right edge** — see §6.8 |
+|                    |                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Icon size          | its **total height** as a multiple of the wordmark's x-height band (526)                                           |
+| Vertical alignment | the icon's vertical extent **centred on the x-height band** (band centre y = −255)                                 |
+| Clear air          | the least space between the **nearest ink** and the wordmark, in **wordmark stems (71.1)**. Ships at 1×, 2× and 3× |
+| Anchor             | the **front triangle's right edge** — see §6.8                                                                     |
 
 **Two things have to hold at once, and they pull against each other.**
 
@@ -294,7 +294,7 @@ wordmark's own units, so the rule survives any rescaling.
    invisible — the second plane is `#C8C8C8` on white — and a pale wedge close
    to a letterform reads as a collision.
 
-They conflict because the trail's length *in stems* scales with the icon:
+They conflict because the trail's length _in stems_ scales with the icon:
 **2.221 / 2.468 / 2.714 stems** at 0.90 / 1.00 / 1.10×. Anchor on the bounding
 box and (2) is constant while (1) drifts; anchor on the front triangle and (1)
 is constant while (2) varies.
@@ -314,14 +314,14 @@ delivers it is derived, not chosen:
 
 `trail_worst()` is computed in `build_v3.py` from the artwork and `SIZES`; it is
 not a constant in this document. At the sizes shipped today it is **2.714357**,
-which is why the table below reads as it does — but the table is *output*, not
+which is why the table below reads as it does — but the table is _output_, not
 input. Add a larger icon size and every gap moves.
 
-| tier | front-edge gap | clear air, 0.90× → 1.10× |
-|---|---|---|
-| **air1x** | 3.75 stems | 1.529 → **1.036** |
-| **air2x** | 4.75 | 2.529 → **2.036** |
-| **air3x** | 5.75 | 3.529 → **3.036** |
+| tier      | front-edge gap | clear air, 0.90× → 1.10× |
+| --------- | -------------- | ------------------------ |
+| **air1x** | 3.75 stems     | 1.529 → **1.036**        |
+| **air2x** | 4.75           | 2.529 → **2.036**        |
+| **air3x** | 5.75           | 3.529 → **3.036**        |
 
 Those gaps are what `gap_for()` returns at the current `SIZES`; `build_v3.py`
 fails if this table and the generator disagree.
@@ -343,12 +343,12 @@ Recorded because the resolution is not self-evident from the numbers, and
 because two of the four candidates below looked right until they were measured
 at the largest icon size.
 
-| candidate | black triangle | nearest ink to the "c" | why rejected |
-|---|---|---|---|
-| **bounding-box anchor** (original) | drifts **3.221 → 3.714** stems across the three icon sizes | constant 1.000 | The three sizes are not the same lockup at three scales. The 2×/3× tiers had already been recalibrated to 1×/2× to absorb the drift, which centres the error without removing it |
-| **front anchor, gap 3.00** | constant | **0.779 / 0.532 / 0.286** | Collides. At 1.10× the pale wedge touches the "c". Chosen for roundness and then warranted with the retired three-triangle mark's 3.07 — a reason found *after* the choice and written up as though it caused it |
-| **front anchor, gap 3.50** | constant | 1.279 / 1.032 / **0.786** | Preserves the air the 1.00× tier happened to have, so it looks right at the reference size and fails at 1.10×. Reference-size reasoning hides the binding case |
-| **front anchor, air-derived** | constant | ≥ **1.036** at every size | Shipped |
+| candidate                          | black triangle                                             | nearest ink to the "c"    | why rejected                                                                                                                                                                                                     |
+| ---------------------------------- | ---------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **bounding-box anchor** (original) | drifts **3.221 → 3.714** stems across the three icon sizes | constant 1.000            | The three sizes are not the same lockup at three scales. The 2×/3× tiers had already been recalibrated to 1×/2× to absorb the drift, which centres the error without removing it                                 |
+| **front anchor, gap 3.00**         | constant                                                   | **0.779 / 0.532 / 0.286** | Collides. At 1.10× the pale wedge touches the "c". Chosen for roundness and then warranted with the retired three-triangle mark's 3.07 — a reason found _after_ the choice and written up as though it caused it |
+| **front anchor, gap 3.50**         | constant                                                   | 1.279 / 1.032 / **0.786** | Preserves the air the 1.00× tier happened to have, so it looks right at the reference size and fails at 1.10×. Reference-size reasoning hides the binding case                                                   |
+| **front anchor, air-derived**      | constant                                                   | ≥ **1.036** at every size | Shipped                                                                                                                                                                                                          |
 
 **Where the floor comes from: the wordmark's own letterspacing.** The gap is
 derived from the air floor, so the floor carries the whole rule. It is not a
@@ -362,20 +362,20 @@ the icon as one more glyph, so the unit is the wordmark's own letter gap.
 
 Measured ink-to-ink between adjacent glyphs in `cocoon-wordmark.svg`:
 
-| c → o | o → c | c → mark | mark → n | mean |
-|---|---|---|---|---|
-| 122.90 | 141.00 | 127.60 | 168.90 | **140.10 units** |
+| c → o  | o → c  | c → mark | mark → n | mean             |
+| ------ | ------ | -------- | -------- | ---------------- |
+| 122.90 | 141.00 | 127.60   | 168.90   | **140.10 units** |
 
 The mean matches what the side bearings in §1 predict (c 70 + o 70 = 140.00) to
 a tenth of a unit, which is the check that the measurement is reading real ink.
 In stems, the letter gap is **1.970** — which is why the stem worked as a proxy,
 and why it was never the reason.
 
-| tier | air | as a multiple of the letter gap |
-|---|---|---|
-| **air1x** | 1 stem | **0.507 ×** — half the wordmark's own tracking |
+| tier      | air     | as a multiple of the letter gap                                                    |
+| --------- | ------- | ---------------------------------------------------------------------------------- |
+| **air1x** | 1 stem  | **0.507 ×** — half the wordmark's own tracking                                     |
 | **air2x** | 2 stems | **1.015 ×** — the icon sits off the word exactly as the letters sit off each other |
-| **air3x** | 3 stems | **1.522 ×** |
+| **air3x** | 3 stems | **1.522 ×**                                                                        |
 
 So the tiers are ½, 1 and 1½ letter gaps to within 1.5%, and `air2x` is the
 setting at which the lockup reads as one object rather than two adjacent ones.
@@ -386,7 +386,7 @@ This also explains the rejected setting: 0.79 stems is **0.40 letter gaps** —
 tighter than half the wordmark's own tracking, so the icon does not merely sit
 close to the "c", it begins to fuse with it the way over-tracked letters do.
 
-**What is still untested.** The *mechanism* offered for why fusion is bad — the
+**What is still untested.** The _mechanism_ offered for why fusion is bad — the
 trail is a depth cue, the wordmark asserts the same depth plane as the black
 triangle, and adjacency with no occlusion boundary leaves the eye two
 incompatible depth claims to arbitrate — is a descriptive claim. It is
@@ -403,7 +403,7 @@ conservative side because the lockup is used small far more often than large,
 and near-miss crowding is one of the things the eye is built to flag.
 
 **What would move these numbers.** The gaps are `air + TRAIL_WORST` where
-`TRAIL_WORST` is the trail length in stems at the *largest* shipped icon size.
+`TRAIL_WORST` is the trail length in stems at the _largest_ shipped icon size.
 So they change if:
 
 - **a larger icon size is added.** `TRAIL_WORST` scales linearly with icon size;
@@ -422,14 +422,14 @@ edited by hand.
 
 The icon centred on a rounded square, in two versions with opposite grounds.
 
-| | |
-|---|---|
-| Tile | 1000 × 1000, corner radius **220** (carried over from the retired favicon) |
-| Icon size | the **front triangle's** larger dimension, centred both ways (§6.8) |
-| Clear air | **10%** of the tile from the edge to any ink — the stated rule; the size above is **derived** from it, and comes out at **53.5%** of the tile. Was 84% of the whole four-triangle box, which put the black triangle 83 units left of the tile's centre |
-| Light version | mark as normal on a `#F7F6F2` ground — off-white rather than pure white so the tile keeps an edge against white browser chrome |
-| Dark version | reversed mark on a `#141414` ground |
-| Cut | **dense**, in both — a favicon is a small-size object by definition |
+|               |                                                                                                                                                                                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tile          | 1000 × 1000, corner radius **220** (carried over from the retired favicon)                                                                                                                                                                             |
+| Icon size     | the **front triangle's** larger dimension, centred both ways (§6.8)                                                                                                                                                                                    |
+| Clear air     | **10%** of the tile from the edge to any ink — the stated rule; the size above is **derived** from it, and comes out at **53.5%** of the tile. Was 84% of the whole four-triangle box, which put the black triangle 83 units left of the tile's centre |
+| Light version | mark as normal on a `#F7F6F2` ground — off-white rather than pure white so the tile keeps an edge against white browser chrome                                                                                                                         |
+| Dark version  | reversed mark on a `#141414` ground                                                                                                                                                                                                                    |
+| Cut           | **dense**, in both — a favicon is a small-size object by definition                                                                                                                                                                                    |
 
 Below about 24 px the fourth triangle is gone and the third is marginal; the
 mark still reads as a triangle with depth, which is the point. If a true 16 px
@@ -446,14 +446,14 @@ sees, and pushes the black triangle off centre by exactly that much.
 
 Three consequences, and they are the whole of the rule:
 
-| asset | anchored on | effect of the change |
-|---|---|---|
-| `cocoon-icon-*-square.svg` | front triangle's centre | canvas grows 1367.87 → 1615.75 so the trail still clears the 60-unit margin |
-| `cocoon-favicon*.svg` | front triangle, sized and centred | the black triangle moves 83 units right, onto the tile's centre |
-| `lockups/*` | front triangle's right edge | visible air becomes constant at 3 or 4 stems instead of drifting 3.22 → 3.71 |
+| asset                      | anchored on                       | effect of the change                                                         |
+| -------------------------- | --------------------------------- | ---------------------------------------------------------------------------- |
+| `cocoon-icon-*-square.svg` | front triangle's centre           | canvas grows 1367.87 → 1615.75 so the trail still clears the 60-unit margin  |
+| `cocoon-favicon*.svg`      | front triangle, sized and centred | the black triangle moves 83 units right, onto the tile's centre              |
+| `lockups/*`                | front triangle's right edge       | visible air becomes constant at 3 or 4 stems instead of drifting 3.22 → 3.71 |
 
 **Vertical anchoring never changes.** The row is level and the front triangle is
-the largest, so the front triangle's vertical extent *is* the whole mark's. The
+the largest, so the front triangle's vertical extent _is_ the whole mark's. The
 lockup's `size` anchor and its vertical centring were already on the front plane
 without anyone having to say so; only horizontal anchors move.
 

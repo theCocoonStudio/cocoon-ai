@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import * as H from '../lib/haze.js'
+import { grey, inkMargins, rasterize } from '../lib/raster.js'
 import { BAR, SET, arrowLeft, settings } from './shapes.js'
 import {
   checkBarIsLive,
@@ -37,6 +38,25 @@ describe('the shipped files', () => {
     expect(readFileSync(join(here, 'preview.html'), 'utf8')).toBe(
       contactSheet(),
     )
+  })
+})
+
+describe('the shipped files, rendered', () => {
+  // Every other check reads the geometry pipeline the artwork came from, so
+  // they can all agree and all be wrong. This one measures pixels.
+  it('put the ink where the viewBox says, at 400 px', () => {
+    for (const [name, text] of Object.entries(files)) {
+      const m = inkMargins(grey(rasterize(text, { width: 400 })))
+      const tightest = Math.min(Math.min(m.l, m.r), Math.min(m.t, m.b))
+      const off = Math.max(Math.abs(m.l - m.r), Math.abs(m.t - m.b))
+      expect(tightest, `${name} has no flush axis`).toBeLessThanOrEqual(1)
+      expect(off, `${name} is off centre`).toBeLessThanOrEqual(1)
+      if (!name.endsWith('-square.svg'))
+        expect(
+          Math.max(m.l, m.r, m.t, m.b),
+          `${name} tight box has margin`,
+        ).toBeLessThanOrEqual(1)
+    }
   })
 })
 

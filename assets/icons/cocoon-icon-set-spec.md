@@ -5,16 +5,16 @@ The UI icon set drawn in the same language as the cocoon mark. It assumes the
 and the colour; nothing here restates those derivations, it only says how an
 arbitrary icon is fitted into them.
 
-One sentence: *every icon is its own outline, chosen so that it would stand
+One sentence: _every icon is its own outline, chosen so that it would stand
 four deep in the same row under the same camera and the same atmosphere as the
-logo's triangles — and shipped as the front face alone.*
+logo's triangles — and shipped as the front face alone._
 
 **What is in this folder.** Two files per icon, both front-face only, both
 uncoloured:
 
-| file | viewBox |
-|---|---|
-| `icon-<name>.svg` | the ink's own bounding box — no margin on any side |
+| file                     | viewBox                                                             |
+| ------------------------ | ------------------------------------------------------------------- |
+| `icon-<name>.svg`        | the ink's own bounding box — no margin on any side                  |
 | `icon-<name>-square.svg` | square, side = the longer ink dimension, ink centred on the shorter |
 
 Every fill is `currentColor` (§5). The haze is **not** in the artwork; it is the
@@ -36,7 +36,7 @@ only thing a new shape has to obey:
 
 > Put the front shape's **area centroid** at `(−1.30 W, 0)`, where `W` is the
 > shape's own projected width.
-> Plane *k* is the whole front shape **scaled about the origin `(0, 0)`** by
+> Plane _k_ is the whole front shape **scaled about the origin `(0, 0)`** by
 
     S_k = D / (D + k·d)  with D = 6s, d = 1s   →   1 : 6/7 : 3/4 : 2/3
 
@@ -56,7 +56,7 @@ makes the set cohere:
   than a broad one's: at 1000 units the up arrow's four shafts separated into
   stripes while the exit mark stayed properly stacked, and the set stopped
   looking like one set. Measuring the offset in shape widths fixes the
-  *relative* spread instead. The logo's triangle is exactly one box wide, so it
+  _relative_ spread instead. The logo's triangle is exactly one box wide, so it
   is untouched — nothing about the mark changes.
 
 ### 1.1 Mirroring the camera
@@ -66,7 +66,7 @@ the planes recede leftward. It is the identical scene seen from the other side;
 no shape is redrawn.
 
 Use it for shapes that point left. Left-pointing artwork under the default
-camera has its rear planes emerge *past the tail* as fletching — legible, but
+camera has its rear planes emerge _past the tail_ as fletching — legible, but
 the depth reads as texture rather than distance. `arrow-left` therefore carries
 `mirror=True`.
 
@@ -108,13 +108,13 @@ All of it is stroke, not offset: the camera is never moved to fix weight, and
 the weight is never moved to fix spread. Those are §1's job and §3's job
 respectively.
 
-| bar | what happens |
-|---|---|
-| 0.10 | the four planes' strokes collapse into a stripe pattern; the icon stops reading as depth and starts reading as moiré |
-| 0.13 | clean, light — closest to a conventional UI stroke |
-| **0.15** | **the cut. Rear planes read as separate objects, the front shape still has real mass** |
-| 0.18 | heavier; the planes begin to close up |
-| 0.22 | the rear planes are mostly occluded; the depth stops paying for itself |
+| bar      | what happens                                                                                                         |
+| -------- | -------------------------------------------------------------------------------------------------------------------- |
+| 0.10     | the four planes' strokes collapse into a stripe pattern; the icon stops reading as depth and starts reading as moiré |
+| 0.13     | clean, light — closest to a conventional UI stroke                                                                   |
+| **0.15** | **the cut. Rear planes read as separate objects, the front shape still has real mass**                               |
+| 0.18     | heavier; the planes begin to close up                                                                                |
+| 0.22     | the rear planes are mostly occluded; the depth stops paying for itself                                               |
 
 Everything derived from the stroke is expressed as a multiple of it — arrow
 heads at `3.2×` wide and `2.0×` long, list markers at `1.15×`, row gaps at
@@ -182,12 +182,12 @@ The build fails if a shipped file contains a hex colour at all (§7).
 The four-plane atmosphere is still the system. It is simply not baked into these
 files, and the trade is deliberate:
 
-| baked in | inherited |
-|---|---|
-| four files per icon per cut, eight with reversals | two files, total |
-| recolouring means regenerating artwork | recolouring is a CSS `color` |
-| the haze is frozen at the tones chosen here | the haze is a live effect that can answer hover, theme, state |
-| the file carries its own background assumption | the file is transparent and composites onto anything |
+| baked in                                          | inherited                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------- |
+| four files per icon per cut, eight with reversals | two files, total                                              |
+| recolouring means regenerating artwork            | recolouring is a CSS `color`                                  |
+| the haze is frozen at the tones chosen here       | the haze is a live effect that can answer hover, theme, state |
+| the file carries its own background assumption    | the file is transparent and composites onto anything          |
 
 **The constraint stays.** A shape earns its place by still reading as four
 receding planes under §1's scene — that is what §6's aperture ceiling is about,
@@ -203,12 +203,12 @@ greys, mixed in **linear light** and only then encoded to sRGB:
 
     L_k = L_surface · T^k + L_haze · (1 − T^k)
 
-| cut | haze | T | k=0 | k=1 | k=2 | k=3 |
-|---|---|---|---|---|---|---|
+| cut                  | haze      | T      | k=0       | k=1       | k=2       | k=3       |
+| -------------------- | --------- | ------ | --------- | --------- | --------- | --------- |
 | **vapour** (default) | `#FFFFFF` | 0.4229 | `#141414` | `#C8C8C8` | `#EAEAEA` | `#F6F6F6` |
-| vapour reversed | | | `#FFFFFF` | `#AFAFAF` | `#777777` | `#515151` |
-| **dense** | `#E8E8E8` | 0.2823 | `#141414` | `#C9C9C9` | `#E0E0E0` | `#E6E6E6` |
-| dense reversed | | | `#E8E8E8` | `#858585` | `#4B4B4B` | `#2C2C2C` |
+| vapour reversed      |           |        | `#FFFFFF` | `#AFAFAF` | `#777777` | `#515151` |
+| **dense**            | `#E8E8E8` | 0.2823 | `#141414` | `#C9C9C9` | `#E0E0E0` | `#E6E6E6` |
+| dense reversed       |           |        | `#E8E8E8` | `#858585` | `#4B4B4B` | `#2C2C2C` |
 
 `T` is derived, not chosen: `T = (T_total)^(1/3)` with `T_total` = 0.275² for
 vapour and 0.15² for dense. **Use dense for print, for off-white grounds, and
@@ -237,14 +237,14 @@ shape still reads instantly.
 ### The one case it fights
 
 **Hollow outlines.** An outline frame has a large interior, and the planes
-behind land *inside* it — the icon fills up with its own echoes and stops
+behind land _inside_ it — the icon fills up with its own echoes and stops
 reading. This is why `launch` is a filled panel with an arrow breaking out of
 its corner rather than the conventional external-link frame. The frame version
 is kept in `shapes.py` as `launch_frame()` and is deliberately not in `SET`.
 
 Where a hollow shape is unavoidable, thicken the walls until the aperture is
 small relative to the 186-unit first step, or knock the detail out of a solid
-mass instead — which is what `info` does: a filled disc with the *i* removed,
+mass instead — which is what `info` does: a filled disc with the _i_ removed,
 so the plane behind shows through the counter.
 
 **The threshold, measured on the one hollow icon in the set.** `search` holds at
@@ -259,9 +259,9 @@ ceiling**: above it, thicken the wall or go solid.
 
 Every icon ships twice. Same artwork, same path data, different viewBox.
 
-| file | viewBox | for |
-|---|---|---|
-| `icon-<name>.svg` | the ink's bounding box, origin `0 0` | placing the mark exactly, when you control the space around it |
+| file                     | viewBox                                                             | for                                                                |
+| ------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `icon-<name>.svg`        | the ink's bounding box, origin `0 0`                                | placing the mark exactly, when you control the space around it     |
 | `icon-<name>-square.svg` | square, side = the longer ink dimension, ink centred on the shorter | dropping into equal slots — one CSS size rule serves the whole set |
 
 **Why the square exists.** The tight box has a different aspect ratio for every
@@ -279,14 +279,14 @@ tile format that carried all three.
 ### The measurement that changed the rule
 
 "The tight box equals the ink" was written, checked, and **false**. `bounds()`
-measures the polygon; the artwork is that polygon *with its corners filleted*,
+measures the polygon; the artwork is that polygon _with its corners filleted_,
 and a fillet cuts inward. Wherever a shape ends in a point, the sharp vertex
 sits outside the ink that actually gets painted. Rendered and measured:
 
-| icon | margin on a box documented as having none |
-|---|---|
-| `arrow-up` | **4.5%** of the width, both sides |
-| `exit` | 0.75% on all four |
+| icon         | margin on a box documented as having none                                    |
+| ------------ | ---------------------------------------------------------------------------- |
+| `arrow-up`   | **4.5%** of the width, both sides                                            |
+| `exit`       | 0.75% on all four                                                            |
 | `arrow-left` | 1.1% on the left only — so the mark also sat **off centre on its long axis** |
 
 Every model-level check passed, because they all read the same polygon the
@@ -317,16 +317,16 @@ warns. Three more are separate commands, and the build **prints them as not
 run** rather than staying quiet about them — a report that lists only what was
 executed reads thorough while hiding its own gaps.
 
-| check | what it binds |
-|---|---|
-| front face == plane 0 | the shipped outline is character-for-character what the haze scene draws. Without this, §5a is a wish |
-| one stroke weight, live | moving `BAR` must change every icon (§3) |
-| viewBox flush / square / centred | measured from the ink **after** translation against the viewBox **actually written to the file** |
-| no two names, one picture | caught `arrow-left-camright` |
-| no colour in any file | no hex anywhere; every fill `currentColor` |
-| `falsify.py` | every guard above, proven capable of failing |
-| `check_raster.py` | the shipped files rendered and measured in pixels |
-| `check_cocoon.py <v3>` | the logo, through this same engine, byte-for-byte |
+| check                            | what it binds                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| front face == plane 0            | the shipped outline is character-for-character what the haze scene draws. Without this, §5a is a wish |
+| one stroke weight, live          | moving `BAR` must change every icon (§3)                                                              |
+| viewBox flush / square / centred | measured from the ink **after** translation against the viewBox **actually written to the file**      |
+| no two names, one picture        | caught `arrow-left-camright`                                                                          |
+| no colour in any file            | no hex anywhere; every fill `currentColor`                                                            |
+| `falsify.py`                     | every guard above, proven capable of failing                                                          |
+| `check_raster.py`                | the shipped files rendered and measured in pixels                                                     |
+| `check_cocoon.py <v3>`           | the logo, through this same engine, byte-for-byte                                                     |
 
 ### Why `falsify.py` exists
 
@@ -339,7 +339,7 @@ this folder were fake when written**:
    the measured gap, and passed at fills where the real clearance was 0.064
    against a 0.10 floor.
 2. The centring check compared the file's viewBox against the artwork's
-   *untranslated* size. Replacing the centring translation with one that jams
+   _untranslated_ size. Replacing the centring translation with one that jams
    every icon into its top-left corner **did not make it fail**. It was rewritten
    to measure the translated ink, and then it failed in 3 ms.
 
@@ -357,7 +357,7 @@ The battery needs the same suspicion applied to itself. The stroke-weight
 mutation reported `DID NOT FIRE` when first written — but the fault was the
 mutation, which removed only one of the gear's two dependencies on `BAR` while
 the other still responded. A mutation has to remove the guarded property
-*entirely*, or "did not fire" is a fact about the mutation rather than about the
+_entirely_, or "did not fire" is a fact about the mutation rather than about the
 guard.
 
 ### Why `check_raster.py` exists
@@ -378,20 +378,20 @@ is.
 
 ## 8. Files
 
-| File | Contents |
-|---|---|
-| `haze_icon.py` | The engine — scene, tone, fillets, fill groups, outline measurement, serialiser |
-| `shapes.py` | The front shapes, and `SET`, the list that gets built |
-| `build_icons.py` | Renders the two files per icon, runs the four build guards, prints the ledger |
-| `falsify.py` | Proves each guard can fail — 9 mutations (§7) |
-| `check_raster.py` | Renders the shipped files and measures the ink (§7) |
-| `check_cocoon.py` | The logo regression (§7) |
-| `specimen.py` | The contact sheet's page template, kept apart so the build stays readable |
-| `icon-<name>.svg` | The artwork, viewBox = ink bounding box |
-| `icon-<name>-square.svg` | The same artwork in a square viewBox |
-| `preview.html` | Contact sheet, self-contained: colour inheritance, both boxes side by side, the set on light and dark down to 16 px, and the four-plane haze render of every icon marked as not shipped |
-| `cocoon-icon-set-spec.md` | This document |
-| `VERIFICATION.md` | The operating procedure — what to run, the last measured numbers, and the three rules §7 exists to enforce |
+| File                      | Contents                                                                                                                                                                                |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `haze_icon.py`            | The engine — scene, tone, fillets, fill groups, outline measurement, serialiser                                                                                                         |
+| `shapes.py`               | The front shapes, and `SET`, the list that gets built                                                                                                                                   |
+| `build_icons.py`          | Renders the two files per icon, runs the four build guards, prints the ledger                                                                                                           |
+| `falsify.py`              | Proves each guard can fail — 9 mutations (§7)                                                                                                                                           |
+| `check_raster.py`         | Renders the shipped files and measures the ink (§7)                                                                                                                                     |
+| `check_cocoon.py`         | The logo regression (§7)                                                                                                                                                                |
+| `specimen.py`             | The contact sheet's page template, kept apart so the build stays readable                                                                                                               |
+| `icon-<name>.svg`         | The artwork, viewBox = ink bounding box                                                                                                                                                 |
+| `icon-<name>-square.svg`  | The same artwork in a square viewBox                                                                                                                                                    |
+| `preview.html`            | Contact sheet, self-contained: colour inheritance, both boxes side by side, the set on light and dark down to 16 px, and the four-plane haze render of every icon marked as not shipped |
+| `cocoon-icon-set-spec.md` | This document                                                                                                                                                                           |
+| `VERIFICATION.md`         | The operating procedure — what to run, the last measured numbers, and the three rules §7 exists to enforce                                                                              |
 
 Current set — 13 icons, 26 files: `arrow-left`, `arrow-right`, `arrow-up`,
 `scroll-top`, `menu`, `toc`, `settings`, `info`, `exit`, `launch`, `home`,
@@ -425,15 +425,15 @@ prefer removing material from a solid to assembling thin strokes.
 
 ## 10. Notes on individual icons
 
-| icon | note |
-|---|---|
-| `arrow-right` | The rear heads trail off to the right as a chevron echo — the best case the system has |
-| `arrow-left` | Mirrored camera (§1.1), so it recedes leftward and reads as the exact counterpart of `arrow-right` under the haze. Front-face only it is `arrow-right` mirrored, which is why the old `arrow-left-camright` entry is gone |
-| `arrow-up` / `scroll-top` | The two narrow shapes in the set, and the two whose tight box is taller than wide, and the reason §1's offset is measured in shape widths. `scroll-top` is the up arrow under a rule; the rule is exactly as wide as the arrowhead and sits within 0.6 stroke of it, so the pair recedes as one object. Use `arrow-up` where a plain direction is meant |
-| `menu` / `toc` | Both are rule stacks; the markers are what keep `toc` from reading as `menu` at small sizes |
-| `settings` | Gear teeth are straight-sided and the valleys are stepped along the root circle, so every corner is a real corner the fillet can take |
-| `info` | Filled disc with the *i* knocked out. The counter shows the plane behind, which an outline ring would not |
-| `launch` | Filled panel, arrow unioned into its top-right corner — the same direction the logo points. See §6 for why not the frame |
-| `home` | A solid house with the doorway knocked out — the same remove-material-from-a-mass move as `info`. The roof overhangs the walls by one stroke each side, which is what stops the silhouette reading as a plain pentagon |
-| `search` | The one hollow shape in the set. Walls at **1.55 strokes**, giving an aperture-to-step ratio of 1.58 — inside the ceiling in §6, so it does not fill with its own echoes. A solid disc was tried and rejected: it reads as a pin at 16 px and collides with `info`, which is also a black disc. Ring and handle are separate fill groups so they union where they meet |
-| `account` | Head and shoulders, both solid, no holes at all — the cleanest shape in the set for this system. The bust is a drawn half-ellipse via `_arc`, not a filleted rectangle |
+| icon                      | note                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arrow-right`             | The rear heads trail off to the right as a chevron echo — the best case the system has                                                                                                                                                                                                                                                                                 |
+| `arrow-left`              | Mirrored camera (§1.1), so it recedes leftward and reads as the exact counterpart of `arrow-right` under the haze. Front-face only it is `arrow-right` mirrored, which is why the old `arrow-left-camright` entry is gone                                                                                                                                              |
+| `arrow-up` / `scroll-top` | The two narrow shapes in the set, and the two whose tight box is taller than wide, and the reason §1's offset is measured in shape widths. `scroll-top` is the up arrow under a rule; the rule is exactly as wide as the arrowhead and sits within 0.6 stroke of it, so the pair recedes as one object. Use `arrow-up` where a plain direction is meant                |
+| `menu` / `toc`            | Both are rule stacks; the markers are what keep `toc` from reading as `menu` at small sizes                                                                                                                                                                                                                                                                            |
+| `settings`                | Gear teeth are straight-sided and the valleys are stepped along the root circle, so every corner is a real corner the fillet can take                                                                                                                                                                                                                                  |
+| `info`                    | Filled disc with the _i_ knocked out. The counter shows the plane behind, which an outline ring would not                                                                                                                                                                                                                                                              |
+| `launch`                  | Filled panel, arrow unioned into its top-right corner — the same direction the logo points. See §6 for why not the frame                                                                                                                                                                                                                                               |
+| `home`                    | A solid house with the doorway knocked out — the same remove-material-from-a-mass move as `info`. The roof overhangs the walls by one stroke each side, which is what stops the silhouette reading as a plain pentagon                                                                                                                                                 |
+| `search`                  | The one hollow shape in the set. Walls at **1.55 strokes**, giving an aperture-to-step ratio of 1.58 — inside the ceiling in §6, so it does not fill with its own echoes. A solid disc was tried and rejected: it reads as a pin at 16 px and collides with `info`, which is also a black disc. Ring and handle are separate fill groups so they union where they meet |
+| `account`                 | Head and shoulders, both solid, no holes at all — the cleanest shape in the set for this system. The bust is a drawn half-ellipse via `_arc`, not a filleted rectangle                                                                                                                                                                                                 |

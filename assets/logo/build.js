@@ -12,6 +12,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { png } from '../lib/raster.js'
 import * as M from './mark.js'
 import * as W from './wordmark.js'
 import {
@@ -31,6 +32,14 @@ export const SIZES = [0.9, 1.0, 1.1]
 /** Tiers are named by clear air, in stems; the gap that delivers it is derived. */
 export const AIR_TIERS = [1, 2, 3]
 export const CUTS = { vapour: { cut: 'vapour' }, dense: { cut: 'dense' } }
+/** PNG previews and their widths. The lockup preview is 1.00x / air2x / vapour. */
+export const PREVIEWS = {
+  'cocoon-wordmark': 1800,
+  'cocoon-icon-vapour': 1400,
+  'cocoon-icon-dense': 1400,
+  'cocoon-favicon': 512,
+  'cocoon-lockup': 2000,
+}
 
 /** Stems from the black triangle's right edge to the faintest tip, at the largest icon size. */
 export function trailWorst(sizes = SIZES) {
@@ -46,19 +55,19 @@ export function gapFor(air, sizes = SIZES) {
 }
 
 /** Every tier must deliver its stated clear air at every icon size. Exact arithmetic, no tolerance. */
-export function checkLockups(sizes = SIZES, tiers = AIR_TIERS) {
+export function checkLockups(sizes = SIZES, tiers = AIR_TIERS, gap = gapFor) {
   const fb = M.frontBounds()
   const ab = M.build().bounds
   const trail = ab[0] + ab[2] - (fb[0] + fb[2])
   const worst = {}
   for (const air of tiers) {
-    const gap = gapFor(air, sizes)
+    const g = gap(air, sizes)
     for (const size of sizes) {
       const k = (size * XH) / fb[3]
-      const got = gap - (trail * k) / STEM
+      const got = g - (trail * k) / STEM
       if (got < air)
         throw new Error(
-          `lockup air FAILED: air${air}x at icon ${size.toFixed(2)}x delivers ${got.toFixed(4)} stems, floor ${air}. gapFor(${air}) = ${gap}.`,
+          `lockup air FAILED: air${air}x at icon ${size.toFixed(2)}x delivers ${got.toFixed(4)} stems, floor ${air}. gap(${air}) = ${g}.`,
         )
       worst[air] = Math.min(worst[air] ?? Infinity, got)
     }
@@ -71,7 +80,7 @@ export const SPEC = join(here, 'cocoon-logo-spec.md')
 /** The spec's tier table must agree with gapFor(). Scoped to the one table whose second column is the gap. */
 export function checkSpec(path = SPEC) {
   const text = readFileSync(path, 'utf8')
-  const head = text.indexOf('| tier | front-edge gap |')
+  const head = text.search(/\|\s*tier\s*\|\s*front-edge gap\s*\|/)
   if (head < 0)
     throw new Error(`${path}: gap table not found. Has its format changed?`)
   const end = text.indexOf('\n\n', head)
@@ -149,6 +158,13 @@ export function build(out = here) {
   mkdirSync(join(out, 'lockups'), { recursive: true })
   for (const [name, text] of Object.entries(files))
     writeFileSync(join(out, name), text)
+  for (const [name, width] of Object.entries(PREVIEWS)) {
+    const src =
+      name === 'cocoon-lockup'
+        ? files['lockups/cocoon-lockup-icon1.00-air2x-vapour.svg']
+        : files[`${name}.svg`]
+    writeFileSync(join(out, `${name}.png`), png(src, { width }))
+  }
   const worst = checkLockups()
   const stated = checkSpec()
   return { files, worst, stated }
@@ -157,7 +173,9 @@ export function build(out = here) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const out = process.argv[2] || here
   const { files, worst, stated } = build(out)
-  console.log(`${Object.keys(files).length} svg files in ${out}`)
+  console.log(
+    `${Object.keys(files).length} svg files + ${Object.keys(PREVIEWS).length} png previews in ${out}`,
+  )
   console.log(
     `wordmark: Saira ${WORD_WGHT}/${WORD_WDTH} from ${FONT.split('/').pop()}`,
   )
