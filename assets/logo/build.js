@@ -41,17 +41,20 @@ export const PREVIEWS = {
   'cocoon-lockup': 2000,
 }
 
-/** Stems from the black triangle's right edge to the faintest tip, at the largest icon size. */
-export function trailWorst(sizes = SIZES) {
-  const fb = M.frontBounds()
-  const ab = M.build().bounds
+/**
+ * Stems from the black triangle's right edge to the faintest tip, at the
+ * largest icon size. `iconKw` describes the scene; the shipped one by default.
+ */
+export function trailWorst(sizes = SIZES, iconKw = {}) {
+  const fb = M.frontBounds(iconKw)
+  const ab = M.build(iconKw).bounds
   const trail = ab[0] + ab[2] - (fb[0] + fb[2])
   return (trail * ((Math.max(...sizes) * XH) / fb[3])) / STEM
 }
 
 /** Front-edge gap for a tier: air + the worst trail, rounded up to the quarter stem. */
-export function gapFor(air, sizes = SIZES) {
-  return Math.ceil((air + trailWorst(sizes)) * 4) / 4
+export function gapFor(air, sizes = SIZES, iconKw = {}) {
+  return Math.ceil((air + trailWorst(sizes, iconKw)) * 4) / 4
 }
 
 /** Every tier must deliver its stated clear air at every icon size. Exact arithmetic, no tolerance. */
