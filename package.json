@@ -24,7 +24,9 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "assets:icons": "node assets/icons/build.js"
+    "assets": "npm run assets:icons && npm run assets:logo",
+    "assets:icons": "node assets/icons/build.js",
+    "assets:logo": "node assets/logo/build.js"
   },
   "peerDependencies": {
     "@pmndrs/assets": "^1.7.0",

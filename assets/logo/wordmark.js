@@ -14,8 +14,9 @@
  * elliptical pen (sv/2, sh/2) that reproduces the o exactly. The negative-
  * slope connector is cut on both sides of the positive-slope one.
  *
- * Font access is fontkit. Outline coordinates stay fractional after
- * instancing, as fontTools leaves them; only advances are rounded.
+ * Font access is fontkit, with its delta rounding switched off during
+ * outline decoding so coordinates stay fractional as fontTools left them.
+ * Advances are rounded, as fontTools rounds them.
  */
 import * as fontkit from 'fontkit'
 import { fmt } from '../lib/fmt.js'
@@ -62,13 +63,31 @@ function cubic(p0, c1, c2, p1, n) {
   ])
 }
 
+/**
+ * fontkit 2.0.4 rounds each variation tuple's delta to whole units as it
+ * applies it (GlyphVariationProcessor.transformPoints). fontTools summed the
+ * deltas in floating point, which is where the shipped wordmark's fractional
+ * stems come from. Making Math.round the identity while one glyph's outline is
+ * decoded reproduces that; the glyph is cached by fontkit afterwards.
+ */
+function unrounded(fn) {
+  const round = Math.round
+  Math.round = (v) => v
+  try {
+    return fn()
+  } finally {
+    Math.round = round
+  }
+}
+
 /** Flattened contours of a glyph: [[[x, y], ...], ...]. */
 export function glyphContours(font, char) {
   const glyph = font.glyphForCodePoint(char.codePointAt(0))
+  const commands = unrounded(() => glyph.path.commands)
   const contours = []
   let cur = []
   const R = (v) => v
-  for (const { command, args } of glyph.path.commands) {
+  for (const { command, args } of commands) {
     if (command === 'moveTo') {
       if (cur.length) contours.push(cur)
       cur = [[R(args[0]), R(args[1])]]

@@ -7,6 +7,7 @@
  * exact decimal expansion is inspected and the tie case is settled by hand.
  */
 export function fmt(x, prec = 3) {
+  if (Object.is(x, -0)) return `-${(0).toFixed(prec)}`
   const exact = x.toFixed(Math.min(100, prec + 40))
   const dot = exact.indexOf('.')
   const tail = exact.slice(dot + 1 + prec)
