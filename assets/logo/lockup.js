@@ -24,24 +24,37 @@ export const XH_BOT = -8
 export const XH = XH_TOP - XH_BOT // 526
 export const XH_MID = (XH_TOP + XH_BOT) / 2 // 255
 
-let cache = null
-/** The wordmark path and its SVG bounds, built once. */
-export function wordmark() {
-  if (!cache) {
-    const { pieces } = W.buildWordmark(FONT, WORD_WGHT, WORD_WDTH)
-    cache = { d: W.toSvgPath(pieces), bounds: W.pieceBounds(pieces), pieces }
+const cache = new Map()
+/**
+ * The wordmark path and its SVG bounds, built once per instance. Any instance
+ * other than the shipped one is for looking, not shipping: the anchoring
+ * constants above stay those of 350 / 107.
+ */
+export function wordmark(wght = WORD_WGHT, wdth = WORD_WDTH) {
+  const key = `${wght}/${wdth}`
+  if (!cache.has(key)) {
+    const { pieces } = W.buildWordmark(FONT, wght, wdth)
+    cache.set(key, {
+      d: W.toSvgPath(pieces),
+      bounds: W.pieceBounds(pieces),
+      pieces,
+    })
   }
-  return cache
+  return cache.get(key)
 }
 
-/** { svg, info } for one lockup. `iconKw` passes through to the mark. */
+/**
+ * { svg, info } for one lockup. `iconKw` passes through to the mark; `word`
+ * picks the wordmark instance, `{ wght, wdth }`.
+ */
 export function lockup({
   size = 1.15,
   gapStems = 3,
   reverse = false,
   iconKw = {},
+  word = {},
 } = {}) {
-  const { d: wd, bounds: wb } = wordmark()
+  const { d: wd, bounds: wb } = wordmark(word.wght, word.wdth)
   const ikw = { reverse, ...iconKw }
   const { pieces, bounds: ib } = M.build(ikw)
   const [ix, iy, iw, ih] = ib
