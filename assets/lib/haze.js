@@ -1,36 +1,40 @@
 /**
- * The cocoon four-plane engine, for any flat shape.
+ * The cocoon plane engine, for any flat shape.
  *
- * The mark is four congruent shapes standing in a row in 3D, seen through a
- * shift camera whose image plane is parallel to them. That collapses to one
- * rule: with the camera's principal point at the origin, plane k is the front
- * shape scaled about the origin by S_k = D / (D + k·d), and nothing else. The
- * front shape's area centroid sits at (-cameraX · W, 0), so all four centroids
- * share one level line and the recession is purely horizontal. Fillets scale
- * with the shape. Tone is aerial perspective mixed in linear light.
+ * The mark is a row of congruent shapes, each a step smaller and a step
+ * further along one direction than the one in front, seen through haze. The
+ * picture is orthographic: there is no camera, the shrinking is in the world.
+ * Plane k is the front shape scaled about its own area centroid by S_k and
+ * moved by d_k along the angle, where S_k and d_k come from the scene in
+ * src/utils/hazePlanes.js, the same module the HazePlanes component reads,
+ * so the logo, the icons and the live effect cannot drift apart. Fillets
+ * scale with the shape. Tone is aerial perspective mixed in linear light.
  *
- * The scene constants come from src/utils/hazePlanes.js, the same module the
- * HazePlanes component reads, so the logo, the icons and the live effect
- * cannot drift apart.
+ * Displacement is measured in the front shape's own width, so every icon
+ * spreads the same fraction of itself: a narrow shape's planes never separate
+ * into stripes.
  *
- * Shapes are drawn in SVG coordinates (y down) on a nominal 1000 grid. A shape
- * is a list of elements: a polygon (an array of [x, y]) or a circle
- * ({ C: [cx, cy, r] }), either wrapped in hole(...) to subtract. Fill rule is
- * evenodd within a fill group, so a hole only has to overlap.
+ * Shapes are drawn in SVG coordinates (y down) on the 1000 grid, the larger
+ * dimension filling it. A shape is a list of elements: a polygon (an array of
+ * [x, y]) or a circle ({ C: [cx, cy, r] }), either wrapped in hole(...) to
+ * subtract. Fill rule is evenodd within a fill group, so a hole only has to
+ * overlap.
  */
 import {
   HAZE_CUTS,
   HAZE_DEFAULTS,
+  hazeProfile,
   hazeTones,
 } from '../../src/utils/hazePlanes.js'
 import { fmt } from './fmt.js'
 
 // ---- scene -----------------------------------------------------------------
-export const SIDE = 1000 // design box width; scene distances are in it
-export const CAM_DIST = HAZE_DEFAULTS.distance * SIDE
-export const SPACING = HAZE_DEFAULTS.spacing * SIDE
-export const CAM_OFF = HAZE_DEFAULTS.cameraX // in shape widths
+export const SIDE = 1000 // design box; the larger dimension of a shape fills it
 export const N = HAZE_DEFAULTS.planes
+export const DEPTH = HAZE_DEFAULTS.depth
+export const RADIUS = HAZE_DEFAULTS.radius // in front-shape widths
+export const ANGLE = HAZE_DEFAULTS.angle // degrees, 0 right, 90 down
+export const PERSPECTIVE = HAZE_DEFAULTS.perspective
 export const CORNER_R = 0.02 // front fillet radius, fraction of the box
 
 export const INK = '#141414'
@@ -39,10 +43,18 @@ export const CUT_GROUND = { vapour: '#FFFFFF', dense: '#E8E8E8' }
 
 const hypot = (dx, dy) => Math.sqrt(dx * dx + dy * dy)
 
-/** Projected scale of each plane: exactly 1 : 6/7 : 3/4 : 2/3 at the house scene. */
-export function scales(n = N, dist = CAM_DIST, spacing = SPACING) {
+/** Size of each plane relative to the front: exactly 1 : 6/7 : 3/4 : 2/3 at the house scene. */
+export function scales(n = N, depth = DEPTH, perspective = PERSPECTIVE) {
   const out = []
-  for (let k = 0; k < n; k++) out.push(dist / (dist + k * spacing))
+  for (let k = 0; k < n; k++)
+    out.push(1 - (1 - depth) * hazeProfile(k, n, perspective))
+  return out
+}
+
+/** Displacement of each plane's centroid from the front's, in front widths. */
+export function shifts(n = N, radius = RADIUS, perspective = PERSPECTIVE) {
+  const out = []
+  for (let k = 0; k < n; k++) out.push(radius * hazeProfile(k, n, perspective))
   return out
 }
 
@@ -245,13 +257,11 @@ export function circlePath(cx, cy, r, prec = 3) {
 }
 
 /**
- * Normalise a front shape to the design box and project it into n planes.
+ * Normalise a front shape to the design box and lay out its n planes.
  *
- * `off` is the camera's offset in the shape's own projected widths, so every
- * icon spreads the same fraction of itself; a value above 10 is taken as
- * absolute design units. `mirror` puts the camera the same distance to the
- * left, so the planes recede leftward. `fit` picks which dimension is held at
- * `box`: 'max' (default), 'width' or 'height'.
+ * The front shape's centroid sits at the origin. Plane k is the front shape
+ * scaled about that centroid by S_k and moved radius · f(k) front widths
+ * along `angle`. `radius` above 10 is taken as absolute design units.
  *
  * Returns [{ elems, scale }, ...], front-most first.
  */
@@ -259,28 +269,33 @@ export function place(
   shape,
   {
     box = SIDE,
-    off = CAM_OFF,
     n = N,
-    dist = CAM_DIST,
-    spacing = SPACING,
-    fit = 'max',
-    mirror = false,
+    depth = DEPTH,
+    radius = RADIUS,
+    angle = ANGLE,
+    perspective = PERSPECTIVE,
   } = {},
 ) {
   let elems = norm(shape)
   const [, , w, h] = bounds(elems)
-  const ref = { max: Math.max(w, h), width: w, height: h }[fit]
-  const k = box / ref
+  const k = box / Math.max(w, h)
   elems = map(elems, (p) => [p[0] * k, p[1] * k])
   const [, , wn] = bounds(elems)
-  const offset = off > 10 ? off : off * wn
   const [gx, gy] = centroid(elems)
-  const x0 = mirror ? offset : -offset
-  elems = map(elems, (p) => [p[0] - gx + x0, p[1] - gy])
-  return scales(n, dist, spacing).map((S) => ({
-    elems: map(elems, (p) => [p[0] * S, p[1] * S]),
-    scale: S,
-  }))
+  elems = map(elems, (p) => [p[0] - gx, p[1] - gy])
+  const rad = (angle * Math.PI) / 180
+  const ux = Math.cos(rad)
+  const uy = Math.sin(rad)
+  const S = scales(n, depth, perspective)
+  return shifts(n, radius > 10 ? radius / wn : radius, perspective).map(
+    (r, i) => {
+      const d = r * wn
+      return {
+        elems: map(elems, (p) => [p[0] * S[i] + d * ux, p[1] * S[i] + d * uy]),
+        scale: S[i],
+      }
+    },
+  )
 }
 
 /** Split elements into fill groups: a non-hole opens a group, a hole joins the last. */

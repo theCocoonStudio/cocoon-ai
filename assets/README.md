@@ -6,7 +6,7 @@ The studio's marks, produced here rather than stored here. Every SVG and PNG in 
 npm run assets            # rebuild everything
 npm run assets:icons      # the icon set and its contact sheet
 npm run assets:logo       # the mark, favicons, wordmark, lockups, PNG previews
-npm run export:logo -- --off 1.9 -b 0.1 -c 2   # the lockup or icon at chosen scene values, plus a sheet of neighbours
+npm run export:logo -- --radius 0.63 -b 0.05 -c 2   # the lockup or icon at chosen scene values, plus a sheet of neighbours
 npm test                  # the guards, the rebuild regression, the raster checks
 ```
 
@@ -22,7 +22,7 @@ assets/
   logo/           the mark, favicons, wordmark and lockups. build.js emits 45 SVGs and 5 PNGs
 ```
 
-Both folders read the scene from `src/utils/hazePlanes.js`, the same module the `HazePlanes` component uses. Plane count, spacing, camera distance and offset, and the two haze cuts live in one place. The old Python folders each restated those numbers and had no check that they agreed; now they cannot disagree.
+Both folders read the scene from `src/utils/hazePlanes.js`, the same module the `HazePlanes` component uses. Plane count, depth, radius, angle, perspective and the two haze cuts live in one place. The old Python folders each restated those numbers and had no check that they agreed; now they cannot disagree.
 
 ## What the checks are for
 

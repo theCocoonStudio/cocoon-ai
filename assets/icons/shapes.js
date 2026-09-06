@@ -302,12 +302,12 @@ export function account(bar = BAR) {
 }
 
 /**
- * name -> [shape function, engine options]. `mirror` moves the camera to the
- * other side of the row; it leaves plane 0 congruent, which is why there is no
- * separate camera-right arrow-left: front-face only, it was the same file.
+ * name -> [shape function, engine options]. `angle: 180` sends the planes
+ * leftward; it leaves plane 0 congruent, which is why there is no separate
+ * arrow-left receding right: front-face only, it was the same file.
  */
 export const SET = {
-  'arrow-left': [arrowLeft, { mirror: true }],
+  'arrow-left': [arrowLeft, { angle: 180 }],
   'arrow-right': [arrowRight, {}],
   'arrow-up': [arrowUp, {}],
   'scroll-top': [scrollTop, {}],
@@ -326,7 +326,7 @@ export const SET = {
 export const NOTES = {
   'arrow-left': [
     'prev',
-    'Mirrored camera - the planes recede leftward, so it reads as the exact counterpart of arrow-right.',
+    'Angle 180 - the planes recede leftward, so it reads as the exact counterpart of arrow-right.',
   ],
   'arrow-right': [
     'next',
@@ -334,7 +334,7 @@ export const NOTES = {
   ],
   'arrow-up': [
     'scroll up',
-    'One of two narrow shapes, and the reason the camera offset is measured in shape widths rather than design units.',
+    'One of two narrow shapes, and the reason the radius is measured in shape widths rather than design units.',
   ],
   'scroll-top': [
     'scroll to 0',

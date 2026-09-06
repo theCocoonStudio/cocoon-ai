@@ -147,12 +147,12 @@ export const HEAD = `<title>Cocoon Icon Set</title>
     <div class="rule">
       <div><dt>Projected scale</dt>
         <dd>1 : 6/7 : 3/4 : 2/3
-          <small>Plane <i>k</i> is the front shape scaled about the camera's
-          principal point. Never redrawn.</small></dd></div>
+          <small>Plane <i>k</i> is the front shape scaled about its own
+          centroid and moved along the row. Never redrawn.</small></dd></div>
       <div><dt>Placement</dt>
-        <dd>centroid &rarr; (&minus;1.30 W, 0)
+        <dd>centroid &rarr; (0, 0), the row to (0.6333 W, 0)
           <small>Area centroid, holes subtracting. <i>W</i> is the shape's own
-          width, so every icon spreads the same 43% of itself.</small></dd></div>
+          width, so every icon spreads the same 63% of itself.</small></dd></div>
       <div><dt>Design box</dt>
         <dd>1000 on the long side
           <small>Normalised on <code>max(w,h)</code> before filleting. The square

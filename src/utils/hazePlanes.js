@@ -1,25 +1,29 @@
 /**
- * The cocoon four-plane recession as a scene, and the CSS that expresses it.
+ * The cocoon plane recession as a scene, and the CSS that expresses it.
  *
- * A row of identical copies of an element stands one behind another, seen by
- * a camera off to one side through haze. Every input is a thing in that scene:
- * how many copies, how far apart, how far away and how far aside the camera
- * is, how thick the air. Offsets, spreads and tones are derived from it.
+ * A row of copies of an element stands behind it, each a fixed step smaller
+ * and a fixed step further along one direction, seen through haze. There is
+ * no camera: the picture is orthographic, so the shrinking is in the world
+ * and the steps are where the parameters put them. Four numbers and a count
+ * reach every output, and none of them is redundant:
  *
- * All distances are in element widths, so a scene survives any resize.
+ *   planes       how many copies, the element's own face included
+ *   depth        the last plane's size as a fraction of the face
+ *   radius       the last plane's centre from the face's centre, in widths
+ *   angle        which way, degrees: 0 right, 90 down, as CSS rotates
+ *   perspective  how the middle planes are spaced between face and last:
+ *                0 is equal steps; larger foreshortens, the near steps long
+ *                and the far ones short, along the hyperbola a camera would
+ *                give. One number, the same easing every time
  *
- *     S_k    = distance / (distance + k * spacing)     projected size of plane k
- *     spread = -(1 - S_k) * width / 2                  shrink the box
- *     offset =  cameraX * (1 - S_k) * width            slide it toward the axis
- *     L_k    = L_surface * T^k + L_ground * (1 - T^k)  mixed in linear light
+ *     f(k)   = (1 - 1/(1 + k·p)) / (1 - 1/(1 + (n-1)·p))    p = 0: k/(n-1)
+ *     S_k    = 1 - (1 - depth) · f(k)                        size of plane k
+ *     d_k    = radius · f(k) · width                         its displacement
+ *     spread = -(1 - S_k) · width / 2                        as a box-shadow
+ *     L_k    = L_surface · T^k + L_ground · (1 - T^k)        mixed in linear light
  *     T      = haze^(1 / (planes - 1))
  *
- * Which lever to reach for:
- *   too flat or too busy ...... spacing    the gap between copies
- *   recession too abrupt ...... distance   a longer lens calms the steps
- *   copies hiding behind ...... cameraX    how far the camera stands aside
- *   fade too fast or slow ..... haze       thickness of the air
- *   more or fewer copies ...... planes
+ * Widths are element widths, so a scene survives any resize.
  *
  * The same scene cuts the logo and the icon set; the generators under assets/
  * read their constants from here so the three cannot drift.
@@ -28,13 +32,14 @@
 /** House scene and subject defaults. */
 export const HAZE_DEFAULTS = Object.freeze({
   planes: 4,
-  spacing: 1,
-  distance: 6,
-  cameraX: 1.9,
+  depth: 2 / 3,
+  radius: 1.9 / 3, // the 1.90 camera offset of the old model, chosen on the spread sheets
+  angle: 0,
+  perspective: 1 / 6,
   haze: 0.275 ** 2,
   width: 48,
   height: null,
-  radius: 0,
+  cornerRadius: 0,
   surface: '#141414',
   ground: '#FFFFFF',
   technique: 'auto',
@@ -108,14 +113,37 @@ export function hazeResolve(opts) {
   if (o.height == null) o.height = o.width
   if (!(o.width > 0)) throw new Error('hazePlanes: width must be > 0')
   if (!(o.planes >= 2)) throw new Error('hazePlanes: planes must be >= 2')
-  if (!(o.spacing > 0)) throw new Error('hazePlanes: spacing must be > 0')
-  if (!(o.distance > 0)) throw new Error('hazePlanes: distance must be > 0')
+  if (!(o.depth > 0 && o.depth <= 1))
+    throw new Error('hazePlanes: depth must be in (0, 1]')
+  if (!(o.radius >= 0)) throw new Error('hazePlanes: radius must be >= 0')
+  if (!Number.isFinite(o.angle))
+    throw new Error('hazePlanes: angle must be a number')
+  if (!(o.perspective >= 0))
+    throw new Error('hazePlanes: perspective must be >= 0')
   if (!(o.haze > 0 && o.haze < 1))
     throw new Error('hazePlanes: haze must be in (0, 1)')
+  if (!(o.cornerRadius >= 0))
+    throw new Error('hazePlanes: cornerRadius must be >= 0')
   return o
 }
 
 // ---- scene -----------------------------------------------------------------
+
+/**
+ * Where plane k sits between the face (0) and the last plane (1). Equal steps
+ * at perspective 0; the hyperbola 1 - 1/(1 + k·p), normalised, otherwise.
+ * @param {number} k plane index, 0 .. planes - 1
+ * @param {number} planes
+ * @param {number} perspective
+ * @returns {number} 0 at k = 0, 1 at k = planes - 1
+ */
+export function hazeProfile(k, planes, perspective) {
+  const n = planes - 1
+  if (n <= 0) return 0
+  if (!(perspective > 0)) return k / n
+  const h = (i) => 1 - 1 / (1 + i * perspective)
+  return h(k) / h(n)
+}
 
 /**
  * The tone ramp, near plane first. Mixed in linear light and only then encoded
@@ -149,69 +177,79 @@ export function hazeTones(opts) {
  * only on a square with sharp corners or a full circle, so each plane reports:
  *   heightError  (1 - S) * |W - H|, zero only when W === H
  *   radiusError  |S * r - max(0, r + spread)|, zero at r = 0 and r = W / 2
- *   clears       how far the plane escapes the element's own border box; a
- *                shadow under the box is never drawn, so <= 0 means hidden
+ *   clears       how far the plane's leading edge escapes the element's own
+ *                border box along the direction of travel; a shadow under the
+ *                box is never drawn, so <= 0 means hidden
  *
  * @param {object} [opts] scene and subject options
  * @returns {{ opts: object, planes: object[], tones: string[], worstError: number, hidden: number[], ok: boolean }}
- *   `planes` holds k = 1 .. planes-1 with scale, offset, spread and the errors;
- *   `hidden` lists planes that do not clear the box; `ok` is true when
- *   box-shadow is within `tolerance` and `cameraX` exceeds 0.5
+ *   `planes` holds k = 1 .. planes-1 with scale, offset, dx, dy, spread and the
+ *   errors; `hidden` lists planes that do not clear the box; `ok` is true
+ *   when box-shadow is within `tolerance` and no plane is hidden
  */
 export function hazeAnalyse(opts) {
   const o = hazeResolve(opts)
-  const { width: W, height: H, radius: r } = o
+  const { width: W, height: H, cornerRadius: r } = o
+  const rad = (o.angle * Math.PI) / 180
+  const ux = Math.cos(rad)
+  const uy = Math.sin(rad)
+  const halfBox = (Math.abs(ux) * W + Math.abs(uy) * H) / 2
   const planes = []
   for (let k = 1; k < o.planes; k++) {
-    const scale = o.distance / (o.distance + k * o.spacing)
+    const f = hazeProfile(k, o.planes, o.perspective)
+    const scale = 1 - (1 - o.depth) * f
     const u = 1 - scale
     const spread = (-u * W) / 2
-    const offset = o.cameraX * u * W
+    const offset = o.radius * f * W
     planes.push({
       k,
       scale,
       offset,
+      dx: offset * ux,
+      dy: offset * uy,
       spread,
       heightError: Math.abs(H + 2 * spread - H * scale),
       radiusError: Math.abs(r * scale - Math.max(0, r + spread)),
-      clears: offset + (W + 2 * spread) / 2 - W / 2,
+      clears: offset - u * halfBox,
     })
   }
   const worstError = planes.reduce(
     (a, p) => Math.max(a, p.heightError, p.radiusError),
     0,
   )
+  const hidden = planes.filter((p) => p.clears <= 0).map((p) => p.k)
   return {
     opts: o,
     planes,
     tones: hazeTones(o),
     worstError,
-    hidden: planes.filter((p) => p.clears <= 0).map((p) => p.k),
-    ok: worstError <= o.tolerance && o.cameraX > 0.5,
+    hidden,
+    ok: worstError <= o.tolerance && hidden.length === 0,
   }
 }
 
 /**
- * The widest plane spacing whose worst box-shadow error stays within a pixel
- * budget. Error grows monotonically with spacing, so this bisects. Returns the
- * given spacing when the geometry is already clean there.
+ * The shallowest depth (the smallest last plane) whose worst box-shadow error
+ * stays within a pixel budget. Error grows as depth falls, so this bisects
+ * between the given depth and 1. Returns the given depth when the geometry is
+ * already clean there.
  * @param {object} [opts]
  * @param {number} [tolerancePx] defaults to `opts.tolerance`
  * @returns {number}
  */
-export function hazeMaxSpacing(opts, tolerancePx) {
+export function hazeMinDepth(opts, tolerancePx) {
   const o = hazeResolve(opts)
   const tol = tolerancePx == null ? o.tolerance : tolerancePx
-  const err = (spacing) => hazeAnalyse({ ...o, spacing }).worstError
-  if (err(o.spacing) <= tol) return o.spacing
-  let lo = 0
-  let hi = o.spacing
+  const err = (depth) => hazeAnalyse({ ...o, depth }).worstError
+  if (err(o.depth) <= tol) return o.depth
+  let lo = o.depth
+  let hi = 1
   for (let i = 0; i < 60; i++) {
     const m = (lo + hi) / 2
-    if (err(m) <= tol) lo = m
-    else hi = m
+    if (err(m) <= tol) hi = m
+    else lo = m
   }
-  return lo
+  return hi
 }
 
 // ---- CSS -------------------------------------------------------------------
@@ -229,7 +267,8 @@ function len(v, o) {
 function boxShadowRule(a) {
   const o = a.opts
   const rules = a.planes.map(
-    (p) => `    ${len(p.offset, o)} 0 0 ${len(p.spread, o)} ${a.tones[p.k]}`,
+    (p) =>
+      `    ${len(p.dx, o)} ${len(p.dy, o)} 0 ${len(p.spread, o)} ${a.tones[p.k]}`,
   )
   return (
     `${o.selector} {\n` +
@@ -241,7 +280,8 @@ function boxShadowRule(a) {
 
 /*
  * Exact for any shape and aspect: every plane, including the element's own
- * face, is a real copy scaled about the camera's principal point.
+ * face, is a real copy, moved along the direction and scaled about its own
+ * centre.
  *
  * No z-index, deliberately. Keeping the background on the element and pushing
  * copies behind it with z-index:-1 breaks two opposite ways: `isolation:
@@ -257,12 +297,11 @@ function transformRules(a) {
   const base = sel.replace(/^[.#]/, '')
   const plane = `${base}-plane`
   const content = `${base}-content`
-  const all = [{ k: 0, scale: 1 }, ...a.planes]
+  const all = [{ k: 0, scale: 1, dx: 0, dy: 0 }, ...a.planes]
   const out = [
     `${sel} {\n  position: relative;\n  background: none;\n}\n`,
     `${sel} > .${plane} {\n  position: absolute;\n  inset: 0;\n` +
-      `  border-radius: inherit;\n  transform-origin: ` +
-      `${Number((o.cameraX * 100 + 50).toFixed(4))}% 50%;\n}\n`,
+      `  border-radius: inherit;\n  transform-origin: 50% 50%;\n}\n`,
   ]
   all
     .slice()
@@ -275,7 +314,7 @@ function transformRules(a) {
           `  background: ${a.tones[p.k]};\n` +
           (p.k === 0
             ? ''
-            : `  transform: scale(${Number(p.scale.toFixed(6))});\n`) +
+            : `  transform: translate(${len(p.dx, o)}, ${len(p.dy, o)}) scale(${Number(p.scale.toFixed(6))});\n`) +
           `}\n`,
       )
     })
@@ -296,9 +335,9 @@ function header(a, chosen) {
   const L = [
     `/* hazePlanes - ${chosen}`,
     ' *',
-    ` * scene    ${o.planes} planes, spacing ${r6(o.spacing)}w, distance ${r6(o.distance)}w, cameraX ${r6(o.cameraX)}w`,
+    ` * scene    ${o.planes} planes, depth ${r6(o.depth)}, radius ${r6(o.radius)}w, angle ${r6(o.angle)}deg, perspective ${r6(o.perspective)}`,
     ` * air      haze ${r6(o.haze)}, so T = ${r6(o.haze ** (1 / (o.planes - 1)))} per gap`,
-    ` * subject  ${o.width} x ${o.height}, radius ${o.radius}, ${a.tones[0]} on ${o.ground}`,
+    ` * subject  ${o.width} x ${o.height}, corner radius ${o.cornerRadius}, ${a.tones[0]} on ${o.ground}`,
     ` * gives    scales ${a.planes.map((p) => Number(p.scale.toFixed(4))).join(' : ')}`,
     ` *          ramp   ${a.tones.join(' -> ')}`,
   ]
@@ -318,14 +357,10 @@ function header(a, chosen) {
     }
     if (a.worstError > o.tolerance)
       L.push(
-        ` *          spacing <= ${Number(hazeMaxSpacing(o, o.tolerance).toFixed(3))}w ` +
+        ` *          depth >= ${Number(hazeMinDepth(o, o.tolerance).toFixed(3))} ` +
           'would bring it inside tolerance, at the cost of the recession',
       )
-    if (o.cameraX <= 0.5)
-      L.push(
-        ' *          cameraX <= 0.5w - every plane hides under the border box and is knocked out',
-      )
-    else if (a.hidden.length)
+    if (a.hidden.length)
       L.push(
         ` *          planes ${a.hidden.join(', ')} do not clear the element edge and will not draw`,
       )

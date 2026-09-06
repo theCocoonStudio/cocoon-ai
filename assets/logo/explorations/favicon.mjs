@@ -1,6 +1,7 @@
 /**
  * The favicon at three settings, at 16 to 128 px, for a decision about the
- * clear-air rule after the camera offset moved to 1.90.
+ * clear-air rule after the trail lengthened to radius 0.6333 (the old camera
+ * offset 1.90).
  *
  *   node assets/logo/explorations/favicon.mjs
  *
@@ -36,15 +37,15 @@ function fillFor({ front = 0.1, pale = PALE_MARGIN, ...opts }) {
 
 const rows = [
   {
-    label: 'before 2026-09-05: off 1.30, every plane 10% clear',
-    kw: { off: 1.3, margin: 0.1 },
+    label: 'before 2026-09-05: radius 0.4333 (off 1.30), every plane 10% clear',
+    kw: { radius: 1.3 / 3, margin: 0.1 },
   },
   {
-    label: `shipped now: off 1.90, every plane ${M.FAVI_MARGIN * 100}% clear`,
+    label: `shipped now: radius 0.6333, every plane ${M.FAVI_MARGIN * 100}% clear`,
     kw: {},
   },
   {
-    label: `not taken: off 1.90, black triangle 10% clear, pale planes ${PALE_MARGIN * 100}%`,
+    label: `not taken: radius 0.6333, black triangle 10% clear, pale planes ${PALE_MARGIN * 100}%`,
     kw: { fill: fillFor({ cut: 'dense' }), margin: PALE_MARGIN },
   },
 ]

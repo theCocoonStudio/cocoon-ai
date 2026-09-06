@@ -3,14 +3,14 @@
  * export:logo — render the mark or the lockup at chosen scene values, with a
  * sheet of neighbours around each chosen value.
  *
- *   npm run export:logo -- --off 1.9
- *   npm run export:logo -- --off 1.9 --spacing 1.2 -b 0.1 -c 2
- *   npm run export:logo -- --off 1.9:0.05:3 --view icon --cut dense
+ *   npm run export:logo -- --radius 0.63
+ *   npm run export:logo -- --radius 0.63 --depth 0.6 -b 0.05 -c 2
+ *   npm run export:logo -- --perspective 0.2:0.05:3 --view icon --cut dense
  *
  * Each parameter is given as `--<name> <value>[:<buffer>[:<count>]]`. The
  * buffer is the step on either side of the value and the count is how many
  * steps; `-b` and `-c` set them for every parameter that does not carry its
- * own. `--off 1.9 -b 0.1 -c 2` sweeps 1.7, 1.8, 1.9, 2.0, 2.1. Parameters
+ * own. `--radius 0.6 -b 0.1 -c 2` sweeps 0.4, 0.5, 0.6, 0.7, 0.8. Parameters
  * are swept one at a time, the others held at their chosen values, so the
  * sheet has one block of rows per swept parameter with the chosen row marked.
  *
@@ -21,8 +21,8 @@
  * and `<name>-examples.svg` plus `.png`, the sheet. `<name>` defaults to
  * `cocoon-<view>-<cut>`.
  *
- * The scene parameters are the engine's: `off`, `spacing`, `dist`, `planes`,
- * `corner`, `haze`, and the mark's `apex`. The lockup adds `size`, `gap`,
+ * The scene parameters are the engine's: `depth`, `radius`, `angle`,
+ * `perspective`, `planes`, `corner`, `haze`, and the mark's `apex`. The lockup adds `size`, `gap`,
  * `air`, and the wordmark's `wght` and `wdth`; a `gap` left unset is derived
  * for each scene by the tier rule at `air`, the same rule the shipped lockups
  * follow.
@@ -30,8 +30,17 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CAM_OFF, CORNER_R, CUT_GROUND, INK, N, SIDE } from '../lib/haze.js'
-import { HAZE_CUTS, HAZE_DEFAULTS } from '../../src/utils/hazePlanes.js'
+import {
+  ANGLE,
+  CORNER_R,
+  CUT_GROUND,
+  DEPTH,
+  INK,
+  N,
+  PERSPECTIVE,
+  RADIUS,
+} from '../lib/haze.js'
+import { HAZE_CUTS } from '../../src/utils/hazePlanes.js'
 import { png } from '../lib/raster.js'
 import * as M from './mark.js'
 import { WORD_WDTH, WORD_WGHT, lockup } from './lockup.js'
@@ -48,23 +57,29 @@ export const DEFAULT_AIR = 2
  * `valid` rejects values the engine cannot draw; those rows are dropped.
  */
 export const PARAMS = {
-  off: {
-    doc: 'camera offset, in shape widths',
-    value: CAM_OFF,
-    buffer: 0.1,
-    valid: (v) => v > 0,
+  depth: {
+    doc: "the last plane's size, as a fraction of the front face",
+    value: DEPTH,
+    buffer: 0.05,
+    valid: (v) => v > 0 && v <= 1,
   },
-  spacing: {
-    doc: 'plane spacing, in design boxes',
-    value: HAZE_DEFAULTS.spacing,
-    buffer: 0.1,
-    valid: (v) => v > 0,
+  radius: {
+    doc: "the last plane's centre from the front face's centre, in front widths",
+    value: RADIUS,
+    buffer: 0.05,
+    valid: (v) => v >= 0,
   },
-  dist: {
-    doc: 'camera distance to the front plane, in design boxes',
-    value: HAZE_DEFAULTS.distance,
-    buffer: 0.5,
-    valid: (v) => v > 0,
+  angle: {
+    doc: 'direction of the row, degrees; 0 right, 90 down',
+    value: ANGLE,
+    buffer: 15,
+    valid: (v) => Number.isFinite(v),
+  },
+  perspective: {
+    doc: 'foreshortening of the middle planes; 0 is equal steps',
+    value: PERSPECTIVE,
+    buffer: 0.05,
+    valid: (v) => v >= 0,
   },
   planes: {
     doc: 'number of planes',
@@ -328,9 +343,8 @@ export function iconKw(values, o) {
   const kw = { cut: o.cut, reverse: o.reverse }
   if (o.surface) kw.surface = o.surface
   if (o.ground) kw.ground = o.ground
-  if (values.off != null) kw.off = values.off
-  if (values.spacing != null) kw.spacing = values.spacing * SIDE
-  if (values.dist != null) kw.dist = values.dist * SIDE
+  for (const k of ['depth', 'radius', 'angle', 'perspective'])
+    if (values[k] != null) kw[k] = values[k]
   if (values.planes != null) kw.n = values.planes
   if (values.corner != null) kw.corner = values.corner
   if (values.haze != null) kw.haze = values.haze

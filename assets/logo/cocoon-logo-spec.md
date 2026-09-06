@@ -172,9 +172,10 @@ names its cut.
 
 ## 6. Icon
 
-Four **congruent** isosceles triangles standing in a row in 3D and seen through
-a perspective camera. They are the same size and the same colour; they read
-smaller and lighter purely because they are further away.
+Four isosceles triangles standing in a row, each a step smaller and a step
+further to the right than the one in front, seen through haze. They are the
+same shape and the same colour; they read further away because they are
+smaller and lighter, and the eye supplies the distance.
 
 ### 6.1 The triangle
 
@@ -193,41 +194,58 @@ right**. The remaining, shorter, left edge is the base.
 At 48° the base is `2·sin(24°) = 0.8135` of a side. Setting that angle to 60°
 reproduces the earlier equilateral mark exactly, which is the regression test.
 
-### 6.2 The camera
+### 6.2 The row
 
-The image plane is held **parallel to the triangles** — a shift, or
-perspective-control, camera. This is the whole reason all four stay exactly
-congruent in projection; a camera rotated to aim down the row would keystone
-them.
+There is no camera. The picture is orthographic: the shrinking is in the
+world, not in the projection, and that is what lets four numbers describe the
+row with nothing left over. Until 2026-09-06 the same picture was stated as a
+shift camera 6s from the front triangle and 1.90s to the right of the row,
+with 1s between triangles; only the ratio of spacing to distance ever reached
+the page, so the three numbers were two, and the model here replaces them.
+The parameters live in `src/utils/hazePlanes.js`, the module the icon set and
+the `HazePlanes` component also read.
 
-All distances are in equal-side lengths, `s`.
+`W` is the front triangle's width, one design box, 1000.
 
-|                                      |                                                                           |
-| ------------------------------------ | ------------------------------------------------------------------------- |
-| Camera to front triangle             | **6s**                                                                    |
-| Spacing between triangles            | **1s**                                                                    |
-| Camera offset, right of the row axis | **1.90s** (17.6° off axis)                                                |
-| Camera height                        | **on the centroid line** — the row is level, neither climbing nor falling |
-| Front triangle's angular size        | 9.53° — a long lens, which is why the recession is calm                   |
+|                                    |                                                                                          |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| Planes                             | **4**, the front triangle included                                                       |
+| Depth, the last triangle's size    | **2/3** of the front                                                                     |
+| Radius, the last centroid's offset | **0.6333 W** to the right of the front's; the row is level, neither climbing nor falling |
+| Angle                              | **0°**, rightward                                                                        |
+| Perspective                        | **1/6** — the middle triangles sit at 3/7 and 3/4 of the way, not 1/3 and 2/3            |
 
-### 6.3 What the projection gives
+Plane k is the front triangle scaled about its own centroid by `S_k` and moved
+`d_k` to the right, where `f(k) = (1 − 1/(1 + k/6)) / (1 − 1/(1 + 3/6))`:
 
-`S_k = 6s / (6s + k·1s)`, so the four scales are exactly **1 : 6/7 : 3/4 : 2/3**.
-The steps are 0.857, 0.875, 0.889 — decelerating, which is the signature of real
-perspective rather than a geometric series.
+    S_k = 1 − (1 − 2/3) · f(k)        d_k = 0.6333 W · f(k)
+
+**Why 1/6.** Perspective 0 is equal steps, the non-arbitrary value. It was not
+taken because the row reads as an even echo rather than a recession. A sweep
+from 0 to 1/3 on the icon at 32 to 400 px fixed the band by this rule: the last
+step no shorter than half the first, or the tail clusters into one smear at
+32 px; no longer than three quarters, or the echo returns. That is perspective
+0.10 to 0.23. 1/6 sits inside it, gives the sizes their exact fractions below,
+and is the foreshortening the old camera had, so nothing shipped moved when
+the model changed.
+
+### 6.3 What the row gives
+
+The four sizes are exactly **1 : 6/7 : 3/4 : 2/3** and the centroid steps are
+in the ratio **3 : 2.25 : 1.75** (271 : 203 : 158 units) — decelerating, the
+look of a real recession, here by choice rather than by projection.
 
 | k   | side     | centroid x | centroid y | corner r |
 | --- | -------- | ---------- | ---------- | -------- |
-| 0   | 1000.000 | −1300.000  | 0          | 20.000   |
-| 1   | 857.143  | −1114.286  | 0          | 17.143   |
-| 2   | 750.000  | −975.000   | 0          | 15.000   |
-| 3   | 666.667  | −866.667   | 0          | 13.333   |
+| 0   | 1000.000 | 0          | 0          | 20.000   |
+| 1   | 857.143  | 271.429    | 0          | 17.143   |
+| 2   | 750.000  | 475.000    | 0          | 15.000   |
+| 3   | 666.667  | 633.333    | 0          | 13.333   |
 
-Artwork bounds `viewBox="-1743.62 -247.71 1247.87 743.14"` — **1.679 : 1**.
+Artwork bounds `viewBox="-443.62 -247.71 1447.87 743.15"` — **1.948 : 1**.
 `cocoon-icon-*-square.svg` squares that canvas **about the front triangle's
 centre** (§6.8), growing the side until every triangle still clears a 60-unit
-margin: `1615.75 × 1615.75`, against `1367.87` when the box was squared about
-its own centre.
+margin: `2015.75 × 2015.75`.
 
 ### 6.4 Corners
 
@@ -554,3 +572,14 @@ collapsing to a smudge at the small end at 1.30 and turning into an echo at
 1 : 6/7 : 3/4 : 2/3; the trail is longer, and the gaps in §6.6 were
 re-derived by the same rule. The icon set moved with it, as §1 of its spec
 requires. The sheets are in `explorations/`.
+
+**2026-09-06.** The camera left the model. Izzy's requirement was enough
+parameters to control the planes and no more; counted as degrees of freedom the
+old scene had a redundant one, since camera distance and plane spacing only
+entered as their ratio, and its offsets were in a unit that misbehaved on
+non-square elements in `HazePlanes`. The row is now stated orthographically
+(§6.2): depth, radius, angle and perspective, plus the count. At perspective
+1/6 it reproduces the old geometry exactly, so every shipped file is the same
+picture; only the coordinates moved, the front centroid now at the origin. The
+§6.3 table had also never been updated for the 1.90 offset. It is now
+generated from the same numbers the build uses.

@@ -3,7 +3,8 @@ import {
   HAZE_CUTS,
   HAZE_DEFAULTS,
   hazeAnalyse,
-  hazeMaxSpacing,
+  hazeMinDepth,
+  hazeProfile,
   hazeResolve,
   hazeShadow,
   hazeTones,
@@ -54,9 +55,38 @@ describe('hazeResolve', () => {
   it('rejects an impossible scene', () => {
     expect(() => hazeResolve({ width: 0 })).toThrow(/width/)
     expect(() => hazeResolve({ planes: 1 })).toThrow(/planes/)
-    expect(() => hazeResolve({ spacing: 0 })).toThrow(/spacing/)
-    expect(() => hazeResolve({ distance: -1 })).toThrow(/distance/)
+    expect(() => hazeResolve({ depth: 0 })).toThrow(/depth/)
+    expect(() => hazeResolve({ depth: 1.5 })).toThrow(/depth/)
+    expect(() => hazeResolve({ radius: -1 })).toThrow(/radius/)
+    expect(() => hazeResolve({ perspective: -1 })).toThrow(/perspective/)
+    expect(() => hazeResolve({ angle: 'left' })).toThrow(/angle/)
     expect(() => hazeResolve({ haze: 1 })).toThrow(/haze/)
+  })
+})
+
+describe('hazeProfile', () => {
+  it('is equal steps at perspective 0 and pinned at both ends', () => {
+    expect([0, 1, 2, 3].map((k) => hazeProfile(k, 4, 0))).toEqual([
+      0,
+      1 / 3,
+      2 / 3,
+      1,
+    ])
+    expect(hazeProfile(0, 4, 0.5)).toBe(0)
+    expect(hazeProfile(3, 4, 0.5)).toBe(1)
+  })
+
+  it('at 1/6 is the camera the old scene had: steps 3/7 : 3/4 : 1', () => {
+    ;[0, 3 / 7, 3 / 4, 1].forEach((v, k) =>
+      expect(hazeProfile(k, 4, 1 / 6)).toBeCloseTo(v, 12),
+    )
+  })
+
+  it('foreshortens more as perspective grows: the last step shrinks', () => {
+    const last = (p) => 1 - hazeProfile(2, 4, p)
+    expect(last(0)).toBeCloseTo(1 / 3, 12)
+    expect(last(1 / 6)).toBeLessThan(last(0))
+    expect(last(1)).toBeLessThan(last(1 / 6))
   })
 })
 
@@ -64,19 +94,32 @@ describe('hazeAnalyse', () => {
   const W = 48
   const a = hazeAnalyse({ width: W })
 
-  it('projects the house scene to 6/7 : 3/4 : 2/3', () => {
-    expect(a.planes.map((p) => p.scale)).toEqual([6 / 7, 3 / 4, 2 / 3])
+  it('sizes the house scene 6/7 : 3/4 : 2/3', () => {
+    a.planes.forEach((p, i) =>
+      expect(p.scale).toBeCloseTo([6 / 7, 3 / 4, 2 / 3][i], 12),
+    )
   })
 
-  it('derives spreads -W/14, -W/8, -W/6 and offsets 1.9W/7, 1.9W/4, 1.9W/3', () => {
+  it('derives spreads -W/14, -W/8, -W/6 and offsets along the profile to radius·W', () => {
     const spreads = a.planes.map((p) => p.spread)
     const offsets = a.planes.map((p) => p.offset)
     ;[-W / 14, -W / 8, -W / 6].forEach((v, i) =>
       expect(spreads[i]).toBeCloseTo(v, 10),
     )
-    ;[(1.9 * W) / 7, (1.9 * W) / 4, (1.9 * W) / 3].forEach((v, i) =>
+    const R = HAZE_DEFAULTS.radius * W
+    ;[(3 / 7) * R, (3 / 4) * R, R].forEach((v, i) =>
       expect(offsets[i]).toBeCloseTo(v, 10),
     )
+    expect(a.planes[2].dx).toBeCloseTo(R, 10)
+    expect(a.planes[2].dy).toBeCloseTo(0, 10)
+  })
+
+  it('turns the row with angle: 90 is straight down, 180 left', () => {
+    const down = hazeAnalyse({ width: W, angle: 90 }).planes[2]
+    expect(down.dx).toBeCloseTo(0, 10)
+    expect(down.dy).toBeCloseTo(HAZE_DEFAULTS.radius * W, 10)
+    const left = hazeAnalyse({ width: W, angle: 180 }).planes[2]
+    expect(left.dx).toBeCloseTo(-HAZE_DEFAULTS.radius * W, 10)
   })
 
   it('is exact on a square with sharp corners', () => {
@@ -94,18 +137,17 @@ describe('hazeAnalyse', () => {
   })
 
   it('is exact at radius 0 and radius W/2, and not between', () => {
-    expect(hazeAnalyse({ width: 240, radius: 0 }).worstError).toBe(0)
-    expect(hazeAnalyse({ width: 240, radius: 120 }).worstError).toBeCloseTo(
-      0,
-      10,
-    )
-    expect(hazeAnalyse({ width: 240, radius: 40 }).worstError).toBeGreaterThan(
-      1,
-    )
+    expect(hazeAnalyse({ width: 240, cornerRadius: 0 }).worstError).toBe(0)
+    expect(
+      hazeAnalyse({ width: 240, cornerRadius: 120 }).worstError,
+    ).toBeCloseTo(0, 10)
+    expect(
+      hazeAnalyse({ width: 240, cornerRadius: 40 }).worstError,
+    ).toBeGreaterThan(1)
   })
 
-  it('hides every plane at cameraX 0.5', () => {
-    const c = hazeAnalyse({ cameraX: 0.5 })
+  it('hides every plane when the radius cannot carry them past the edge', () => {
+    const c = hazeAnalyse({ radius: 0.1 })
     expect(c.hidden).toEqual([1, 2, 3])
     expect(c.ok).toBe(false)
   })
@@ -115,20 +157,18 @@ describe('hazeAnalyse', () => {
   })
 })
 
-describe('hazeMaxSpacing', () => {
-  it('returns the given spacing when the geometry is already clean', () => {
-    expect(hazeMaxSpacing({ width: 48 })).toBe(1)
+describe('hazeMinDepth', () => {
+  it('returns the given depth when the geometry is already clean', () => {
+    expect(hazeMinDepth({ width: 48 })).toBe(HAZE_DEFAULTS.depth)
   })
 
-  it('finds the widest spacing inside the budget otherwise', () => {
-    const opts = { width: 240, radius: 40 }
-    const s = hazeMaxSpacing(opts, 1)
+  it('finds the shallowest depth inside the budget otherwise', () => {
+    const opts = { width: 240, cornerRadius: 40 }
+    const s = hazeMinDepth(opts, 1)
     expect(s).toBeLessThan(1)
-    expect(hazeAnalyse({ ...opts, spacing: s }).worstError).toBeLessThanOrEqual(
-      1,
-    )
+    expect(hazeAnalyse({ ...opts, depth: s }).worstError).toBeLessThanOrEqual(1)
     expect(
-      hazeAnalyse({ ...opts, spacing: s * 1.05 }).worstError,
+      hazeAnalyse({ ...opts, depth: s - 0.05 }).worstError,
     ).toBeGreaterThan(1)
   })
 })
@@ -140,18 +180,24 @@ describe('hazeShadow', () => {
     expect(css).toContain('background: #141414;')
     expect(css.match(/#[0-9A-F]{6}/g)).toHaveLength(4)
     expect(css).toMatch(/13\.0286px 0 0 -3\.4286px #C8C8C8/)
+    expect(hazeShadow({ width: 48, angle: 90, comment: false })).toMatch(
+      /0 13\.0286px 0 -3\.4286px #C8C8C8/,
+    )
   })
 
   it('falls back to the transform stack off square under auto', () => {
     const css = hazeShadow({ width: 240, height: 120, comment: false })
-    expect(css).toContain('transform-origin: 240% 50%')
-    expect(css.match(/transform: scale\(/g)).toHaveLength(3)
+    expect(css).toContain('transform-origin: 50% 50%')
+    expect(css).toMatch(
+      /transform: translate\(65\.1429px, 0\) scale\(0\.857143\)/,
+    )
+    expect(css.match(/ scale\(/g)).toHaveLength(3)
     expect(css).toContain('.haze-content')
   })
 
   it('honours an explicit technique and rejects an unknown one', () => {
     expect(hazeShadow({ technique: 'transform', comment: false })).toContain(
-      'transform: scale(0.857143)',
+      'scale(0.857143)',
     )
     expect(() => hazeShadow({ technique: 'blur' })).toThrow(/unknown technique/)
   })
@@ -165,7 +211,9 @@ describe('hazeShadow', () => {
   it('describes the scene in the header comment', () => {
     const css = hazeShadow({ width: 240, height: 120 })
     expect(css).toMatch(/^\/\* hazePlanes - transform/)
-    expect(css).toContain('4 planes, spacing 1w, distance 6w, cameraX 1.9w')
+    expect(css).toContain(
+      '4 planes, depth 0.666667, radius 0.633333w, angle 0deg, perspective 0.166667',
+    )
     expect(css).toContain('ramp   #141414 -> #C8C8C8 -> #EAEAEA -> #F6F6F6')
   })
 })
