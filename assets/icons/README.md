@@ -46,5 +46,5 @@ Each has a test that makes it fail. The raster test renders every file at 400 px
 
 ## Known gaps
 
-- `launch` does not read as "open" at UI sizes in the alignment row. Redraw or ship as is: undecided.
+- `launch` does not read as "open" at UI sizes in the alignment row. Redraw agreed (Izzy, 2026-09-06); candidates in `explorations/launch.png`, pick pending.
 - Optical sizing is bounding-box sizing. See `assets/README.md`.
