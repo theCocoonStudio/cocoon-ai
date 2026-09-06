@@ -7,35 +7,36 @@ import { HazePlanes, CocoonIcon } from 'cocoon-ai'
 
 <HazePlanes>Heading</HazePlanes>
 <HazePlanes fan><CocoonIcon name="settings" size={48} /></HazePlanes>
-<HazePlanes mode="shadow" cornerRadius={8} style={{ width: 80, height: 80 }}>block</HazePlanes>
-<HazePlanes paint="both" surface="#141414" ink="#FFFFFF"><button>dark button</button></HazePlanes>
+<HazePlanes mode="shadow" style={{ width: 80, height: 80, borderRadius: 8 }}>block</HazePlanes>
+<HazePlanes paint={{ background: true, color: true, border: true }} ink="#FFFFFF"><button>dark button, black border</button></HazePlanes>
 ```
 
 ## Props
 
 The scene, in the util's terms. Defaults are the shipped mark's.
 
-| prop                | default              |                                                                   |
-| ------------------- | -------------------- | ----------------------------------------------------------------- |
-| `planes`            | 4                    | copies, the element's own face included                           |
-| `depth`             | 2/3                  | the last plane's size as a fraction of the face                   |
-| `radius`            | 0.6333               | the last plane's centre from the face's, in element widths        |
-| `angle`             | 0                    | degrees; 0 right, 90 down, as CSS rotates. The mark recedes right |
-| `perspective`       | 1/6                  | foreshortening of the middle planes; 0 is equal steps             |
-| `cut`, `haze`       | `'vapour'`           | `'vapour'` or `'dense'`, or a raw transmittance total             |
-| `surface`, `ground` | `#141414`, `#FFFFFF` | the face's colour and the colour behind the element; hex          |
-| `ink`               | = `ground`           | the content's colour under `paint="both"`; hex                    |
+| prop                | default                                              |                                                                   |
+| ------------------- | ---------------------------------------------------- | ----------------------------------------------------------------- |
+| `planes`            | 4                                                    | copies, the element's own face included                           |
+| `depth`             | 2/3                                                  | the last plane's size as a fraction of the face                   |
+| `radius`            | 0.6333                                               | the last plane's centre from the face's, in element widths        |
+| `angle`             | 0                                                    | degrees; 0 right, 90 down, as CSS rotates. The mark recedes right |
+| `perspective`       | 1/6                                                  | foreshortening of the middle planes; 0 is equal steps             |
+| `cut`, `haze`       | `'vapour'`                                           | `'vapour'` or `'dense'`, or a raw transmittance total             |
+| `surface`, `ground` | `#141414`, `#FFFFFF`                                 | the face's colour and the colour behind the element; hex          |
+| `ink`               | = `ground` when the box is painted, else = `surface` | the content's colour; hex                                         |
+| `borderInk`         | = `surface`                                          | the border's colour; hex                                          |
 
 How it is painted and how it behaves.
 
-| prop                                  | default             |                                                                                                                  |
-| ------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `mode`                                | `'transform'`       | `'transform'`, copies of the children; `'shadow'`, one box-shadow. The old names element, text and box throw     |
-| `paint`                               | `'auto'`            | `'color'`, `'background'` or `'both'`; auto is color. Transform mode only                                        |
-| `cornerRadius`                        | 0                   | any CSS length, a number meaning px; the wrapper's border radius and the shadow geometry's                       |
-| `fan`                                 | `false`             | `true`, or `{ xyz, size }`: planes are transparent at rest and open on hover or focus; see The fan               |
-| `duration`, `easing`                  | `'260ms'`, `'ease'` | the transition; any CSS time and timing function, `ease-in`, `ease-out`, `ease-in-out`, `linear`, a cubic-bezier |
-| `className`, `style`, `ref`, the rest |                     | onto the wrapper `<span>`; `style` merges last                                                                   |
+| prop                                  | default             |                                                                                                                                            |
+| ------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mode`                                | `'transform'`       | `'transform'`, copies of the children; `'shadow'`, one box-shadow. The old names element, text and box throw                               |
+| `paint`                               | `'auto'`            | `{ background, color, border }`, each a boolean, or the shorthands `'color'`, `'background'`, `'both'`; auto is color. Transform mode only |
+| `cornerRadius`                        | `'auto'`            | the wrapper's border radius and the shadow geometry's; auto reads the content's own, a number means px, any CSS length passes through      |
+| `fan`                                 | `false`             | `true`, or `{ xyz, size }`: planes are transparent at rest and open on hover or focus; see The fan                                         |
+| `duration`, `easing`                  | `'260ms'`, `'ease'` | the transition; any CSS time and timing function, `ease-in`, `ease-out`, `ease-in-out`, `linear`, a cubic-bezier                           |
+| `className`, `style`, `ref`, the rest |                     | onto the wrapper `<span>`; `style` merges last                                                                                             |
 
 ## The two mechanisms
 
@@ -45,7 +46,9 @@ How it is painted and how it behaves.
 
 ## Paint
 
-`color` recolours the copy's text and any `currentColor` artwork, which is what `CocoonIcon` files are cut for. `background` fills the copy's box. `both` does both, with two ramps: the box fades from `surface` toward `ground` and the content from `ink` toward `ground`, so a dark button with white text fades as a whole and its text stays legible on its own box. With one ramp the content would take its box's tone and vanish, which is what the first version did.
+A copy has three surfaces, and `paint` says which of them take a tone: its box (`background`), its content (`color`) and its border (`border`). Each has its own ramp toward `ground`: the box from `surface`, the content from `ink`, the border from `borderInk`. `ink` defaults to `surface` when the box is not painted, since content standing alone is the surface, and to `ground` when it is, since the content then contrasts with its box. `borderInk` defaults to `surface`.
+
+The tones land on the copy's wrapper, so the content takes them only where it inherits: text and `currentColor` artwork for the colour, which is what `CocoonIcon` files are cut for; `border-color: inherit` for the border; a transparent or `inherit` background for the box. A child that sets its own colours keeps them on every plane, which is the case the border option exists for: a black-bordered button whose planes kept a black border.
 
 ## The fan
 
@@ -60,4 +63,4 @@ If nothing inside can take focus, the wrapper takes a tab stop, so the fan is re
 
 ## First paint
 
-The element is measured after layout with a ResizeObserver, because `radius` is in element widths. Before the first measurement there are no planes; they appear on the next paint and follow every resize, font swap and container query. Server markup carries no planes.
+The element is measured after layout with a ResizeObserver, because `radius` is in element widths; the content's border radius is read at the same time for `cornerRadius: 'auto'`, which only shadow mode uses. Before the first measurement there are no planes; they appear on the next paint and follow every resize, font swap and container query. Server markup carries no planes.

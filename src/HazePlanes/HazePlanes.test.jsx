@@ -129,6 +129,48 @@ describe('HazePlanes markup', () => {
     expect(tones[3]).toBe('#F4F4F4')
   })
 
+  it('markup.5 paint as an object: border takes the border ramp from borderInk, default the surface', async () => {
+    const c = render(
+      <HazePlanes
+        paint={{ background: true, color: true, border: true }}
+        surface='#141414'
+        ground='#FFFFFF'
+      >
+        <button style={{ border: '1px solid', borderColor: 'inherit' }}>
+          b
+        </button>
+      </HazePlanes>,
+    )
+    await measure(W, H)
+    const near = copies(root(c))[2]
+    const box = hazeTones({ planes: 4, cut: 'vapour' })
+    const rgb = (hex) =>
+      `rgb(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)})`
+    expect(near.style.borderColor).toBe(rgb(box[1]))
+    expect(near.style.background).toBe(rgb(box[1]))
+    expect(near.style.color).toBe('rgb(255, 255, 255)')
+    cleanup()
+    const d = render(
+      <HazePlanes paint={{ border: true }} borderInk='#0000AA' ground='#FFFFFF'>
+        b
+      </HazePlanes>,
+    )
+    await measure(W, H)
+    const far = copies(root(d))[0]
+    const border = hazeTones({
+      planes: 4,
+      cut: 'vapour',
+      surface: '#0000AA',
+      ground: '#FFFFFF',
+    })
+    expect(far.style.borderColor).toBe(rgb(border[3]))
+    expect(far.style.background).toBe('')
+    expect(far.style.color).toBe('')
+    expect(() => HazePlanes({ paint: 'edges', children: 'x' })).toThrow(
+      /paint="edges"/,
+    )
+  })
+
   it('markup.6 paint both: box from the surface ramp, content from the ink ramp, so they differ', async () => {
     const c = render(
       <HazePlanes paint='both' surface='#141414' ink='#FFFFFF' ground='#888888'>
@@ -192,7 +234,7 @@ describe('HazePlanes markup', () => {
     expect(root(c).style.transitionProperty).toBe('')
   })
 
-  it('props.13 cornerRadius: a number is px, a string passes through, and it reaches the shadow geometry', async () => {
+  it('props.13 cornerRadius: a number is px, a string passes through, auto reads the content when measured', async () => {
     let c = render(<HazePlanes cornerRadius={8}>x</HazePlanes>)
     expect(root(c).style.borderRadius).toBe('8px')
     cleanup()
@@ -202,6 +244,17 @@ describe('HazePlanes markup', () => {
       </HazePlanes>,
     )
     expect(root(c).style.borderRadius).toBe('50%')
+    cleanup()
+    c = render(
+      <HazePlanes mode='shadow'>
+        <div style={{ borderRadius: '12px' }}>x</div>
+      </HazePlanes>,
+    )
+    expect(root(c).style.borderRadius).toBe('')
+    await measure(80, 80)
+    expect(root(c).style.borderRadius).toBe('12px')
+    const p = hazeAnalyse({ width: 80, height: 80, cornerRadius: 12 })
+    expect(p.worstError).toBeGreaterThan(0) // 12 px of corner off a square is not exact
   })
 })
 

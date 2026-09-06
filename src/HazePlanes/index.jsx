@@ -40,6 +40,23 @@ const cssLength = (v) =>
 // without layout counts as 0.
 const px = (v) => (typeof v === 'number' ? v : parseFloat(v) || 0)
 
+// Which of a copy's surfaces take a tone. Strings are shorthands.
+const PAINTS = {
+  auto: { color: true },
+  color: { color: true },
+  background: { background: true },
+  both: { background: true, color: true },
+}
+const resolvePaint = (p) => {
+  if (p && typeof p === 'object')
+    return { background: !!p.background, color: !!p.color, border: !!p.border }
+  if (!(p in PAINTS))
+    throw new Error(
+      `HazePlanes: paint="${p}" is not one of ${Object.keys(PAINTS).join(', ')} or { background, color, border }.`,
+    )
+  return { background: false, color: false, border: false, ...PAINTS[p] }
+}
+
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const DEV = process.env.NODE_ENV !== 'production'
 
@@ -54,10 +71,11 @@ const DEV = process.env.NODE_ENV !== 'production'
  * @param {number} [props.haze] overrides the cut's total
  * @param {string} [props.surface] hex, the face's colour; default '#141414'
  * @param {string} [props.ground] hex, the colour behind the element; default '#FFFFFF'
- * @param {string} [props.ink] hex, the content's colour under paint 'both'; default ground
+ * @param {string} [props.ink] hex, the content's colour; default ground when the box is painted, surface otherwise
+ * @param {string} [props.borderInk] hex, the border's colour; default surface
  * @param {'transform'|'shadow'} [props.mode] default 'transform'
- * @param {'auto'|'background'|'color'|'both'} [props.paint] transform mode only; default 'auto', which is 'color'
- * @param {number|string} [props.cornerRadius] border radius of the wrapper and the shadow geometry; default 0
+ * @param {'auto'|'background'|'color'|'both'|{background?: boolean, color?: boolean, border?: boolean}} [props.paint] which of a copy's box, content and border take a tone; default 'auto', which is { color: true }. Transform mode only
+ * @param {'auto'|number|string} [props.cornerRadius] border radius of the wrapper and the shadow geometry; 'auto' reads the content's; default 'auto'
  * @param {false|true|{xyz?: boolean, size?: 'grow'|'shrink'|false}} [props.fan] planes are transparent at rest and open on hover or focus; true is { xyz: true, size: 'shrink' }; default false
  * @param {string} [props.duration] CSS time; default '260ms'
  * @param {string} [props.easing] CSS timing function; default 'ease'
@@ -74,9 +92,10 @@ export function HazePlanes({
   surface = '#141414',
   ground = '#FFFFFF',
   ink,
+  borderInk,
   mode = 'transform',
   paint = 'auto',
-  cornerRadius = 0,
+  cornerRadius = 'auto',
   fan = false,
   duration = '260ms',
   easing = 'ease',
@@ -89,6 +108,7 @@ export function HazePlanes({
   ...rest
 }) {
   const mech = resolveMode(mode)
+  const painted = resolvePaint(paint)
   const fanOn = fan === true || (fan && typeof fan === 'object')
   const fanXyz = fanOn ? (fan === true ? true : (fan.xyz ?? true)) : false
   const fanSize = fanOn
@@ -100,7 +120,7 @@ export function HazePlanes({
     : false
   const fanWhere = fanOn ? `${fanXyz ? 'xyz' : ''}:${fanSize || ''}` : null
   const ref = useRef(null)
-  const [box, setBox] = useState({ width: 0, height: 0 })
+  const [box, setBox] = useState({ width: 0, height: 0, cornerRadius: 0 })
   const [open, setOpen] = useState(false)
   const [needsFocus, setNeedsFocus] = useState(false)
   const [reduced, setReduced] = useState(false)
@@ -121,7 +141,16 @@ export function HazePlanes({
     if (!el || typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(([e]) => {
       const r = e.contentRect
-      setBox({ width: r.width, height: r.height })
+      // The content's own corner, read here so cornerRadius 'auto' follows
+      // the child without being told. The content span is the last child.
+      const inner = el.lastElementChild?.firstElementChild
+      const cr =
+        inner && typeof getComputedStyle === 'function'
+          ? parseFloat(getComputedStyle(inner).borderTopLeftRadius) ||
+            parseFloat(getComputedStyle(inner).borderRadius) ||
+            0
+          : 0
+      setBox({ width: r.width, height: r.height, cornerRadius: cr })
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -158,6 +187,7 @@ export function HazePlanes({
   }, [])
 
   const ready = box.width > 0
+  const corner = cornerRadius === 'auto' ? box.cornerRadius : cornerRadius
   const scene = ready
     ? hazeAnalyse({
         planes,
@@ -170,19 +200,24 @@ export function HazePlanes({
         ground,
         width: box.width,
         height: box.height,
-        cornerRadius: px(cornerRadius),
+        cornerRadius: px(corner),
       })
     : null
-  const painted = paint === 'auto' ? 'color' : paint
-  const inkTones =
-    scene && mech === 'transform' && painted === 'both'
+  const ramp = (near) =>
+    scene && mech === 'transform'
       ? hazeTones({
           planes,
           ...(haze == null ? { cut } : { haze }),
-          surface: ink ?? ground,
+          surface: near,
           ground,
         })
       : null
+  // Content that stands alone is the surface; content on a painted box
+  // contrasts with it, so it ramps from the ground unless told otherwise.
+  const inkTones = painted.color
+    ? ramp(ink ?? (painted.background ? ground : surface))
+    : null
+  const borderTones = painted.border ? ramp(borderInk ?? surface) : null
 
   // effects.4
   useLayoutEffect(() => {
@@ -218,7 +253,7 @@ export function HazePlanes({
   const wrapper = {
     position: 'relative',
     display: 'inline-block',
-    borderRadius: cssLength(cornerRadius),
+    borderRadius: cssLength(corner),
     ...(mech === 'shadow' && scene
       ? { background: scene.tones[0], boxShadow: shadow }
       : null),
@@ -248,13 +283,11 @@ export function HazePlanes({
                 transitionProperty: 'transform, opacity',
                 transitionDuration: time,
                 transitionTimingFunction: easing,
-                ...(painted === 'color' ? { color: scene.tones[p.k] } : null),
-                ...(painted === 'background'
+                ...(painted.background
                   ? { background: scene.tones[p.k] }
                   : null),
-                ...(painted === 'both'
-                  ? { background: scene.tones[p.k], color: inkTones[p.k] }
-                  : null),
+                ...(painted.color ? { color: inkTones[p.k] } : null),
+                ...(painted.border ? { borderColor: borderTones[p.k] } : null),
               }}
             >
               {children}
