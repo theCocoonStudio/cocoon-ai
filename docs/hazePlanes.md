@@ -1,51 +1,55 @@
 # hazePlanes
 
-`src/utils/hazePlanes.js`. The cocoon four-plane recession as a scene, and the CSS that expresses it. React-free. Not exported from the package; `HazePlanes` and the asset generators import it directly.
+`src/utils/hazePlanes.js`. The cocoon plane recession as a scene, and the CSS that expresses it. React-free. Not exported from the package; `HazePlanes` and the asset generators import it directly.
 
-The logo, the icon set and the `HazePlanes` component all draw the same picture: a row of identical copies standing one behind another, seen by a shift camera off to one side, through haze. This module holds that scene once. The constants in `HAZE_DEFAULTS` and `HAZE_CUTS` are the ones the logo spec derives; change them here and the assets rebuild differently, which their tests will say.
+The logo, the icon set and the `HazePlanes` component all draw the same picture: a row of copies of a shape standing behind it, each a step smaller and a step further along one direction, seen through haze. This module holds that scene once. The constants in `HAZE_DEFAULTS` and `HAZE_CUTS` are the ones the logo spec derives; change them here and the assets rebuild differently, which their tests will say.
 
 ## The model
 
-Every input names something in the scene. Nothing is a CSS quantity.
+There is no camera. The picture is orthographic: the shrinking is in the world, and the steps are where the parameters put them. Four numbers and a count reach every output, and none of them is redundant. That is the whole reason for this parametrisation; the one before it had two numbers, a camera distance and a plane spacing, that only ever entered as their ratio.
 
 ```
-S_k    = distance / (distance + k · spacing)     projected size of plane k
-spread = -(1 - S_k) · width / 2                  shrink the box
-offset =  cameraX · (1 - S_k) · width            slide it toward the axis
-L_k    = L_surface · T^k + L_ground · (1 - T^k)  mixed in linear light
+f(k)   = (1 - 1/(1 + k·p)) / (1 - 1/(1 + (n-1)·p))    where plane k sits, 0 at the face, 1 at the last
+         k / (n-1) when p = 0
+S_k    = 1 - (1 - depth) · f(k)                        size of plane k, as a fraction of the face
+d_k    = radius · f(k) · width                         its centre's displacement from the face's
+spread = -(1 - S_k) · width / 2                        the same size change as a box-shadow spread
+L_k    = L_surface · T^k + L_ground · (1 - T^k)        tone, mixed in linear light
 T      = haze^(1 / (planes - 1))
 ```
 
-Distances are in element widths, so a scene survives any resize. At the house scene the scales are exactly 1 : 6/7 : 3/4 : 2/3.
+`radius` is in element widths, so a scene survives any resize. Every plane is the face scaled about its own centre and moved along `angle`.
 
-| lever                       | default                               | reach for it when                                                |
-| --------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
-| `planes`                    | 4                                     | more or fewer copies                                             |
-| `spacing`                   | 1                                     | too flat or too busy                                             |
-| `distance`                  | 6                                     | the first step swamps the rest                                   |
-| `cameraX`                   | 1.9                                   | copies barely peek out, or crowd. Must exceed 0.5 for box-shadow |
-| `haze` or `cut`             | `vapour` (0.275²), or `dense` (0.15²) | fade too fast or too slow                                        |
-| `surface`, `ground`         | `#141414`, `#FFFFFF`                  | the element and the real colour behind it                        |
-| `width`, `height`, `radius` | 48, = width, 0                        | the subject, in px                                               |
+| parameter                         | default                               | what it moves                                                                                                                                                    |
+| --------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `planes`                          | 4                                     | how many copies, the element's own face included                                                                                                                 |
+| `depth`                           | 2/3                                   | the last plane's size as a fraction of the face; the planes between step evenly toward it                                                                        |
+| `radius`                          | 0.6333                                | the last plane's centre from the face's centre, in widths                                                                                                        |
+| `angle`                           | 0                                     | which way, degrees: 0 right, 90 down, as CSS rotates                                                                                                             |
+| `perspective`                     | 1/6                                   | how the middle planes are spaced: 0 is equal steps; larger foreshortens, near steps long and far ones short, along the hyperbola a camera would give. One number |
+| `haze` or `cut`                   | `vapour` (0.275²), or `dense` (0.15²) | how much of the surface is left at the last plane; a cut names a preset                                                                                          |
+| `surface`, `ground`               | `#141414`, `#FFFFFF`                  | the element and the real colour behind it                                                                                                                        |
+| `width`, `height`, `cornerRadius` | 48, = width, 0                        | the subject, in px; the corner radius is the box-shadow fidelity question below                                                                                  |
+
+**Why these defaults.** `depth` 2/3 and `radius` 0.6333 are the last plane of the shipped mark: the camera the old model had at 6 shape-widths' distance and 1.90 widths' offset put the fourth triangle exactly there. `perspective` 1/6 is that camera's foreshortening, and it was kept after a sweep from 0 to 1/3 on the logo icon at 32 to 400 px, by this rule: the last step should be no shorter than half the first, or the tail clusters into one smear at 32 px, and no longer than three quarters, or the row reads as an even echo rather than a recession. That band is perspective 0.10 to 0.23; at 1/6 the last step is 0.58 of the first. At 1/6 the sizes are exactly 1 : 6/7 : 3/4 : 2/3 and the steps 3/7 : 3/4 : 1 of the radius.
 
 ## API
 
 - `hazeResolve(opts)` fills defaults and validates. `cut` sets `haze` by name.
+- `hazeProfile(k, planes, perspective)` is `f(k)` above.
 - `hazeTones(opts)` returns one hex per plane, near plane first, mixed in linear light.
-- `hazeAnalyse(opts)` returns per-plane `scale`, `offset`, `spread`, the two box-shadow errors, `clears`, plus `tones`, `worstError`, `hidden` and `ok`.
-- `hazeMaxSpacing(opts, px)` returns the widest spacing whose worst box-shadow error stays within a pixel budget.
-- `hazeShadow(opts)` returns CSS text: a `box-shadow` rule where the geometry supports it within `tolerance`, otherwise a transform stack with markup in a comment. `technique`, `selector`, `responsive`, `precision` and `comment` shape the output.
+- `hazeAnalyse(opts)` returns per-plane `scale`, `offset`, `dx`, `dy`, `spread`, the box-shadow errors, which planes are hidden under the element, and `ok`.
+- `hazeMinDepth(opts, px)` returns the shallowest depth whose worst box-shadow error stays within a pixel budget.
+- `hazeShadow(opts)` returns CSS text: a `box-shadow` rule where the geometry supports it within `tolerance`, the transform stack otherwise, or either on request via `technique`. `responsive` emits lengths as `calc(var(--haze-w) * k)`. `comment: false` drops the header.
 
 ## Why box-shadow is an approximation
 
-A plane is the element scaled about the camera's principal point. A `box-shadow` spread is a uniform outset. They coincide only where an outset is a scale: on a square with sharp corners, or a full circle. Off square the far plane is short by `(1 - S)·|W - H|`; between `r = 0` and `r = W/2` the corner radius is wrong, worst near `W/6`. Both errors are proportional to `spacing`, so pulling the row together makes them small without making them go away. `hazeAnalyse` reports them; `hazeShadow` under `auto` switches to the transform stack when they exceed `tolerance`.
-
-The transform stack has no `z-index`, deliberately. Pushing copies behind the element with a negative z-index fails two opposite ways depending on whether an ancestor isolates; siblings in back-to-front DOM order fail neither way.
+A plane is the element scaled about its own centre. A `box-shadow` spread is a uniform outset. They coincide only on a square with sharp corners, or a full circle. Off square the far plane is `(1 - S)·|W - H|` px wrong; with a corner radius between 0 and `W/2` the corners are wrong by `|S·r - max(0, r + spread)|`. `hazeAnalyse` reports both, `hazeShadow` picks the transform stack when they exceed `tolerance`, and the header comment says which it chose and why. The transform stack is exact for any shape and costs `planes - 1` extra elements.
 
 ## Tests
 
-`hazePlanes.test.js` pins the four house ramps to the logo spec's tables, the closed-form geometry at the house scene, the two exact box-shadow conditions, the hidden-plane rule at `cameraX` 0.5, the spacing search, and the shape of both CSS outputs. The port was also checked byte for byte against the original generator across ten option sets before it replaced it.
+`hazePlanes.test.js` pins the four house ramps to the logo spec's tables, the profile at 0 and at 1/6, the closed-form geometry at the house scene, the angle convention, the two exact box-shadow conditions, the hidden-plane rule, the depth search, and the shape of both CSS outputs. The first port of this module was checked byte for byte against the original generator across ten option sets; this model replaced that one on 2026-09-06 and reproduces its geometry at perspective 1/6.
 
 ## Ahead
 
-- A three.js playground for the scene: the same parameters driving real planes and a real camera, so the CSS and the render can be compared side by side. Replaces the old HTML sliders page, which was not carried over.
+- A three.js playground for the scene: the four sliders live, on real content, so a change can be seen before it is committed. The old HTML sliders page was not carried over.

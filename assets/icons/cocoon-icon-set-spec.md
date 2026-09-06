@@ -29,25 +29,27 @@ consistent scale works; only the ratios matter.
 
 ## 1. The scene, collapsed
 
-The logo's icon is four congruent triangles in a row seen through a shift
-camera. Because the image plane is held parallel to the subjects, the whole
-projection reduces to a similarity transform about one point, and that is the
-only thing a new shape has to obey:
+The logo's icon is four triangles in a row, each a step smaller and a step
+further along than the one in front, with no camera: the picture is
+orthographic and the whole row is a similarity transform of the front shape,
+and that is the only thing a new shape has to obey:
 
-> Put the front shape's **area centroid** at `(−1.90 W, 0)`, where `W` is the
-> shape's own projected width.
-> Plane _k_ is the whole front shape **scaled about the origin `(0, 0)`** by
+> Put the front shape's **area centroid** at the origin. Plane _k_ is the
+> whole front shape **scaled about its own centroid** by `S_k` and moved
+> `d_k` along the angle, where `W` is the shape's own width and
+> `f(k) = (1 − 1/(1 + k·p)) / (1 − 1/(1 + 3p))` at perspective `p = 1/6`:
 
-    S_k = D / (D + k·d)  with D = 6s, d = 1s   →   1 : 6/7 : 3/4 : 2/3
+    S_k = 1 − (1 − 2/3) · f(k)   →   1 : 6/7 : 3/4 : 2/3
+    d_k = 0.6333 W · f(k)        →   0 : 0.271 W : 0.475 W : 0.633 W
 
-The origin is the camera's principal point; the row axis sits **1.90 shape
-widths** left of it. Three consequences worth stating, because they are what
-makes the set cohere:
+The four numbers — depth 2/3, radius 0.6333 W, angle 0°, perspective 1/6 —
+live in `src/utils/hazePlanes.js` and the logo spec §6.2 says why each has
+its value. Three consequences worth stating, because they are what makes the
+set cohere:
 
 - **The recession is purely horizontal.** All four centroids share the line
-  `y = 0`, so nothing climbs or falls. The first step is `1.90 W · (1 − 6/7)`;
-  the steps decelerate in the ratio 186 : 139 : 108 — the signature of real
-  perspective rather than a geometric series.
+  `y = 0`, so nothing climbs or falls. The steps decelerate in the ratio
+  271 : 203 : 158 — the look of a real recession, by choice.
 - **Every plane is congruent to the front one.** Planes are never redrawn,
   restyled, or nudged. If a plane looks wrong, the front shape is wrong.
 - **The spread is always 63% of the front shape's own width.** This is the one
@@ -59,24 +61,26 @@ makes the set cohere:
   _relative_ spread instead. The logo's triangle is exactly one box wide, so it
   is untouched — nothing about the mark changes.
 
-### 1.1 Mirroring the camera
+### 1.1 Turning the row
 
-`mirror=True` puts the camera the same distance to the **left** of the row, so
-the planes recede leftward. It is the identical scene seen from the other side;
-no shape is redrawn.
+`angle: 180` sends the planes **leftward**. It is the identical row mirrored;
+no shape is redrawn. (Until 2026-09-06 this was `mirror=True`, a camera on the
+other side of the row; the row has no camera now, and the option is the angle
+every scene carries.)
 
 Use it for shapes that point left. Left-pointing artwork under the default
-camera has its rear planes emerge _past the tail_ as fletching — legible, but
+angle has its rear planes emerge _past the tail_ as fletching — legible, but
 the depth reads as texture rather than distance. `arrow-left` therefore carries
-`mirror=True`.
+`angle: 180`.
 
-**It no longer changes the shipped file.** `mirror` moves the camera, and the
-camera is exactly what front-face-only output discards: plane 0 stays congruent,
-so the two cuts serialise byte-for-byte identical once the trail is gone. The old
-`arrow-left-camright` entry was therefore dropped from `SET` — it was a second
-name for one picture. The flag stays, because it still governs the haze render,
-which is what a shape is judged against. The build refuses to ship two names for
-one picture (§7), which is how this was caught rather than shipped.
+**It does not change the shipped file.** The angle only moves the planes
+behind, which is exactly what front-face-only output discards: plane 0 stays
+congruent, so the two cuts serialise byte-for-byte identical once the trail is
+gone. The old `arrow-left-camright` entry was therefore dropped from `SET` — it
+was a second name for one picture. The option stays, because it still governs
+the haze render, which is what a shape is judged against. The build refuses to
+ship two names for one picture (§7), which is how this was caught rather than
+shipped.
 
 **Where the fletching goes instead.** The effect was worth keeping, and now that
 the haze is applied downstream it belongs there: the React haze component takes
@@ -398,7 +402,7 @@ Current set — 13 icons, 26 files: `arrow-left`, `arrow-right`, `arrow-up`,
 `search`, `account`.
 
 `SET` maps each name to `(shape function, engine options)` — the options dict is
-where `mirror` and any future per-icon override live.
+where `angle` and any future per-icon override live.
 
 ## 9. Adding an icon
 
@@ -428,8 +432,8 @@ prefer removing material from a solid to assembling thin strokes.
 | icon                      | note                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `arrow-right`             | The rear heads trail off to the right as a chevron echo — the best case the system has                                                                                                                                                                                                                                                                                 |
-| `arrow-left`              | Mirrored camera (§1.1), so it recedes leftward and reads as the exact counterpart of `arrow-right` under the haze. Front-face only it is `arrow-right` mirrored, which is why the old `arrow-left-camright` entry is gone                                                                                                                                              |
-| `arrow-up` / `scroll-top` | The two narrow shapes in the set, and the two whose tight box is taller than wide, and the reason §1's offset is measured in shape widths. `scroll-top` is the up arrow under a rule; the rule is exactly as wide as the arrowhead and sits within 0.6 stroke of it, so the pair recedes as one object. Use `arrow-up` where a plain direction is meant                |
+| `arrow-left`              | Angle 180 (§1.1), so it recedes leftward and reads as the exact counterpart of `arrow-right` under the haze. Front-face only it is `arrow-right` mirrored, which is why the old `arrow-left-camright` entry is gone                                                                                                                                                    |
+| `arrow-up` / `scroll-top` | The two narrow shapes in the set, and the two whose tight box is taller than wide, and the reason §1's radius is measured in shape widths. `scroll-top` is the up arrow under a rule; the rule is exactly as wide as the arrowhead and sits within 0.6 stroke of it, so the pair recedes as one object. Use `arrow-up` where a plain direction is meant                |
 | `menu` / `toc`            | Both are rule stacks; the markers are what keep `toc` from reading as `menu` at small sizes                                                                                                                                                                                                                                                                            |
 | `settings`                | Gear teeth are straight-sided and the valleys are stepped along the root circle, so every corner is a real corner the fillet can take                                                                                                                                                                                                                                  |
 | `info`                    | Filled disc with the _i_ knocked out. The counter shows the plane behind, which an outline ring would not                                                                                                                                                                                                                                                              |

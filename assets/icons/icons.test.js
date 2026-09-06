@@ -61,13 +61,31 @@ describe('the shipped files, rendered', () => {
 })
 
 describe('the engine', () => {
-  it('projects to 1 : 6/7 : 3/4 : 2/3', () => {
-    expect(H.scales()).toEqual([1, 6 / 7, 3 / 4, 2 / 3])
+  it('sizes the planes 1 : 6/7 : 3/4 : 2/3 and spaces them along the profile', () => {
+    H.scales().forEach((s, i) =>
+      expect(s).toBeCloseTo([1, 6 / 7, 3 / 4, 2 / 3][i], 12),
+    )
+    H.shifts().forEach((d, i) =>
+      expect(d).toBeCloseTo(H.RADIUS * [0, 3 / 7, 3 / 4, 1][i], 12),
+    )
   })
 
-  it('puts every plane centroid on one level line', () => {
-    for (const { elems } of H.place(settings()))
+  it('puts every plane centroid on one level line, the front at the origin', () => {
+    const planes = H.place(settings())
+    expect(H.centroid(planes[0].elems)[0]).toBeCloseTo(0, 6)
+    for (const { elems } of planes)
       expect(H.centroid(elems)[1]).toBeCloseTo(0, 6)
+  })
+
+  it('angle 180 recedes leftward: the mirror image of angle 0', () => {
+    const right = H.place(settings())
+    const left = H.place(settings(), { angle: 180 })
+    right.forEach((p, i) =>
+      expect(H.centroid(left[i].elems)[0]).toBeCloseTo(
+        -H.centroid(p.elems)[0],
+        6,
+      ),
+    )
   })
 
   it('measures the drawn outline, not the polygon', () => {
