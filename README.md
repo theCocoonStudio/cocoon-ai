@@ -4,13 +4,22 @@ Component and utility library for the [Cocoon](https://github.com/theCocoonStudi
 
 Built with Vite in library mode. Plain JavaScript, ESM output. Every runtime dependency the site provides (`react`, `react-dom`, `three`, `@react-three/*`, `maath`, `tunnel-rat`, `@pmndrs/assets`) is a peer dependency and is never bundled.
 
-```bash
-npm run build         # emit dist/index.js (minified, sourcemaps carry source)
-npm run dev           # rebuild on change
-npm test              # vitest, once (npm run test:watch to keep it running)
-npm run lint          # eslint
-npm run format        # prettier
-```
+## Scripts
+
+Every `package.json` script, what it does, and where to read more.
+
+| script                                   | does                                                                                                                   | more                                             |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `npm run build`                          | emit `dist/index.js`, minified, sourcemaps carrying source                                                             |                                                  |
+| `npm run dev`                            | the build, rerun on change                                                                                             |                                                  |
+| `npm test`                               | vitest, once                                                                                                           |                                                  |
+| `npm run test:watch`                     | vitest, kept running                                                                                                   |                                                  |
+| `npm run lint`, `npm run lint:fix`       | eslint, report or fix                                                                                                  |                                                  |
+| `npm run format`, `npm run format:check` | prettier, write or check                                                                                               |                                                  |
+| `npm run assets`                         | rebuild every shipped asset: the icon set, then the logo                                                               | [assets/README.md](assets/README.md)             |
+| `npm run assets:icons`                   | the 26 icon SVGs and their contact sheet, with the five build guards                                                   | [assets/icons/README.md](assets/icons/README.md) |
+| `npm run assets:logo`                    | the mark, favicons, wordmark, lockups and PNG previews; refuses if the four plain icons or the spec's tier table drift | [assets/logo/README.md](assets/logo/README.md)   |
+| `npm run export:logo -- [params]`        | the mark or lockup at chosen scene values, plus a sheet of neighbours around each value                                | [docs/export-logo.md](docs/export-logo.md)       |
 
 Components are general React 19: nothing in `src/` assumes a bundler. Anything a bundler would normally supply (env values, asset URLs, lazy imports) arrives as an input. The build stamps `"use client"` onto `dist/index.js` so a Next consumer gets a client boundary and a Vite consumer ignores it.
 
