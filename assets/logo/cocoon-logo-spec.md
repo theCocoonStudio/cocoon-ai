@@ -271,23 +271,26 @@ absorbs that radiance and substitutes its own:
 The mix is done in **linear light** and only then encoded to sRGB — compositing
 in gamma space is the usual reason distant objects come out too dark.
 
-`T` is derived, not chosen. The row's **total** haze is held at the value the
-earlier three-triangle mark carried, so the front and back triangles keep
-exactly the tones they had and the atmosphere is simply thinned to spread that
-total over three gaps instead of two:
+`T` is derived, not chosen. The row's **total** haze is the stated number and
+the atmosphere spreads it evenly over the three gaps:
 
-    T = (T_old²)^(1/3)      vapour: 0.275² → T = 0.422885
+    T = T_total^(1/3)       vapour: 0.10   → T = 0.464159
                             dense:  0.15²  → T = 0.282311
+
+Vapour was 0.275² = 0.0756 until 2026-09-06, the total the earlier
+three-triangle mark carried; Izzy raised it to 0.10 on Claude's read of a
+sheet at 32 to 600 px, so the fourth plane reads at 32 px in the lockup instead
+of vanishing below 64. Dense is unchanged.
 
 | cut                  | haze      | T      | k=0       | k=1       | k=2       | k=3       |
 | -------------------- | --------- | ------ | --------- | --------- | --------- | --------- |
-| **vapour** (default) | `#FFFFFF` | 0.4229 | `#141414` | `#C8C8C8` | `#EAEAEA` | `#F6F6F6` |
-| vapour reversed      |           |        | `#FFFFFF` | `#AFAFAF` | `#777777` | `#515151` |
+| **vapour** (default) | `#FFFFFF` | 0.4642 | `#141414` | `#C2C2C2` | `#E5E5E5` | `#F4F4F4` |
+| vapour reversed      |           |        | `#FFFFFF` | `#B6B6B6` | `#818181` | `#5C5C5C` |
 | **dense**            | `#E8E8E8` | 0.2823 | `#141414` | `#C9C9C9` | `#E0E0E0` | `#E6E6E6` |
 | dense reversed       |           |        | `#E8E8E8` | `#858585` | `#4B4B4B` | `#2C2C2C` |
 
-Vapour's back triangle at `#F6F6F6` is deliberately at the edge of visibility:
-it reads on a white screen and disappears anywhere else. **Use dense for print,
+Vapour's back triangle at `#F4F4F4` is close to the edge of visibility: it
+reads on a white screen and disappears anywhere else. **Use dense for print,
 for off-white grounds, and below about 32 px.**
 
 ### 6.6 Lockup
@@ -308,7 +311,7 @@ wordmark's own units, so the rule survives any rescaling.
    what reads as the mark, so if that distance drifts, the three icon sizes are
    not the same lockup at three scales.
 2. The **nearest ink** must not crowd the wordmark. The trail is faint but not
-   invisible — the second plane is `#C8C8C8` on white — and a pale wedge close
+   invisible — the second plane is `#C2C2C2` on white — and a pale wedge close
    to a letterform reads as a collision.
 
 They conflict because the trail's length _in stems_ scales with the icon:
@@ -430,7 +433,7 @@ So they change if:
 - **a larger icon size is added.** `TRAIL_WORST` scales linearly with icon size;
   a 1.20× tier would put it at 2.961 and push every gap up a quarter stem.
 - **the haze gets denser.** The floor exists because the second plane is
-  `#C8C8C8` and visible. A thicker atmosphere makes it fainter and the floor
+  `#C2C2C2` and visible. A thicker atmosphere makes it fainter and the floor
   could fall; a thinner one makes it darker and the floor must rise.
 - **the number of planes changes.** Four planes set the trail at 0.248 of the
   mark's width; three or five would change it and `TRAIL_WORST` with it.
@@ -461,7 +464,7 @@ heavier separation — rather than this artwork scaled down.
 
 **Anything that centres or spaces the mark anchors on the front triangle.** The
 four-triangle bounding box ends at the fourth triangle's tip, and that triangle
-is `#F6F6F6` — it reads on a white screen and disappears anywhere else. Centring
+is `#F4F4F4` — it reads on a white screen and disappears anywhere else. Centring
 on the box therefore hands a quarter of the mark's measured width to ink nobody
 sees, and pushes the black triangle off centre by exactly that much.
 
@@ -583,3 +586,7 @@ non-square elements in `HazePlanes`. The row is now stated orthographically
 picture; only the coordinates moved, the front centroid now at the origin. The
 §6.3 table had also never been updated for the 1.90 offset. It is now
 generated from the same numbers the build uses.
+
+**2026-09-06, later.** The vapour haze total rose from 0.275² to 0.10 (§6.5),
+so the fourth plane reads at 32 px in the lockup. Every vapour file rebuilt;
+dense untouched.

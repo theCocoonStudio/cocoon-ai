@@ -11,7 +11,7 @@ export const HEAD = `<title>Cocoon Icon Set</title>
 <style>
   :root{
     --ground:#FAFAF7; --panel:#FFFFFF; --ink:#141414; --muted:#6C6C68;
-    --hair:#E3E2DC; --haze:#C8C8C8;
+    --hair:#E3E2DC; --haze:#C2C2C2;
     --sans:"Saira","Helvetica Neue",Arial,sans-serif;
     --serif:"Newsreader",Georgia,"Times New Roman",serif;
     --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;

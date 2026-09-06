@@ -12,8 +12,8 @@ import {
 
 // The four house cuts, as the logo spec tables them (k = 0 .. 3).
 const RAMPS = {
-  vapour: ['#141414', '#C8C8C8', '#EAEAEA', '#F6F6F6'],
-  'vapour reversed': ['#FFFFFF', '#AFAFAF', '#777777', '#515151'],
+  vapour: ['#141414', '#C2C2C2', '#E5E5E5', '#F4F4F4'],
+  'vapour reversed': ['#FFFFFF', '#B6B6B6', '#818181', '#5C5C5C'],
   dense: ['#141414', '#C9C9C9', '#E0E0E0', '#E6E6E6'],
   'dense reversed': ['#E8E8E8', '#858585', '#4B4B4B', '#2C2C2C'],
 }
@@ -179,9 +179,9 @@ describe('hazeShadow', () => {
     expect(css.startsWith('.haze {')).toBe(true)
     expect(css).toContain('background: #141414;')
     expect(css.match(/#[0-9A-F]{6}/g)).toHaveLength(4)
-    expect(css).toMatch(/13\.0286px 0 0 -3\.4286px #C8C8C8/)
+    expect(css).toMatch(/13\.0286px 0 0 -3\.4286px #C2C2C2/)
     expect(hazeShadow({ width: 48, angle: 90, comment: false })).toMatch(
-      /0 13\.0286px 0 -3\.4286px #C8C8C8/,
+      /0 13\.0286px 0 -3\.4286px #C2C2C2/,
     )
   })
 
@@ -214,6 +214,6 @@ describe('hazeShadow', () => {
     expect(css).toContain(
       '4 planes, depth 0.666667, radius 0.633333w, angle 0deg, perspective 0.166667',
     )
-    expect(css).toContain('ramp   #141414 -> #C8C8C8 -> #EAEAEA -> #F6F6F6')
+    expect(css).toContain('ramp   #141414 -> #C2C2C2 -> #E5E5E5 -> #F4F4F4')
   })
 })

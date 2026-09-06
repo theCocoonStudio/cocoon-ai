@@ -20,7 +20,7 @@ Sheets made to decide something, kept as the record of what was looked at. Made 
   npm run export:logo -- --haze 0.0756:0.03:2 --planes 4:1:1 --view icon --widths 32,64,128,400
   ```
 
-- `sensibility-pick-icon.png`, `sensibility-pick-lockup.png` — the pick itself, haze 0.10, between the shipped 0.0756 and 0.1244, on the icon at 32 to 400 px and the 1.00x lockup at 120 to 600 px. Ramp at 0.10: `#141414 #C2C2C2 #E5E5E5 #F4F4F4` against the shipped `#C8C8C8 #EAEAEA #F6F6F6`.
+- `sensibility-pick-icon.png`, `sensibility-pick-lockup.png` — the pick itself, haze 0.10, between the shipped 0.0756 and 0.1244, on the icon at 32 to 400 px and the 1.00x lockup at 120 to 600 px. Ramp at 0.10: `#141414 #C2C2C2 #E5E5E5 #F4F4F4` against the earlier `#C8C8C8 #EAEAEA #F6F6F6`. Taken by Izzy on 2026-09-06; 0.10 is the shipped vapour total.
 
   ```
   npm run export:logo -- --haze 0.1:0.0244:1 --view icon --widths 32,64,128,400

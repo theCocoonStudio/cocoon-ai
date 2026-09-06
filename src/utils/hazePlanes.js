@@ -36,7 +36,7 @@ export const HAZE_DEFAULTS = Object.freeze({
   radius: 1.9 / 3, // the 1.90 camera offset of the old model, chosen on the spread sheets
   angle: 0,
   perspective: 1 / 6,
-  haze: 0.275 ** 2,
+  haze: 0.1,
   width: 48,
   height: null,
   cornerRadius: 0,
@@ -52,7 +52,7 @@ export const HAZE_DEFAULTS = Object.freeze({
 
 /** Named haze totals: the fraction of surface radiance surviving the whole row. */
 export const HAZE_CUTS = Object.freeze({
-  vapour: 0.275 ** 2,
+  vapour: 0.1, // 0.275² until 2026-09-06; see the logo spec's tone table
   dense: 0.15 ** 2,
 })
 

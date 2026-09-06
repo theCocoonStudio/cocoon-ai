@@ -209,15 +209,16 @@ greys, mixed in **linear light** and only then encoded to sRGB:
 
 | cut                  | haze      | T      | k=0       | k=1       | k=2       | k=3       |
 | -------------------- | --------- | ------ | --------- | --------- | --------- | --------- |
-| **vapour** (default) | `#FFFFFF` | 0.4229 | `#141414` | `#C8C8C8` | `#EAEAEA` | `#F6F6F6` |
-| vapour reversed      |           |        | `#FFFFFF` | `#AFAFAF` | `#777777` | `#515151` |
+| **vapour** (default) | `#FFFFFF` | 0.4642 | `#141414` | `#C2C2C2` | `#E5E5E5` | `#F4F4F4` |
+| vapour reversed      |           |        | `#FFFFFF` | `#B6B6B6` | `#818181` | `#5C5C5C` |
 | **dense**            | `#E8E8E8` | 0.2823 | `#141414` | `#C9C9C9` | `#E0E0E0` | `#E6E6E6` |
 | dense reversed       |           |        | `#E8E8E8` | `#858585` | `#4B4B4B` | `#2C2C2C` |
 
-`T` is derived, not chosen: `T = (T_total)^(1/3)` with `T_total` = 0.275² for
-vapour and 0.15² for dense. **Use dense for print, for off-white grounds, and
-below about 32 px** — vapour's back plane at `#F6F6F6` reads on a white screen
-and disappears anywhere else.
+`T` is derived, not chosen: `T = (T_total)^(1/3)` with `T_total` = 0.10 for
+vapour (0.275² until 2026-09-06; the logo spec §6.5 says why) and 0.15² for
+dense. **Use dense for print, for off-white grounds, and below about 32 px** —
+vapour's back plane at `#F4F4F4` reads on a white screen and disappears
+anywhere else.
 
 ## 6. Shapes, holes, and fill groups
 
