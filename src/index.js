@@ -4,3 +4,4 @@
 export const VERSION = '0.0.1'
 
 export { MorphTargets } from './MorphTargets/index.jsx'
+export { CocoonIcon, iconNames, icons } from './CocoonIcon/index.jsx'
