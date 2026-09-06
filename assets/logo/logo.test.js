@@ -1,4 +1,5 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -10,6 +11,7 @@ import { FONT, lockup, wordmark } from './lockup.js'
 import {
   AIR_TIERS,
   SIZES,
+  SPEC,
   checkLockups,
   checkSpec,
   gapFor,
@@ -86,6 +88,31 @@ describe('the lockup rule', () => {
 
   it('agrees with the tier table in the spec', () => {
     expect(checkSpec()).toEqual({ 1: gapFor(1), 2: gapFor(2), 3: gapFor(3) })
+  })
+
+  it('checkSpec fails on a wrong gap, a missing table, and does not read the letter-gap table by mistake', () => {
+    const spec = readFileSync(SPEC, 'utf8')
+    const tmp = join(tmpdir(), `spec-${process.pid}.md`)
+    const wrong = spec.replace(
+      /\|\s*\*\*air2x\*\*\s*\|\s*[\d.]+/,
+      '| **air2x** | 1.5',
+    )
+    expect(wrong).not.toBe(spec)
+    writeFileSync(tmp, wrong)
+    expect(() => checkSpec(tmp)).toThrow(/disagrees with the generator: air2x/)
+    writeFileSync(
+      tmp,
+      spec.replace(/\|\s*tier\s*\|\s*front-edge gap\s*\|/, '| tier | gap |'),
+    )
+    expect(() => checkSpec(tmp)).toThrow(/gap table not found/)
+    // the letter-gap table in 6.6.1 also lists air1x..air3x; only the gap table counts
+    const dropped = spec.replace(
+      /\|\s*\*\*air3x\*\*\s*\|\s*[\d.]+\s*\|[^\n]*\n/,
+      '',
+    )
+    writeFileSync(tmp, dropped)
+    expect(() => checkSpec(tmp)).toThrow(/has 2 tiers, build has 3/)
+    rmSync(tmp)
   })
 
   it('paints the wordmark in plane 0 tone of the cut', () => {

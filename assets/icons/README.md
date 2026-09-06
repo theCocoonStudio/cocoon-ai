@@ -48,3 +48,4 @@ Each has a test that makes it fail. The raster test renders every file at 400 px
 
 - `launch` does not read as "open" at UI sizes in the alignment row. Redraw agreed (Izzy, 2026-09-06); candidates in `explorations/launch.png`, pick pending.
 - Optical sizing is bounding-box sizing. See `assets/README.md`.
+- The haze constraint is enforced for geometry, not legibility. The build proves the shipped face is plane 0 of the haze render; nothing measures whether a shape still reads as receding planes. The spec's aperture-to-step ceiling (§6, about 1.6, the first step now 271 units) is the measurable form and could be computed per shape instead of by hand for one icon. Carried from the Python folder's ledger, 2026-09-06.
