@@ -48,7 +48,7 @@ How it is painted and how it behaves.
 
 A copy has three surfaces, and `paint` says which of them take a tone: its box (`background`), its content (`color`) and its border (`border`). Each has its own ramp toward `ground`: the box from `surface`, the content from `ink`, the border from `borderInk`. `ink` defaults to `surface` when the box is not painted, since content standing alone is the surface, and to `ground` when it is, since the content then contrasts with its box. `borderInk` defaults to `surface`.
 
-The tones land on the copy's wrapper, so the content takes them only where it inherits: text and `currentColor` artwork for the colour, which is what `CocoonIcon` files are cut for; `border-color: inherit` for the border; a transparent or `inherit` background for the box. A child that sets its own colours keeps them on every plane, which is the case the border option exists for: a black-bordered button whose planes kept a black border.
+The tones are written as inline style on each copy's top-level elements, merged after the element's own `style`, so they override whatever a stylesheet gives that element: a button styled black on white in CSS still fades through the ramps on every plane, border included. Elements below the top level take the tones only where they inherit them, `currentColor` for text and artwork, which is what `CocoonIcon` files are cut for, `inherit` for a border. Plain text children, which have no element, take their colour from the copy's wrapper.
 
 ## The fan
 

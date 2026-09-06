@@ -136,17 +136,20 @@ describe('HazePlanes markup', () => {
         surface='#141414'
         ground='#FFFFFF'
       >
-        <button style={{ border: '1px solid', borderColor: 'inherit' }}>
+        <button style={{ border: '1px solid black', background: 'black' }}>
           b
         </button>
       </HazePlanes>,
     )
     await measure(W, H)
-    const near = copies(root(c))[2]
+    const near = copies(root(c))[2].firstElementChild
     const box = hazeTones({ planes: 4, cut: 'vapour' })
     const rgb = (hex) =>
       `rgb(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)})`
+    expect(near.tagName).toBe('BUTTON')
     expect(near.style.borderColor).toBe(rgb(box[1]))
+    expect(near.style.borderWidth).toBe('1px') // the element's own style survives
+    expect(copies(root(c))[2].style.color).toBe('')
     expect(near.style.background).toBe(rgb(box[1]))
     expect(near.style.color).toBe('rgb(255, 255, 255)')
     cleanup()
