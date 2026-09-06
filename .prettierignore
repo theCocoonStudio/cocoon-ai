@@ -6,3 +6,4 @@ exports
 assets/**/*.svg
 assets/icons/preview.html
 assets/**/*.ttf
+src/CocoonIcon/icons.js

@@ -40,6 +40,10 @@ Two files per icon, both `fill="currentColor"`:
 
 Each has a test that makes it fail. The raster test renders every file at 400 px and requires the ink flush on the tight axis and centred within a pixel.
 
+## The component's module
+
+`npm run assets:icons` also writes `src/CocoonIcon/icons.js`, the 13 square files as path data for the `CocoonIcon` component. It is generated, not edited; the component's test fails if it drifts from the files.
+
 ## Known gaps
 
 - `launch` does not read as "open" at UI sizes in the alignment row. Redraw or ship as is: undecided.
