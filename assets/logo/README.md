@@ -30,4 +30,4 @@ A note on fontkit: it rounds each variation delta to whole units as it applies i
 ## Known gaps
 
 - The mechanism offered in the spec for why a pale trail near a letterform reads as a collision is descriptive, not tested. The lockup floor stands on the letterspacing derivation alone.
-- Whether the planes should spread wider so the mark survives smaller sizes is under review. The sheets in `explorations/` are the current look; `npm run export:logo` makes the next ones.
+- Decided 2026-09-05: the planes spread wider, radius 0.6333 from 0.4333 (spec §6.2 and its history). The sheets in `explorations/` are the record; `npm run export:logo` makes the next ones.
