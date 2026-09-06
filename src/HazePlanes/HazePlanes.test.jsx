@@ -118,15 +118,15 @@ describe('HazePlanes markup', () => {
     let c = render(<HazePlanes>x</HazePlanes>)
     await measure(W, H)
     let far = copies(root(c))[0]
-    expect(far.style.color).toBe('rgb(246, 246, 246)')
+    expect(far.style.color).toBe('rgb(244, 244, 244)')
     expect(far.style.background).toBe('')
     cleanup()
     c = render(<HazePlanes paint='background'>x</HazePlanes>)
     await measure(W, H)
     far = copies(root(c))[0]
-    expect(far.style.background).toBe('rgb(246, 246, 246)')
+    expect(far.style.background).toBe('rgb(244, 244, 244)')
     expect(far.style.color).toBe('')
-    expect(tones[3]).toBe('#F6F6F6')
+    expect(tones[3]).toBe('#F4F4F4')
   })
 
   it('markup.6 paint both: box from the surface ramp, content from the ink ramp, so they differ', async () => {

@@ -48,9 +48,9 @@ describe('the mark', () => {
   it('carries the four house ramps from the spec', () => {
     expect(M.build().pieces.map((p) => p.fill)).toEqual([
       '#141414',
-      '#C8C8C8',
-      '#EAEAEA',
-      '#F6F6F6',
+      '#C2C2C2',
+      '#E5E5E5',
+      '#F4F4F4',
     ])
     expect(
       M.build({ cut: 'dense', reverse: true }).pieces.map((p) => p.fill),
