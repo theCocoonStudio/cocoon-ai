@@ -37,7 +37,7 @@ src/
   utils/                      reusable, React-free functions with their own tests; not exported unless something outside needs them
 docs/
   <Component>.md              API doc: props, handle, dispose rules, limits
-  <util>.md                   API doc for a util worth reading about on its own
+  utils/<util>.md             API doc for a util worth reading about on its own; a folder, so a util and a component of the same name never collide on a case-insensitive disk
   export-logo.md              the export:logo script: grammar, every parameter, output
 assets/                       the studio's marks, produced by the scripts beside them; see assets/README.md
   lib/                        the four-plane engine shared by the icons and the logo
