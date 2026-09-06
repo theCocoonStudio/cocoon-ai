@@ -242,9 +242,15 @@ shape still reads instantly.
 
 **Hollow outlines.** An outline frame has a large interior, and the planes
 behind land _inside_ it — the icon fills up with its own echoes and stops
-reading. This is why `launch` is a filled panel with an arrow breaking out of
-its corner rather than the conventional external-link frame. The frame version
-is kept in `shapes.js` as `launch_frame()` and is deliberately not in `SET`.
+reading. This is why `launch` is a filled panel rather than the conventional
+external-link frame: since 2026-09-06 the panel has its top-right corner
+knocked out and the arrow leaves through the notch, chosen from
+`explorations/launch.png` because the earlier panel, with the arrow unioned
+into its corner, read as a square with a nub at 16 px. The notch is 340 units,
+above the 271-unit first step, so the planes behind show inside it; it is the
+arrow's own trail that reads there, which is the point. The frame version is
+kept in `shapes.js` as `launchFrame()` and the unioned panel as `launchSolid()`;
+neither is in `SET`.
 
 Where a hollow shape is unavoidable, thicken the walls until the aperture is
 small relative to the 186-unit first step, or knock the detail out of a solid
@@ -437,7 +443,7 @@ prefer removing material from a solid to assembling thin strokes.
 | `menu` / `toc`            | Both are rule stacks; the markers are what keep `toc` from reading as `menu` at small sizes                                                                                                                                                                                                                                                                            |
 | `settings`                | Gear teeth are straight-sided and the valleys are stepped along the root circle, so every corner is a real corner the fillet can take                                                                                                                                                                                                                                  |
 | `info`                    | Filled disc with the _i_ knocked out. The counter shows the plane behind, which an outline ring would not                                                                                                                                                                                                                                                              |
-| `launch`                  | Filled panel, arrow unioned into its top-right corner — the same direction the logo points. See §6 for why not the frame                                                                                                                                                                                                                                               |
+| `launch`                  | Filled panel with its top-right corner knocked out, the arrow leaving through the notch — the same direction the logo points. See §6 for why not the frame, and why not the unioned panel                                                                                                                                                                              |
 | `home`                    | A solid house with the doorway knocked out — the same remove-material-from-a-mass move as `info`. The roof overhangs the walls by one stroke each side, which is what stops the silhouette reading as a plain pentagon                                                                                                                                                 |
 | `search`                  | The one hollow shape in the set. Walls at **1.55 strokes**, giving an aperture-to-step ratio of 1.58 — inside the ceiling in §6, so it does not fill with its own echoes. A solid disc was tried and rejected: it reads as a pin at 16 px and collides with `info`, which is also a black disc. Ring and handle are separate fill groups so they union where they meet |
 | `account`                 | Head and shoulders, both solid, no holes at all — the cleanest shape in the set for this system. The bust is a drawn half-ellipse via `_arc`, not a filleted rectangle                                                                                                                                                                                                 |

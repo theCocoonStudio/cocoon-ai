@@ -10,27 +10,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as H from '../../lib/haze.js'
 import { png } from '../../lib/raster.js'
-import { BAR, BOX, arrow, launchSolid, rect } from '../shapes.js'
+import { BAR, BOX, arrow, launchNotch, launchSolid, rect } from '../shapes.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
-
-/** B. Notch: the corner of the panel knocked out, the arrow leaving through it. */
-export function launchNotch(bar = BAR) {
-  const x1 = BOX * 0.74
-  const y0 = BOX * 0.26
-  const n = BOX * 0.34
-  return [
-    rect(0, y0, x1, BOX),
-    H.hole(rect(x1 - n, y0, x1, y0 + n)),
-    arrow(
-      [BOX, 0],
-      [x1 - n + bar * 0.9, y0 + n - bar * 0.9],
-      bar,
-      bar * 3,
-      bar * 2.1,
-    ),
-  ]
-}
 
 /** D. Two masses: a small square low left, a long arrow clear of it. */
 export function launchTwo(bar = BAR) {
@@ -65,8 +47,14 @@ export function launchChannel(bar = BAR, gap = bar * 0.55) {
 }
 
 const ROWS = [
-  ['current: filled panel, arrow unioned into the corner', launchSolid],
-  ['B notch: corner knocked out, arrow leaving through it', launchNotch],
+  [
+    'before 2026-09-06: filled panel, arrow unioned into the corner',
+    launchSolid,
+  ],
+  [
+    'B notch, chosen: corner knocked out, arrow leaving through it',
+    launchNotch,
+  ],
   ['D two masses: small square, long arrow clear of it', launchTwo],
   ['E channel: clear air cut around the arrow, arrow in it', launchChannel],
 ]
