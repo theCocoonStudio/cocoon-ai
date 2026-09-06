@@ -23,7 +23,7 @@ Values the engine cannot draw are dropped from the sweep rather than failing the
 
 ## Parameters
 
-Units are the ones `src/utils/hazePlanes.js` uses; `docs/hazePlanes.md` states the model. There is no camera: each plane is the front face scaled about its own centre and moved along a direction.
+Units are the ones `src/utils/hazePlanes.js` uses; `docs/utils/hazePlanes.md` states the model. There is no camera: each plane is the front face scaled about its own centre and moved along a direction.
 
 | parameter       | what it is                                                                                                                                                                                                                                              | shipped                   | default buffer | range               |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------- | ------------------- |
