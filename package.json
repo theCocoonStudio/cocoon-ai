@@ -30,46 +30,14 @@
     "export:logo": "node assets/logo/export.js"
   },
   "peerDependencies": {
-    "@pmndrs/assets": "^1.7.0",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
-    "@react-three/postprocessing": "^3.0.4",
-    "maath": "^0.10.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "three": "^0.184.0",
-    "tunnel-rat": "^0.1.2"
-  },
-  "peerDependenciesMeta": {
-    "@pmndrs/assets": {
-      "optional": true
-    },
-    "@react-three/drei": {
-      "optional": true
-    },
-    "@react-three/fiber": {
-      "optional": true
-    },
-    "@react-three/postprocessing": {
-      "optional": true
-    },
-    "maath": {
-      "optional": true
-    },
-    "three": {
-      "optional": true
-    },
-    "tunnel-rat": {
-      "optional": true
-    }
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@eslint/css": "^1.4.0",
     "@eslint/js": "^9.39.5",
-    "@pmndrs/assets": "^1.7.0",
-    "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
-    "@react-three/postprocessing": "^3.0.4",
     "@react-three/test-renderer": "^9.1.1",
     "@resvg/resvg-js": "^2.6.2",
     "@vitejs/plugin-react": "^6.1.1",
@@ -81,12 +49,10 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "fontkit": "^2.0.4",
     "globals": "^17.12.0",
-    "maath": "^0.10.8",
     "prettier": "^3.9.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "three": "^0.184.0",
-    "tunnel-rat": "^0.1.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
   }

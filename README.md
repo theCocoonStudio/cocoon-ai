@@ -2,7 +2,7 @@
 
 Component and utility library for the [Cocoon](https://github.com/theCocoonStudio) studio website — a dual-engine React 19 / react-three-fiber app. Developed with Claude (Claude Code) and consumed by the main Cocoon site as a dependency.
 
-Built with Vite in library mode. Plain JavaScript, ESM output. Every runtime dependency the site provides (`react`, `react-dom`, `three`, `@react-three/*`, `maath`, `tunnel-rat`, `@pmndrs/assets`) is a peer dependency and is never bundled.
+Built with Vite in library mode. Plain JavaScript, ESM output. Peer dependencies are the packages the site must share one instance of and this library imports: `react`, `react-dom` and `three`, never bundled. A package becomes a peer the day a component imports it (`@react-three/fiber` will, when an r3f component lands) and not before; everything only the build or the tests need is a devDependency. Versions track the site's own `package.json`.
 
 ## Scripts
 
