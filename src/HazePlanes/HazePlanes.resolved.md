@@ -25,7 +25,7 @@ defaults.7: `radius` on the component is the scene's radius; the border radius i
 
 ## notes
 
-notes.1: `paint="both"` on a copy of a `CocoonIcon` gives the icon the ink tone and its box the surface tone; the icon's own wrapper has no background, so the box shows behind the artwork
+notes.1: `paint={{ background: true, color: true }}` on a copy of a `CocoonIcon` gives the icon the ink tone and its box the surface tone; the icon's own wrapper has no background, so the box shows behind the artwork
 notes.2: the dev warnings fire from a layout effect keyed on the scene's error and hidden count, once per change, not per render
 notes.3: jsdom keeps box-shadow text as written, `0` for the blur and hex colours; the tests match that shape
 
