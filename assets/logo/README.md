@@ -7,7 +7,7 @@ The cocoon mark and wordmark, and every derived file. `cocoon-logo-spec.md` is t
 - `mark.js` — the four-triangle mark through the shared engine, the square canvas, and the favicon.
 - `wordmark.js` — the wordmark cut from Saira at `wght 350 / wdth 107` through fontkit, with the infinity mark derived from the instanced `o`.
 - `lockup.js` — icon left of the wordmark, anchored in the wordmark's own units.
-- `build.js` — `node assets/logo/build.js [outdir]`. Emits 45 SVGs and 5 PNG previews, and refuses if the four plain icon files change or the spec's tier table disagrees with the generator.
+- `build.js` — `node assets/logo/build.js [outdir]`. Emits 45 SVGs and 7 PNG previews, and refuses if the four plain icon files change or the spec's tier table disagrees with the generator.
 - `export.js` — `npm run export:logo -- --radius 0.63 -b 0.05 -c 2`. Renders the lockup or the icon at chosen scene values into one SVG, and a sheet of neighbours around each chosen value into another, with a PNG. Parameters: `depth`, `radius`, `angle`, `perspective`, `planes`, `corner`, `haze`, `apex`, and for the lockup `size`, `gap`, `air`, `wght` and `wdth`. Each is `--<name> <value>[:<buffer>[:<count>]]`; `-b` and `-c` set the buffer and count for the rest. `--help` lists the options; `docs/export-logo.md` explains every parameter. Output goes to `explorations/export/`, which is not committed.
 - `export.test.js` — the argument grammar, the sweep, the chosen file equal to the shipped lockup and icon at the shipped scene, and the sheet's cell count.
 - `logo.test.js` — the rebuild regression, the triangle's geometry, the ramps, the lockup rule with a hand-picked gap proven to fail, and the wordmark against the fontTools cut.

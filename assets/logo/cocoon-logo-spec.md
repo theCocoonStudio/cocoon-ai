@@ -155,12 +155,12 @@ names its cut.
 | `cocoon-icon-dense.svg`                                                                | The dense cut                                                             |
 | `cocoon-icon-dense-square.svg`                                                         | Dense, square canvas                                                      |
 | `cocoon-icon-dense-reversed.svg`                                                       | Dense, reversed                                                           |
-| `cocoon-icon-vapour.png`, `cocoon-icon-dense.png`                                      | 1400 px previews                                                          |
+| `cocoon-icon-vapour.png`, `cocoon-icon-vapour-reversed.png`, `cocoon-icon-dense.png`   | 1400 px previews; the reversed one on `#141414`                           |
 | `cocoon-favicon.svg`                                                                   | Dark mark on a light rounded tile                                         |
 | `cocoon-favicon-reversed.svg`                                                          | Light mark on a `#141414` rounded tile                                    |
 | `cocoon-favicon.png`                                                                   | 512 px preview                                                            |
 | `lockups/cocoon-lockup-icon{0.90,1.00,1.10}-air{1,2,3}x-{vapour,dense}[-reversed].svg` | 36 combinations                                                           |
-| `cocoon-lockup.png`                                                                    | 2000 px preview of 1.00× / air2x / vapour                                 |
+| `cocoon-lockup.png`, `cocoon-lockup-reversed.png`                                      | 2000 px previews of 1.00× / air2x / vapour, the reversed one on `#141414` |
 | `cocoon-logo-spec.md`                                                                  | This document                                                             |
 | `wordmark.js`                                                                          | Generator — rebuilds the wordmark at any Saira instance                   |
 | `mark.js`                                                                              | Generator — renders the icon and favicons from the 3D scene               |
