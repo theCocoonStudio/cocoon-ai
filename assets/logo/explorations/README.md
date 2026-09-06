@@ -13,4 +13,11 @@ Sheets made to decide something, kept as the record of what was looked at. Made 
 
 - `favicon.png`, from `favicon.mjs` — the favicon at 16 to 128 px, light and dark, at three settings: the old offset 1.30, the shipped 1.90 where the 10% clear-air rule shrinks the black triangle to hold the longer trail, and a candidate at 1.90 where the 10% holds for the black triangle and the pale planes may come within 4% of the edge. Front triangle scale 0.535, 0.422 and 0.485 of the tile. Decided 2026-09-05 (Izzy): one rule for every plane, and more air, 15%; the candidate is not taken. The generator derives the size from the rule; no size is chosen anywhere. The sheet's middle row shows the shipped tile at whatever `FAVI_MARGIN` is when it is run.
 
+- `sensibility-depth-apex.png`, `sensibility-haze-planes.png` — Izzy asked for my own read of the mark (2026-09-06). Depth 0.53 to 0.80, apex 40 to 56, haze 0.016 to 0.136 and 3 to 5 planes, on the icon at 32 to 400 px. My read: keep depth, apex and count; the one change I would make is the vapour haze total from 0.0756 to about 0.10, so the fourth plane reads at 32 px instead of vanishing below 64. The spec put it at the edge of visibility on purpose, so this is taste, recorded here for Izzy's call.
+
+  ```
+  npm run export:logo -- --depth 0.6667:0.0667:2 --apex 48:4:2 --view icon --widths 32,64,128,400
+  npm run export:logo -- --haze 0.0756:0.03:2 --planes 4:1:1 --view icon --widths 32,64,128,400
+  ```
+
 Output of the tool goes to `export/` here, which is not committed.
