@@ -235,7 +235,30 @@ export function launchFrame(bar = BAR) {
   ]
 }
 
-/** A filled panel with the arrow unioned into its corner, leaving up and right. */
+/**
+ * A filled panel with its top-right corner knocked out and the arrow leaving
+ * through the notch, up and right. Chosen 2026-09-06 from explorations/launch.png
+ * over the unioned panel below: at 16 px the notch reads as leaving the box,
+ * where the union read as a square with a nub.
+ */
+export function launchNotch(bar = BAR) {
+  const x1 = BOX * 0.74
+  const y0 = BOX * 0.26
+  const n = BOX * 0.34
+  return [
+    rect(0, y0, x1, BOX),
+    hole(rect(x1 - n, y0, x1, y0 + n)),
+    arrow(
+      [BOX, 0],
+      [x1 - n + bar * 0.9, y0 + n - bar * 0.9],
+      bar,
+      bar * 3,
+      bar * 2.1,
+    ),
+  ]
+}
+
+/** The filled panel with the arrow unioned into its corner. Shipped until 2026-09-06; not in SET. */
 export function launchSolid(bar = BAR) {
   const x1 = BOX * 0.74
   const y0 = BOX * 0.26
@@ -316,7 +339,7 @@ export const SET = {
   settings: [settings, {}],
   info: [info, {}],
   exit: [cross, {}],
-  launch: [launchSolid, {}],
+  launch: [launchNotch, {}],
   home: [home, {}],
   search: [search, {}],
   account: [account, {}],
@@ -371,6 +394,6 @@ export const NOTES = {
   ],
   launch: [
     'launch, open',
-    'A filled panel with the arrow unioned into its corner, leaving up and to the right - the direction the logo points. The conventional hollow frame is the one shape this system fights: the planes behind land inside its own opening.',
+    'A filled panel with its corner knocked out and the arrow leaving through the notch, up and to the right - the direction the logo points. The conventional hollow frame is the one shape this system fights: the planes behind land inside its own opening.',
   ],
 }
