@@ -28,7 +28,7 @@ props.10: ink — CSS hex colour, optional, default props.9; the near end of the
 props.11: mode — 'transform' | 'shadow', optional, default 'transform'; the old aliases element, text and box are refused (exits.throws)
 props.12: paint — 'auto' | 'background' | 'color' | 'both', optional, default 'auto', which is 'color'; transform mode only, ignored under shadow
 props.13: cornerRadius — number (px) or CSS length string, optional, default 0; the border radius of the wrapper and, under shadow mode, of the shadow geometry (was `radius`; renamed because props.3 is the scene's radius)
-props.14: fan — false | true | 'both' | 'xy' | 'z', optional, default false; true is 'both'. Planes stand open at rest when false; otherwise they coincide with the face at rest and open on hover or focus. 'xy' animates the displacement only, 'z' the size only, 'both' both; the axis not animated snaps to its open value when opening (new)
+props.14: fan — false | true | { xyz: boolean, size: 'grow' | 'shrink' | falsy }, optional, default false; true is { xyz: true, size: 'shrink' }, and an object fills its missing keys from that. Planes stand open at rest when false; otherwise they are transparent at rest and fade in as they open on hover or focus, every animated quantity moving together. xyz: the planes start on the face's position and travel to their places. size 'shrink': the planes start at the face's size and shrink to their final size; 'grow': they start at 0 and grow; falsy: they are at their final size throughout (Izzy, 2026-09-06)
 props.15: duration — CSS time string, optional, default '260ms'
 props.16: easing — CSS timing function, optional, default 'ease', what CSS does; 'ease-in', 'ease-out', 'ease-in-out', 'linear' and any cubic-bezier pass through (was a custom cubic-bezier)
 props.17: className — string, optional
@@ -62,15 +62,14 @@ markup.4: each copy k carries transform translate(dx_k, dy_k) scale(S_k) about i
 markup.5: paint 'color' gives copy k `color: tone_k`; 'background' gives `background: tone_k`; tone_k from hazeTones with props.8 and props.9
 markup.6: paint 'both' gives copy k `background: tone_k` from the surface ramp and `color: inkTone_k` from a second ramp, hazeTones with props.10 as surface and props.9 as ground, so the copy's content stays legible on its own box (fix: the old component gave both the same tone and the content vanished)
 markup.7: shadow mode: the root carries `background: tone_0` and a box-shadow with one layer per plane, `dx dy 0 spread tone_k`, from hazeAnalyse; no copies exist
-markup.8: shadow mode: transition-property box-shadow; transform mode: each copy transition-property transform; both with props.15 and props.16
+markup.8: transform mode: each copy transition-property transform, opacity, with props.15 and props.16; shadow mode: no transition
 markup.9: before state.1 has a width, no planes: markup.1–2 only
 
 ## states
 
 states.default: markup.1–9 with the planes open: fan false, or fan set and state.2 true
-states.closed: fan set and state.2 false: every copy at translate(0, 0) scale(1), or every shadow layer at 0 0 0 0, so the planes coincide with the face and are occluded by it; nothing animates opacity
-states.opening-xy: fan 'xy' and state.2 true: copies at their final scale from the first frame, translate animating from 0
-states.opening-z: fan 'z' and state.2 true: copies at their final translate from the first frame, scale animating from 1
+states.closed: fan set and state.2 false: every copy at opacity 0 and at its start pose: translate(0, 0) when xyz else its final translate; scale 1 under size 'shrink', 0 under 'grow', its final scale when size is falsy. Shadow mode has no fan: its layers cannot fade separately, so fan is ignored there and the planes stand open
+states.opening: fan set and state.2 true: every copy at its open pose, translate d_k scale S_k opacity 1, reached by one transition from states.closed
 states.unmeasured: markup.9
 states.disabled: none
 states.pending: none

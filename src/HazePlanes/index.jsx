@@ -58,7 +58,7 @@ const DEV = process.env.NODE_ENV !== 'production'
  * @param {'transform'|'shadow'} [props.mode] default 'transform'
  * @param {'auto'|'background'|'color'|'both'} [props.paint] transform mode only; default 'auto', which is 'color'
  * @param {number|string} [props.cornerRadius] border radius of the wrapper and the shadow geometry; default 0
- * @param {false|true|'both'|'xy'|'z'} [props.fan] planes coincide with the face at rest and open on hover or focus; default false
+ * @param {false|true|{xyz?: boolean, size?: 'grow'|'shrink'|false}} [props.fan] planes are transparent at rest and open on hover or focus; true is { xyz: true, size: 'shrink' }; default false
  * @param {string} [props.duration] CSS time; default '260ms'
  * @param {string} [props.easing] CSS timing function; default 'ease'
  */
@@ -89,7 +89,16 @@ export function HazePlanes({
   ...rest
 }) {
   const mech = resolveMode(mode)
-  const fanWhere = fan === true ? 'both' : fan || null
+  const fanOn = fan === true || (fan && typeof fan === 'object')
+  const fanXyz = fanOn ? (fan === true ? true : (fan.xyz ?? true)) : false
+  const fanSize = fanOn
+    ? fan === true
+      ? 'shrink'
+      : fan.size === undefined
+        ? 'shrink'
+        : fan.size || false
+    : false
+  const fanWhere = fanOn ? `${fanXyz ? 'xyz' : ''}:${fanSize || ''}` : null
   const ref = useRef(null)
   const [box, setBox] = useState({ width: 0, height: 0 })
   const [open, setOpen] = useState(false)
@@ -189,16 +198,19 @@ export function HazePlanes({
   }, [scene?.worstError, scene?.hidden.length, mech, box.width, box.height]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const time = reduced ? '0ms' : duration
-  // Which quantities move on opening. The other snaps to its open value.
-  const moveXY = isOpen || fanWhere === 'z'
-  const moveZ = isOpen || fanWhere === 'xy'
+  // The closed pose: on the face's position when xyz fans, at the face's size
+  // or at nothing when size fans, transparent always. Everything moves together.
+  const atPlace = isOpen || !fanXyz
+  const scaleOf = (p) =>
+    isOpen || !fanSize ? Number(p.scale.toFixed(6)) : fanSize === 'grow' ? 0 : 1
   const f = (v) => Number(v.toFixed(3))
 
+  // Shadow mode has no fan: its layers cannot fade separately.
   const shadow = scene
     ? scene.planes
         .map(
           (p) =>
-            `${f(moveXY ? p.dx : 0)}px ${f(moveXY ? p.dy : 0)}px 0 ${f(moveZ ? p.spread : 0)}px ${scene.tones[p.k]}`,
+            `${f(p.dx)}px ${f(p.dy)}px 0 ${f(p.spread)}px ${scene.tones[p.k]}`,
         )
         .join(', ')
     : undefined
@@ -207,13 +219,8 @@ export function HazePlanes({
     position: 'relative',
     display: 'inline-block',
     borderRadius: cssLength(cornerRadius),
-    ...(mech === 'shadow'
-      ? {
-          transitionProperty: 'box-shadow',
-          transitionDuration: time,
-          transitionTimingFunction: easing,
-          ...(scene ? { background: scene.tones[0], boxShadow: shadow } : null),
-        }
+    ...(mech === 'shadow' && scene
+      ? { background: scene.tones[0], boxShadow: shadow }
       : null),
     ...style,
   }
@@ -236,8 +243,9 @@ export function HazePlanes({
                 pointerEvents: 'none',
                 userSelect: 'none',
                 transformOrigin: '50% 50%',
-                transform: `translate(${f(moveXY ? p.dx : 0)}px, ${f(moveXY ? p.dy : 0)}px) scale(${moveZ ? Number(p.scale.toFixed(6)) : 1})`,
-                transitionProperty: 'transform',
+                transform: `translate(${f(atPlace ? p.dx : 0)}px, ${f(atPlace ? p.dy : 0)}px) scale(${scaleOf(p)})`,
+                opacity: isOpen ? 1 : 0,
+                transitionProperty: 'transform, opacity',
                 transitionDuration: time,
                 transitionTimingFunction: easing,
                 ...(painted === 'color' ? { color: scene.tones[p.k] } : null),

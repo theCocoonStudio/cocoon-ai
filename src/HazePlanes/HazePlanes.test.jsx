@@ -170,23 +170,26 @@ describe('HazePlanes markup', () => {
     )
   })
 
-  it('markup.8 transitions: box-shadow on the root in shadow mode, transform on copies otherwise, with duration and easing', async () => {
+  it('markup.8 transitions: transform and opacity on the copies with duration and easing; none in shadow mode', async () => {
     let c = render(
-      <HazePlanes mode='shadow' duration='1s' easing='ease-in-out'>
+      <HazePlanes duration='1s' easing='ease-in-out'>
         x
       </HazePlanes>,
     )
-    await measure(80, 80)
-    expect(root(c).style.transitionProperty).toBe('box-shadow')
-    expect(root(c).style.transitionDuration).toBe('1s')
-    expect(root(c).style.transitionTimingFunction).toBe('ease-in-out')
+    await measure(W, H)
+    const s = copies(root(c))[0].style
+    expect(s.transitionProperty).toBe('transform, opacity')
+    expect(s.transitionDuration).toBe('1s')
+    expect(s.transitionTimingFunction).toBe('ease-in-out')
     cleanup()
     c = render(<HazePlanes>x</HazePlanes>)
     await measure(W, H)
-    const s = copies(root(c))[0].style
-    expect(s.transitionProperty).toBe('transform')
-    expect(s.transitionDuration).toBe('260ms')
-    expect(s.transitionTimingFunction).toBe('ease')
+    expect(copies(root(c))[0].style.transitionDuration).toBe('260ms')
+    expect(copies(root(c))[0].style.transitionTimingFunction).toBe('ease')
+    cleanup()
+    c = render(<HazePlanes mode='shadow'>x</HazePlanes>)
+    await measure(80, 80)
+    expect(root(c).style.transitionProperty).toBe('')
   })
 
   it('props.13 cornerRadius: a number is px, a string passes through, and it reaches the shadow geometry', async () => {
@@ -203,53 +206,63 @@ describe('HazePlanes markup', () => {
 })
 
 describe('HazePlanes fan', () => {
-  it('states.closed: with fan the planes coincide with the face at rest, and open on hover', async () => {
+  const closedPose = (el) =>
+    copies(el).map((s) => [norm(s.style.transform), s.style.opacity])
+
+  it('states.closed: fan true is xyz + shrink: on the face, at its size, transparent; open on hover', async () => {
     const c = render(<HazePlanes fan>x</HazePlanes>)
     await measure(W, H)
     const el = root(c)
-    for (const s of copies(el))
-      expect(norm(s.style.transform)).toBe('translate(0px, 0px) scale(1)')
+    for (const [t, o] of closedPose(el)) {
+      expect(t).toBe('translate(0px, 0px) scale(1)')
+      expect(o).toBe('0')
+    }
     fireEvent.mouseEnter(el)
     expect(norm(copies(el)[0].style.transform)).toBe(norm(tx(scene(), 3)))
+    expect(copies(el)[0].style.opacity).toBe('1')
     fireEvent.mouseLeave(el)
-    expect(norm(copies(el)[0].style.transform)).toBe(
-      'translate(0px, 0px) scale(1)',
-    )
+    expect(closedPose(el)[0]).toEqual(['translate(0px, 0px) scale(1)', '0'])
   })
 
-  it('states.opening-xy: the scale is final at rest and only the translate moves', async () => {
-    const c = render(<HazePlanes fan='xy'>x</HazePlanes>)
+  it("states.closed: size grow starts from 0 at each plane's own place when xyz is off", async () => {
+    const c = render(
+      <HazePlanes fan={{ xyz: false, size: 'grow' }}>x</HazePlanes>,
+    )
     await measure(W, H)
     const p = scene()
     const far = copies(root(c))[0]
     expect(norm(far.style.transform)).toBe(
-      `translate(0px, 0px) scale(${Number(p.planes[2].scale.toFixed(6))})`,
+      norm(tx(p, 3)).replace(/scale\([^)]+\)/, 'scale(0)'),
     )
+    expect(far.style.opacity).toBe('0')
     fireEvent.focus(root(c))
     expect(norm(far.style.transform)).toBe(norm(tx(p, 3)))
   })
 
-  it('states.opening-z: the translate is final at rest and only the scale moves', async () => {
-    const c = render(<HazePlanes fan='z'>x</HazePlanes>)
+  it('states.closed: xyz alone keeps the final size and starts on the face; both fans move together', async () => {
+    let c = render(<HazePlanes fan={{ size: false }}>x</HazePlanes>)
     await measure(W, H)
     const p = scene()
-    const far = copies(root(c))[0]
-    expect(norm(far.style.transform)).toBe(
-      norm(tx(p, 3)).replace(/scale\([^)]+\)/, 'scale(1)'),
+    expect(norm(copies(root(c))[0].style.transform)).toBe(
+      `translate(0px, 0px) scale(${Number(p.planes[2].scale.toFixed(6))})`,
+    )
+    cleanup()
+    c = render(<HazePlanes fan={{ xyz: true, size: 'grow' }}>x</HazePlanes>)
+    await measure(W, H)
+    expect(norm(copies(root(c))[0].style.transform)).toBe(
+      'translate(0px, 0px) scale(0)',
     )
     fireEvent.mouseEnter(root(c))
-    expect(norm(far.style.transform)).toBe(norm(tx(p, 3)))
+    expect(norm(copies(root(c))[0].style.transform)).toBe(norm(tx(p, 3)))
   })
 
-  it('states.closed in shadow mode: every layer at zero at rest', async () => {
+  it('states.closed: shadow mode has no fan; the layers stand open', async () => {
     const c = render(
       <HazePlanes mode='shadow' fan>
         x
       </HazePlanes>,
     )
     await measure(80, 80)
-    expect(root(c).style.boxShadow).toMatch(/^0px 0px 0 0px #/)
-    fireEvent.mouseEnter(root(c))
     expect(root(c).style.boxShadow).not.toMatch(/^0px 0px 0 0px/)
   })
 

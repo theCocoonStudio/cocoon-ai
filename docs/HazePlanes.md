@@ -33,7 +33,7 @@ How it is painted and how it behaves.
 | `mode`                                | `'transform'`       | `'transform'`, copies of the children; `'shadow'`, one box-shadow. The old names element, text and box throw     |
 | `paint`                               | `'auto'`            | `'color'`, `'background'` or `'both'`; auto is color. Transform mode only                                        |
 | `cornerRadius`                        | 0                   | any CSS length, a number meaning px; the wrapper's border radius and the shadow geometry's                       |
-| `fan`                                 | `false`             | `true` or `'both'`, `'xy'`, `'z'`: planes coincide with the face at rest and open on hover or focus              |
+| `fan`                                 | `false`             | `true`, or `{ xyz, size }`: planes are transparent at rest and open on hover or focus; see The fan               |
 | `duration`, `easing`                  | `'260ms'`, `'ease'` | the transition; any CSS time and timing function, `ease-in`, `ease-out`, `ease-in-out`, `linear`, a cubic-bezier |
 | `className`, `style`, `ref`, the rest |                     | onto the wrapper `<span>`; `style` merges last                                                                   |
 
@@ -49,7 +49,12 @@ How it is painted and how it behaves.
 
 ## The fan
 
-At rest every plane sits exactly on the face, at translate 0 and scale 1, so it is occluded rather than faded; nothing animates opacity. On hover or focus the planes open. `'both'` animates displacement and size together. `'xy'` animates the displacement only, the copies already at their final size. `'z'` animates the size only, the copies already at their final displacement. The axis not animated snaps to its open value at the moment of opening. A change of `fan` closes the planes.
+`fan` is `false`, `true`, or an object `{ xyz, size }`; `true` means `{ xyz: true, size: 'shrink' }`, and an object fills its missing keys from that. At rest every plane is transparent and sits at its start pose; on hover or focus it fades in and moves to its place, every animated quantity together in one transition.
+
+- `xyz: true` starts each plane on the face's position; `false` leaves it at its own place throughout.
+- `size: 'shrink'` starts each plane at the face's size and shrinks it to its own; `'grow'` starts it at nothing, at its own centre, and grows it; a falsy `size` keeps the final size throughout.
+
+A change of `fan` closes the planes. Shadow mode has no fan: its layers cannot fade separately, so `fan` is ignored there and the planes stand open.
 
 If nothing inside can take focus, the wrapper takes a tab stop, so the fan is reachable from a keyboard; the scan reruns when the subtree mutates, so a child that becomes focusable later hands the stop back. Under `prefers-reduced-motion: reduce` the duration is 0.
 
