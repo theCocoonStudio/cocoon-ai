@@ -19,7 +19,7 @@ assets/
     fmt.js        number formatting that rounds like Python, so old files compare byte for byte
     raster.js     resvg wrappers: render, ink margins, pixel diff
   icons/          the UI icon set. shapes.js is the source; build.js emits 26 SVGs and preview.html
-  logo/           the mark, favicons, wordmark and lockups. build.js emits 45 SVGs and 5 PNGs
+  logo/           the mark, favicons, wordmark and lockups. build.js emits 45 SVGs and 7 PNGs
 ```
 
 Both folders read the scene from `src/utils/hazePlanes.js`, the same module the `HazePlanes` component uses. Plane count, depth, radius, angle, perspective and the two haze cuts live in one place. The old Python folders each restated those numbers and had no check that they agreed; now they cannot disagree.

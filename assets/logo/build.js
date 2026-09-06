@@ -13,6 +13,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { png } from '../lib/raster.js'
+import { INK } from '../lib/haze.js'
 import * as M from './mark.js'
 import * as W from './wordmark.js'
 import {
@@ -32,13 +33,22 @@ export const SIZES = [0.9, 1.0, 1.1]
 /** Tiers are named by clear air, in stems; the gap that delivers it is derived. */
 export const AIR_TIERS = [1, 2, 3]
 export const CUTS = { vapour: { cut: 'vapour' }, dense: { cut: 'dense' } }
-/** PNG previews and their widths. The lockup preview is 1.00x / air2x / vapour. */
+/**
+ * PNG previews: name -> [width, source file, background]. The lockup previews
+ * are 1.00x / air2x / vapour; reversed ones stand on ink.
+ */
 export const PREVIEWS = {
-  'cocoon-wordmark': 1800,
-  'cocoon-icon-vapour': 1400,
-  'cocoon-icon-dense': 1400,
-  'cocoon-favicon': 512,
-  'cocoon-lockup': 2000,
+  'cocoon-wordmark': [1800, 'cocoon-wordmark.svg'],
+  'cocoon-icon-vapour': [1400, 'cocoon-icon-vapour.svg'],
+  'cocoon-icon-vapour-reversed': [1400, 'cocoon-icon-vapour-reversed.svg', INK],
+  'cocoon-icon-dense': [1400, 'cocoon-icon-dense.svg'],
+  'cocoon-favicon': [512, 'cocoon-favicon.svg'],
+  'cocoon-lockup': [2000, 'lockups/cocoon-lockup-icon1.00-air2x-vapour.svg'],
+  'cocoon-lockup-reversed': [
+    2000,
+    'lockups/cocoon-lockup-icon1.00-air2x-vapour-reversed.svg',
+    INK,
+  ],
 }
 
 /**
@@ -161,13 +171,11 @@ export function build(out = here) {
   mkdirSync(join(out, 'lockups'), { recursive: true })
   for (const [name, text] of Object.entries(files))
     writeFileSync(join(out, name), text)
-  for (const [name, width] of Object.entries(PREVIEWS)) {
-    const src =
-      name === 'cocoon-lockup'
-        ? files['lockups/cocoon-lockup-icon1.00-air2x-vapour.svg']
-        : files[`${name}.svg`]
-    writeFileSync(join(out, `${name}.png`), png(src, { width }))
-  }
+  for (const [name, [width, file, background]] of Object.entries(PREVIEWS))
+    writeFileSync(
+      join(out, `${name}.png`),
+      png(files[file], { width, ...(background ? { background } : null) }),
+    )
   const worst = checkLockups()
   const stated = checkSpec()
   return { files, worst, stated }
