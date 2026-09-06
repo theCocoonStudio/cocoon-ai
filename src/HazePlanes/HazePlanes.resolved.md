@@ -14,7 +14,8 @@ contracts.4: `ResizeObserver` and `matchMedia` exist; without the first the comp
 defaults.1: state.reset is an adjustment during render, the React pattern for state that follows a prop, rather than an effect, so the closed frame never paints
 defaults.2: the first focus scan and the reduced-motion read are deferred one microtask, the same path a mutation or a media change takes; the effect bodies set no state, as the React Compiler lint requires
 defaults.3: `open` is only meaningful while fan is set; `isOpen = !fan || open`, so turning fan off shows the planes at once
-defaults.4: under 'xy' and 'z' the axis that does not animate is at its open value in the closed state too, which is what lets the open transition move one quantity; a closed 'xy' fan therefore has the copies at final size behind the face, and a closed 'z' fan has them at final displacement at size 1, visible beside the face
+defaults.4: the fan object is normalised to a string key, `xyz:shrink` and the like, so a new object with the same meaning does not reset the planes; a change of meaning does
+defaults.4a: `size: 'grow'` starts at `scale(0)`, which the browser interpolates from; under `shrink` a plane starts exactly on the face at `scale(1)` and, with `xyz`, is fully occluded at the first frame as well as transparent
 defaults.5: `paint` is read under transform mode only; under shadow mode it is ignored without a warning
 defaults.6: lengths in transforms and shadows are rounded to 3 decimals, scales to 6, matching the util's CSS output
 defaults.7: `radius` on the component is the scene's radius; the border radius is `cornerRadius`. The old `radius` prop name is not aliased; it would silently become a scene value
@@ -27,4 +28,4 @@ notes.3: jsdom keeps box-shadow text as written, `0` for the blur and hex colour
 
 ## gaps
 
-gaps.1: defaults.4 makes a closed `'z'` fan visible; if the intent was a fully hidden rest state for every fan, `'z'` needs the displacement to animate as well, which is `'both'`. Left as specified, flagged for Izzy
+gaps: none
