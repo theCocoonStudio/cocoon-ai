@@ -9,7 +9,8 @@ import { hazeAnalyse, hazeTones } from '../utils/hazePlanes.js'
  *
  *   <HazePlanes>Heading</HazePlanes>
  *   <HazePlanes fan><CocoonIcon name="settings" size={48} /></HazePlanes>
- *   <HazePlanes mode="shadow" cornerRadius={8} style={{ width: 80, height: 80 }} />
+ *   <HazePlanes mode="shadow" style={{ width: 80, height: 80, borderRadius: 8 }} />
+ *   <HazePlanes paint={{ background: true, color: true, border: true }}><button>…</button></HazePlanes>
  *
  * Two mechanisms. `transform` duplicates the children once per plane, each
  * copy moved along the angle and scaled about its own centre: exact for any
