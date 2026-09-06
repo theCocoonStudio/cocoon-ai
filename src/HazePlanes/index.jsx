@@ -1,4 +1,11 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { hazeAnalyse, hazeTones } from '../utils/hazePlanes.js'
 
 /**
@@ -261,7 +268,27 @@ export function HazePlanes({
     ...style,
   }
 
-  // markup.3–6: copies, furthest first, each moved along the angle and scaled
+  // markup.5–6: the tones go on each copy's top-level elements as inline
+  // style, so they beat the stylesheet rules the element carries. Only text
+  // falls back to the wrapper.
+  const kids = Children.toArray(children)
+  const allElements = kids.length > 0 && kids.every(isValidElement)
+  const toneStyle = (k) => ({
+    ...(painted.background ? { background: scene.tones[k] } : null),
+    ...(painted.color ? { color: inkTones[k] } : null),
+    ...(painted.border ? { borderColor: borderTones[k] } : null),
+  })
+  const paintCopy = (k) =>
+    kids.map((child, i) =>
+      isValidElement(child)
+        ? cloneElement(child, {
+            key: child.key ?? i,
+            style: { ...child.props.style, ...toneStyle(k) },
+          })
+        : child,
+    )
+
+  // markup.3–4: copies, furthest first, each moved along the angle and scaled
   // about its own centre. aria-hidden and unselectable, so they stay out of
   // the accessibility tree and out of a selection.
   const copies =
@@ -284,14 +311,11 @@ export function HazePlanes({
                 transitionProperty: 'transform, opacity',
                 transitionDuration: time,
                 transitionTimingFunction: easing,
-                ...(painted.background
-                  ? { background: scene.tones[p.k] }
-                  : null),
-                ...(painted.color ? { color: inkTones[p.k] } : null),
-                ...(painted.border ? { borderColor: borderTones[p.k] } : null),
+                // Text has no element of its own, so its tones land here.
+                ...(allElements ? null : toneStyle(p.k)),
               }}
             >
-              {children}
+              {paintCopy(p.k)}
             </span>
           ))
       : null
