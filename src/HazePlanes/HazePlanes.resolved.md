@@ -17,6 +17,9 @@ defaults.3: `open` is only meaningful while fan is set; `isOpen = !fan || open`,
 defaults.4: the fan object is normalised to a string key, `xyz:shrink` and the like, so a new object with the same meaning does not reset the planes; a change of meaning does
 defaults.4a: `size: 'grow'` starts at `scale(0)`, which the browser interpolates from; under `shrink` a plane starts exactly on the face at `scale(1)` and, with `xyz`, is fully occluded at the first frame as well as transparent
 defaults.5: `paint` is read under transform mode only; under shadow mode it is ignored without a warning
+defaults.5a: `paint` strings are shorthands for the object: auto and color are { color }, background is { background }, both is { background, color }; an unknown string throws before any hook runs, like a bad mode
+defaults.5b: `ink` defaults to the surface when the box is not painted and to the ground when it is; `borderInk` defaults to the surface. A copy takes the tones only where its content inherits them
+defaults.5c: `cornerRadius: 'auto'` reads the content's first element's computed border-top-left-radius in the ResizeObserver callback, falling back to the border-radius shorthand where the longhand resolves to 0, which is what jsdom does; a value given overrides
 defaults.6: lengths in transforms and shadows are rounded to 3 decimals, scales to 6, matching the util's CSS output
 defaults.7: `radius` on the component is the scene's radius; the border radius is `cornerRadius`. The old `radius` prop name is not aliased; it would silently become a scene value
 

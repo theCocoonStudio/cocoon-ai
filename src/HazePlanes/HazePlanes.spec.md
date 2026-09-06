@@ -24,10 +24,11 @@ props.6: cut — 'vapour' | 'dense', optional, default 'vapour'; names the haze 
 props.7: haze — number in (0, 1), optional, default none; overrides props.6 when given
 props.8: surface — CSS hex colour, optional, default '#141414'; the colour the face paints, and the near end of the box ramp
 props.9: ground — CSS hex colour, optional, default '#FFFFFF'; the colour behind the element, and the far end of every ramp
-props.10: ink — CSS hex colour, optional, default props.9; the near end of the content ramp under paint 'both' (new; see markup.6)
+props.10: ink — CSS hex colour, optional; the near end of the content ramp. Default props.9 when paint.background is on, since the content then contrasts with its box, and props.8 otherwise, since content standing alone is the surface (new; see markup.6)
+props.10a: borderInk — CSS hex colour, optional, default props.8; the near end of the border ramp (Izzy, 2026-09-06: a black-bordered button whose planes kept a black border on every copy)
 props.11: mode — 'transform' | 'shadow', optional, default 'transform'; the old aliases element, text and box are refused (exits.throws)
-props.12: paint — 'auto' | 'background' | 'color' | 'both', optional, default 'auto', which is 'color'; transform mode only, ignored under shadow
-props.13: cornerRadius — number (px) or CSS length string, optional, default 0; the border radius of the wrapper and, under shadow mode, of the shadow geometry (was `radius`; renamed because props.3 is the scene's radius)
+props.12: paint — 'auto' | 'background' | 'color' | 'both' | { background: boolean, color: boolean, border: boolean }, optional, default 'auto', which is { color: true }; 'background' and 'color' name one, 'both' is { background: true, color: true }; an object fills its missing keys with false. Transform mode only, ignored under shadow
+props.13: cornerRadius — 'auto' | number (px) | CSS length string, optional, default 'auto'; the border radius of the wrapper and, under shadow mode, of the shadow geometry. 'auto' reads the content's first element's computed border-radius whenever the element is measured (was `radius`, default 0; renamed because props.3 is the scene's radius; auto at Izzy's ask, 2026-09-06)
 props.14: fan — false | true | { xyz: boolean, size: 'grow' | 'shrink' | falsy }, optional, default false; true is { xyz: true, size: 'shrink' }, and an object fills its missing keys from that. Planes stand open at rest when false; otherwise they are transparent at rest and fade in as they open on hover or focus, every animated quantity moving together. xyz: the planes start on the face's position and travel to their places. size 'shrink': the planes start at the face's size and shrink to their final size; 'grow': they start at 0 and grow; falsy: they are at their final size throughout (Izzy, 2026-09-06)
 props.15: duration — CSS time string, optional, default '260ms'
 props.16: easing — CSS timing function, optional, default 'ease', what CSS does; 'ease-in', 'ease-out', 'ease-in-out', 'linear' and any cubic-bezier pass through (was a custom cubic-bezier)
@@ -48,7 +49,7 @@ context.provided: none
 
 ## state
 
-state.1: box — { width, height } in px, initial { 0, 0 }; the wrapper's content box, measured
+state.1: box — { width, height, cornerRadius } in px, initial { 0, 0, 0 }; the wrapper's content box, measured, and the content's first element's computed border-radius
 state.2: open — boolean, initial !fan; whether the planes stand open
 state.3: needsFocus — boolean, initial false; whether the wrapper must take a tab stop for the fan
 state.reset: state.2 resets to !fan whenever props.14 changes
@@ -59,8 +60,8 @@ markup.1: root <span> position relative, display inline-block, border-radius pro
 markup.2: the content in a <span> position relative, display block, rendered last so it paints above every plane without z-index
 markup.3: transform mode, once state.1 has a width: one <span aria-hidden="true"> per plane k = 1 .. planes−1, absolutely positioned over the content box, pointer-events none, user-select none, DOM order furthest first, each holding a copy of children
 markup.4: each copy k carries transform translate(dx_k, dy_k) scale(S_k) about its own centre, from hazeAnalyse at state.1's width and height; open state per states.*
-markup.5: paint 'color' gives copy k `color: tone_k`; 'background' gives `background: tone_k`; tone_k from hazeTones with props.8 and props.9
-markup.6: paint 'both' gives copy k `background: tone_k` from the surface ramp and `color: inkTone_k` from a second ramp, hazeTones with props.10 as surface and props.9 as ground, so the copy's content stays legible on its own box (fix: the old component gave both the same tone and the content vanished)
+markup.5: three ramps, each hazeTones toward props.9: the box ramp from props.8, the content ramp from props.10, the border ramp from props.10a. paint.background gives copy k `background` from the box ramp, paint.color gives it `color` from the content ramp, paint.border gives it `border-color` from the border ramp
+markup.6: a copy's content takes those values only where it inherits them: currentColor for the content, `border-color: inherit` for the border, and a background that is transparent or `inherit`; a child that sets its own colours keeps them on every plane (fix for the old 'both', which gave box and content one tone and the content vanished)
 markup.7: shadow mode: the root carries `background: tone_0` and a box-shadow with one layer per plane, `dx dy 0 spread tone_k`, from hazeAnalyse; no copies exist
 markup.8: transform mode: each copy transition-property transform, opacity, with props.15 and props.16; shadow mode: no transition
 markup.9: before state.1 has a width, no planes: markup.1–2 only
@@ -83,7 +84,7 @@ callbacks.neg.1: none of the four is attached when fan is false
 
 ## effects
 
-effects.1: on mount → a ResizeObserver on the root writes state.1 from the content rect on every size change; disconnected on unmount
+effects.1: on mount → a ResizeObserver on the root writes state.1 from the content rect and from getComputedStyle of the content's first element child (border-top-left-radius, in px, 0 when there is none) on every size change; disconnected on unmount
 effects.2: on mount and whenever fan changes → if fan is set, scan the root for a focusable descendant (a[href], button, input, select, textarea, [tabindex] not -1, none disabled) and set state.3 to its absence; a MutationObserver on the subtree (childList, subtree, tabindex, href, disabled) rescans; disconnected when fan turns off or on unmount
 effects.3: on mount → a matchMedia listener for prefers-reduced-motion: reduce; while it matches, props.15 is treated as '0ms' (new: the old component ignored it)
 effects.4: dev-only console.warn, absent in production builds, when mode is 'shadow' and state.1 is not square, naming the height error hazeAnalyse reports; and when any plane is in hazeAnalyse's hidden list (new: the old component computed and ignored both)
