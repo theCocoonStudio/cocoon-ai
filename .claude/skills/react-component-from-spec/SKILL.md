@@ -455,7 +455,7 @@ Every entry gets a mitigation tier. The first two are worth reaching for; if a c
 
 ### Naming and files
 
-- PascalCase component names — JSX treats a lowercase tag as a host element.
+- PascalCase component names — JSX treats a lowercase tag as a host element. A scene component's name ends in the class of the three object its root renders — `CocoonLogoGroup`, `RibbonMesh`, `DustPoints` — so the call site says what lands in the graph without opening the file.
 - `.jsx` for any file containing JSX. Under Vite, JSX in a `.js` file isn't transformed and fails at parse, so this is a build fact rather than a preference.
 - One folder per component: `src/Button/index.jsx` holds the component, beside `Button.spec.md`, `Button.resolved.md`, `Button.test.jsx`, and any helper used only by this component. A helper that is reusable and React-free goes to `src/utils/` as a plain function with its own test, and is not exported from the package until something outside needs it.
 - `src/index.js` is the only barrel, and it is the package entry by design, so tree-shaking is unaffected. No other index file re-exports anything; `src/Button/index.jsx` defines the component, it does not gather.
