@@ -22,33 +22,34 @@ import {
 } from '../utils/hazePlanes.js'
 import { simplifyPolyline } from '../utils/simplifyPolyline.js'
 import { LOGO } from './logo.js'
+import { config } from '../../cocoon.config.js'
 
 /** The scene keys the `scene` prop may carry; the rest of HAZE_DEFAULTS is CSS. */
 const SCENE_KEYS = ['planes', 'depth', 'radius', 'angle', 'perspective']
 
 const DEFAULTS = /* @__PURE__ */ Object.freeze({
   view: 'lockup',
-  width: 1,
+  width: config.logoGroup.width,
   depth: null, // DEPTH_RATIO of the ink height
-  maxSize: 1000,
-  eps: 0.25,
+  maxSize: config.logoGroup.maxSize,
+  eps: config.logoGroup.eps,
   scene: null,
-  cut: 'vapour',
+  cut: config.cut,
   haze: null,
   reverse: false,
   surface: HAZE_DEFAULTS.surface,
   ground: HAZE_DEFAULTS.ground,
-  size: 1,
-  air: 2,
+  size: config.lockup.size,
+  air: config.lockup.air,
   gap: null,
   extrudeOptions: null,
 })
 
 /** The group's z extent as a fraction of the ink height, when `depth` is unset. */
-const DEPTH_RATIO = 1 / 4
+const DEPTH_RATIO = config.logoGroup.depthRatio
 /** Bevel radius as a fraction of one triangle's depth, the same on every piece. */
-const BEVEL_RATIO = 0.3
-const BEVEL_SEGMENTS = 3
+const BEVEL_RATIO = config.logoGroup.bevelRatio
+const BEVEL_SEGMENTS = config.logoGroup.bevelSegments
 
 function positive(o, key) {
   if (!(o[key] > 0))

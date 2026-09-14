@@ -45,11 +45,12 @@ import { png } from '../lib/raster.js'
 import * as M from './mark.js'
 import { WORD_WDTH, WORD_WGHT, lockup } from './lockup.js'
 import { SIZES, gapFor } from './build.js'
+import { config } from '../../cocoon.config.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const OUT_DIR = join(here, 'explorations', 'export')
 export const DEFAULT_COUNT = 2
-export const DEFAULT_AIR = 2
+export const DEFAULT_AIR = config.lockup.air
 
 /**
  * The sweepable parameters. `buffer` is the default step, chosen so two
@@ -108,7 +109,7 @@ export const PARAMS = {
   },
   size: {
     doc: 'icon height, in x-height bands (lockup only)',
-    value: 1.0,
+    value: config.lockup.size,
     buffer: 0.1,
     lockup: true,
     valid: (v) => v > 0,

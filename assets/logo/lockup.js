@@ -13,11 +13,12 @@ import { fileURLToPath } from 'node:url'
 import { fmt } from '../lib/fmt.js'
 import * as M from './mark.js'
 import * as W from './wordmark.js'
+import { config } from '../../cocoon.config.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const FONT = join(here, 'Saira-VariableFont_wdth,wght.ttf')
-export const WORD_WGHT = 350
-export const WORD_WDTH = 107
+export const WORD_WGHT = config.wordmark.wght
+export const WORD_WDTH = config.wordmark.wdth
 export const STEM = 71.1
 export const XH_TOP = 518
 export const XH_BOT = -8

@@ -29,19 +29,17 @@
  * read their constants from here so the three cannot drift.
  */
 
-/** House scene and subject defaults. */
+import { config } from '../../cocoon.config.js'
+
+/** House scene and subject defaults: the scene, ink and cut from cocoon.config.js, the CSS subject's own here. */
 export const HAZE_DEFAULTS = /* @__PURE__ */ Object.freeze({
-  planes: 4,
-  depth: 2 / 3,
-  radius: 1.9 / 3, // the 1.90 camera offset of the old model, chosen on the spread sheets
-  angle: 0,
-  perspective: 1 / 6,
-  haze: 0.1,
+  ...config.scene,
+  haze: config.cuts[config.cut].haze,
   width: 48,
   height: null,
   cornerRadius: 0,
-  surface: '#141414',
-  ground: '#FFFFFF',
+  surface: config.ink,
+  ground: config.cuts[config.cut].ground,
   technique: 'auto',
   tolerance: 1,
   selector: '.haze',
@@ -51,10 +49,11 @@ export const HAZE_DEFAULTS = /* @__PURE__ */ Object.freeze({
 })
 
 /** Named haze totals: the fraction of surface radiance surviving the whole row. */
-export const HAZE_CUTS = /* @__PURE__ */ Object.freeze({
-  vapour: 0.1, // 0.275² until 2026-09-06; see the logo spec's tone table
-  dense: 0.15 ** 2,
-})
+export const HAZE_CUTS = /* @__PURE__ */ Object.freeze(
+  Object.fromEntries(
+    Object.entries(config.cuts).map(([name, cut]) => [name, cut.haze]),
+  ),
+)
 
 // ---- colour ----------------------------------------------------------------
 

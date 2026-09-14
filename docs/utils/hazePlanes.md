@@ -2,7 +2,7 @@
 
 `src/utils/hazePlanes.js`. The cocoon plane recession as a scene, and the CSS that expresses it. React-free. Not exported from the package; `HazePlanes` and the asset generators import it directly.
 
-The logo, the icon set and the `HazePlanes` component all draw the same picture: a row of copies of a shape standing behind it, each a step smaller and a step further along one direction, seen through haze. This module holds that scene once. The constants in `HAZE_DEFAULTS` and `HAZE_CUTS` are the ones the logo spec derives; change them here and the assets rebuild differently, which their tests will say.
+The numbers start in `cocoon.config.js` at the repo root and `HAZE_DEFAULTS` reads them from there. The logo, the icon set and the `HazePlanes` component all draw the same picture: a row of copies of a shape standing behind it, each a step smaller and a step further along one direction, seen through haze. This module holds that scene once. The constants in `HAZE_DEFAULTS` and `HAZE_CUTS` are the ones the logo spec derives; change them here and the assets rebuild differently, which their tests will say.
 
 ## The model
 

@@ -10,9 +10,10 @@
  */
 import * as H from '../lib/haze.js'
 import { fmt } from '../lib/fmt.js'
+import { config } from '../../cocoon.config.js'
 
 const SIDE = 1000
-export const APEX_DEG = 48 // 60 would be equilateral
+export const APEX_DEG = config.mark.apex // 60 would be equilateral
 
 /** The front triangle in SVG coordinates, traversed TR -> TL -> apex. */
 export function triangle(e = SIDE, apexDeg = APEX_DEG) {
@@ -88,11 +89,11 @@ export function svg(
 }
 
 // ---- favicon ---------------------------------------------------------------
-const FAVI_SIZE = 1000
-const FAVI_RADIUS = 220
-export const FAVI_MARGIN = 0.15 // least clear air between any ink and the tile edge; 0.1 until 2026-09-05
-export const FAVI_LIGHT = '#FFFFFF' // white; the tile has no edge on white chrome, by decision (2026-09-05)
-export const FAVI_DARK = '#141414'
+const FAVI_SIZE = config.favicon.size
+const FAVI_RADIUS = config.favicon.radius
+export const FAVI_MARGIN = config.favicon.margin // least clear air between any ink and the tile edge
+export const FAVI_LIGHT = config.favicon.light // the light tile's ground
+export const FAVI_DARK = config.favicon.dark
 
 /**
  * The mark on a rounded tile. The front triangle is sized and centred; the
