@@ -22,6 +22,3 @@ export function fmt(x, prec = 3) {
   const step = 10 ** -prec
   return (x < 0 ? down - step : down + step).toFixed(prec)
 }
-
-/** `fmt` over a point: "x y". */
-export const fmt2 = (p, prec = 3) => `${fmt(p[0], prec)} ${fmt(p[1], prec)}`
