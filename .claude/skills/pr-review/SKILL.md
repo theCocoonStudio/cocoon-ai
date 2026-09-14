@@ -25,7 +25,7 @@ Two principles, and everything below applies them:
 2. **Take the branch.** Check it out locally. `git log --oneline main..HEAD` is the commit list; one commit per conceptual task, and each message says what and why. `git diff main...HEAD --stat` is the surface.
 3. **Run it.** `npm run check` on the branch, in full. Then whatever the change adds that the check does not exercise: a script, run; an export, opened; a generated file, regenerated and diffed; a component, mounted in the test renderer if its tests do not already; a claimed number, measured. This is the step that turns a reading into a review.
 4. **Walk the floor.** Every item below, every time, each with a one-line result in the report.
-5. **Attack.** Above the floor, with the time left: inputs the author did not try, the sequence they did not think of, the size that breaks it, the consumer that imports it differently, the machine that lacks what this one has. Anything found goes in the report's "Beyond the floor" section with its evidence.
+5. **Attack.** Above the floor, with the time left: every entry under "Attacks learned" first, then inputs the author did not try, the sequence they did not think of, the size that breaks it, the consumer that imports it differently, the machine that lacks what this one has. Anything found goes in the report's "Beyond the floor" section with its evidence, and anything the floor and the ordinary tests would not have caught is added to "Attacks learned".
 6. **Report.** In the shape below, then the decision.
 
 ## The floor
@@ -60,6 +60,12 @@ Posted as the review on GitHub, and, for a self-review, in the PR body. Sections
 **Questions.** Suspicions the reviewer could not verify, as questions to the author. Never mixed with findings.
 
 **Decision.** Approve, request changes, or comment, with the one sentence that decides it. Approve only if the reviewer would merge it. A request for changes names each change and, where the fix is mechanical, gives the exact command or edit.
+
+## Attacks learned
+
+What a review found that the floor and the ordinary tests would not have caught. Each entry is an anomaly turned into a standing attack: the reviewer tries every one of these on every non-trivial PR, and a new one is added the day it is found, with the date and the PR, so the list is the record of what this repo has been surprised by. The matching test shape goes into the spec skill's test table the same day, so the build catches it next time and the attack becomes a check.
+
+- **Two instances at once.** Mount the component or hook twice in one app, or alternate two of them frame by frame. Anything at module scope that is written, a uniforms object, a cache, a scratch vector stored between frames, is shared by both, and the failure is not an error but two things slightly wrong. Found 2026-09-15 on #29: every fluid pass took its uniforms object from its module-level config and wrote into it, so a second simulation would have overwritten the first's force and centre before rendering. Written for one known parent; a library cannot know its parent.
 
 ## Rules the reviewer keeps
 
