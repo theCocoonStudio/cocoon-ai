@@ -62,7 +62,7 @@ A `<group>` holding one mesh per plane, named `plane0` to `plane3`, front first,
 
 ## Colour
 
-Plane k takes tone k of the `hazeTones` ramp from `surface` toward `ground`; the wordmark takes tone 0, the same material as the front plane at the same depth. The material is a `meshBasicMaterial` with `toneMapped` off, so the tones match the SVG under the Canvas's default ACES tone mapping. `meshStandardMaterialProps` swaps in a lit `meshStandardMaterial` with three's default `toneMapped` on; the tone still sets `color`.
+Plane k takes tone k of the `hazeTones` ramp from `surface` toward `ground`; the wordmark takes tone 0, the same material as the front plane at the same depth. The material is a `meshBasicMaterial` with `toneMapped` off, so the tones match the SVG under the Canvas's default ACES tone mapping. `meshStandardMaterialProps` swaps in a lit `meshStandardMaterial` with three's default `toneMapped` left on, by decision (Izzy, 2026-09-13): a lit surface is already a departure from the flat logo, and tone mapping is what the rest of a lit scene expects; the tone still sets `color`. To match the SVG under lights anyway, pass `materialProps={{ toneMapped: false }}`.
 
 ## Vertices
 
