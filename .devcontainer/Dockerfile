@@ -9,7 +9,11 @@ ARG CLAUDE_CODE_VERSION=latest
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates curl git gh jq less nano procps sudo \
   iptables ipset iproute2 dnsutils aggregate \
+  chromium \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+# chromium: the headless browser `npm run export:logo-group` screenshots its
+# WebGL render with (SwiftShader, no GPU), driven by puppeteer-core from npm.
+# Nothing else in the sandbox uses it.
 
 # Global npm installs go somewhere the non-root user owns.
 RUN mkdir -p /usr/local/share/npm-global && chown -R node:node /usr/local/share
