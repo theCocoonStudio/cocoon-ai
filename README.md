@@ -8,18 +8,19 @@ Built with Vite in library mode. Plain JavaScript, ESM output. Peer dependencies
 
 Every `package.json` script, what it does, and where to read more.
 
-| script                                   | does                                                                                                                   | more                                             |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `npm run build`                          | emit `dist/index.js`, minified, sourcemaps carrying source                                                             |                                                  |
-| `npm run dev`                            | the build, rerun on change                                                                                             |                                                  |
-| `npm test`                               | vitest, once                                                                                                           |                                                  |
-| `npm run test:watch`                     | vitest, kept running                                                                                                   |                                                  |
-| `npm run lint`, `npm run lint:fix`       | eslint, report or fix                                                                                                  |                                                  |
-| `npm run format`, `npm run format:check` | prettier, write or check                                                                                               |                                                  |
-| `npm run assets`                         | rebuild every shipped asset: the icon set, then the logo                                                               | [assets/README.md](assets/README.md)             |
-| `npm run assets:icons`                   | the 26 icon SVGs and their contact sheet, with the five build guards                                                   | [assets/icons/README.md](assets/icons/README.md) |
-| `npm run assets:logo`                    | the mark, favicons, wordmark, lockups and PNG previews; refuses if the four plain icons or the spec's tier table drift | [assets/logo/README.md](assets/logo/README.md)   |
-| `npm run export:logo -- [params]`        | the mark or lockup at chosen scene values, plus a sheet of neighbours around each value                                | [docs/export-logo.md](docs/export-logo.md)       |
+| script                                   | does                                                                                                                   | more                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `npm run build`                          | emit `dist/index.js`, minified, sourcemaps carrying source                                                             |                                                        |
+| `npm run dev`                            | the build, rerun on change                                                                                             |                                                        |
+| `npm test`                               | vitest, once                                                                                                           |                                                        |
+| `npm run test:watch`                     | vitest, kept running                                                                                                   |                                                        |
+| `npm run lint`, `npm run lint:fix`       | eslint, report or fix                                                                                                  |                                                        |
+| `npm run format`, `npm run format:check` | prettier, write or check                                                                                               |                                                        |
+| `npm run assets`                         | rebuild every shipped asset: the icon set, then the logo                                                               | [assets/README.md](assets/README.md)                   |
+| `npm run assets:icons`                   | the 26 icon SVGs and their contact sheet, with the five build guards                                                   | [assets/icons/README.md](assets/icons/README.md)       |
+| `npm run assets:logo`                    | the mark, favicons, wordmark, lockups and PNG previews; refuses if the four plain icons or the spec's tier table drift | [assets/logo/README.md](assets/logo/README.md)         |
+| `npm run export:logo -- [params]`        | the mark or lockup at chosen scene values, plus a sheet of neighbours around each value                                | [docs/export-logo.md](docs/export-logo.md)             |
+| `npm run export:logo-group -- [props]`   | the logo mesh through a perspective camera, to SVG and PNG, every prop value printed on the sheet                      | [docs/export-logo-group.md](docs/export-logo-group.md) |
 
 Components are general React 19: nothing in `src/` assumes a bundler. Anything a bundler would normally supply (env values, asset URLs, lazy imports) arrives as an input. The build stamps `"use client"` onto `dist/index.js` so a Next consumer gets a client boundary and a Vite consumer ignores it.
 
@@ -39,6 +40,7 @@ docs/
   <Component>.md              API doc: props, handle, dispose rules, limits
   utils/<util>.md             API doc for a util worth reading about on its own; a folder, so a util and a component of the same name never collide on a case-insensitive disk
   export-logo.md              the export:logo script: grammar, every parameter, output
+  export-logo-group.md        the export:logo-group script: the logo mesh drawn in Node, and the camera to show it with
 assets/                       the studio's marks, produced by the scripts beside them; see assets/README.md
   lib/                        the four-plane engine shared by the icons and the logo
   icons/                      the UI icon set: shapes.js in, 26 SVGs and a contact sheet out
