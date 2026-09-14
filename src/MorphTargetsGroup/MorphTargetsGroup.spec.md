@@ -1,10 +1,12 @@
-# MorphTargets spec
+# MorphTargetsGroup spec
+
+Renamed from MorphTargets on 2026-09-13 (Izzy): a scene component's name ends in the three class its root renders, the group here.
 
 ## meta
 
 meta.target: portable
 meta.runtime: client
-meta.file: src/MorphTargets/index.jsx
+meta.file: src/MorphTargetsGroup/index.jsx
 
 ## imports
 
@@ -107,7 +109,7 @@ bridge: none
 
 ## library
 
-library.export: named `MorphTargets` from src/index.js
+library.export: named `MorphTargetsGroup` from src/index.js
 library.side-effects: none
 library.utils: src/utils/resampleGeometry.js and src/utils/decimateGeometry.js — plain functions, no React, unit-tested, not exported from the package
-library.docs: docs/MorphTargets.md — props, handle, dispose rules, limits from effects.2; README lists the file structure
+library.docs: docs/MorphTargetsGroup.md — props, handle, dispose rules, limits from effects.2; README lists the file structure
