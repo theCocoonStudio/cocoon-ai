@@ -24,9 +24,9 @@ import { simplifyPolyline } from '../utils/simplifyPolyline.js'
 import { LOGO } from './logo.js'
 
 /** The scene keys the `scene` prop may carry; the rest of HAZE_DEFAULTS is CSS. */
-export const SCENE_KEYS = ['planes', 'depth', 'radius', 'angle', 'perspective']
+const SCENE_KEYS = ['planes', 'depth', 'radius', 'angle', 'perspective']
 
-export const DEFAULTS = /* @__PURE__ */ Object.freeze({
+const DEFAULTS = /* @__PURE__ */ Object.freeze({
   view: 'lockup',
   width: 1,
   depth: null, // DEPTH_RATIO of the ink height
@@ -45,10 +45,10 @@ export const DEFAULTS = /* @__PURE__ */ Object.freeze({
 })
 
 /** The group's z extent as a fraction of the ink height, when `depth` is unset. */
-export const DEPTH_RATIO = 1 / 4
+const DEPTH_RATIO = 1 / 4
 /** Bevel radius as a fraction of one triangle's depth, the same on every piece. */
-export const BEVEL_RATIO = 0.3
-export const BEVEL_SEGMENTS = 3
+const BEVEL_RATIO = 0.3
+const BEVEL_SEGMENTS = 3
 
 function positive(o, key) {
   if (!(o[key] > 0))
@@ -91,7 +91,7 @@ export function resolveLogo(props = {}) {
 }
 
 /** The tone ramp, near plane first; a lone plane is the surface itself. */
-export function logoTones(o) {
+function logoTones(o) {
   const surface = o.reverse ? o.ground : o.surface
   const ground = o.reverse ? o.surface : o.ground
   if (o.scene.planes < 2) {
@@ -261,7 +261,7 @@ export function layoutLogo(o) {
 }
 
 /** Extrusion options for a piece, geometry units, the caller's merged last. */
-export function extrudeOptions(p, dt, overrides) {
+function extrudeOptions(p, dt, overrides) {
   let b = BEVEL_RATIO * dt
   if (2 * b >= p.depth) b = 0.45 * p.depth // a bevel can never eat the piece
   const g = 1 / p.width

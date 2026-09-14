@@ -11,7 +11,7 @@
 import * as H from '../lib/haze.js'
 import { fmt } from '../lib/fmt.js'
 
-export const SIDE = 1000
+const SIDE = 1000
 export const APEX_DEG = 48 // 60 would be equilateral
 
 /** The front triangle in SVG coordinates, traversed TR -> TL -> apex. */
@@ -88,8 +88,8 @@ export function svg(
 }
 
 // ---- favicon ---------------------------------------------------------------
-export const FAVI_SIZE = 1000
-export const FAVI_RADIUS = 220
+const FAVI_SIZE = 1000
+const FAVI_RADIUS = 220
 export const FAVI_MARGIN = 0.15 // least clear air between any ink and the tile edge; 0.1 until 2026-09-05
 export const FAVI_LIGHT = '#FFFFFF' // white; the tile has no edge on white chrome, by decision (2026-09-05)
 export const FAVI_DARK = '#141414'

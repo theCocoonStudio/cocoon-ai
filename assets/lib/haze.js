@@ -89,7 +89,7 @@ export const circle = (cx, cy, r) => ({ C: [cx, cy, r] })
 export const hole = (el) => ({ hole: el })
 
 /** Canonicalise to [{ kind, v, hole }]: v is [[x, y], ...] or [cx, cy, r]. */
-export function norm(elems) {
+function norm(elems) {
   return elems.map((e) => {
     if (e && e.kind) return e
     let isHole = false
@@ -248,7 +248,7 @@ export function fillet(poly, r, prec = 3) {
 }
 
 /** A full circle as two half-arcs. */
-export function circlePath(cx, cy, r, prec = 3) {
+function circlePath(cx, cy, r, prec = 3) {
   const f = (v) => fmt(v, prec)
   return (
     `M ${f(cx - r)} ${f(cy)} A ${f(r)} ${f(r)} 0 1 0 ${f(cx + r)} ${f(cy)} ` +
@@ -299,7 +299,7 @@ export function place(
 }
 
 /** Split elements into fill groups: a non-hole opens a group, a hole joins the last. */
-export function group(elems) {
+function group(elems) {
   const groups = []
   for (const el of elems) {
     if (el.hole && groups.length) groups[groups.length - 1].push(el)
@@ -462,7 +462,7 @@ export function flattenPath(d, tol = 0.05) {
 }
 
 /** Bounds of one path string over the subset this module emits: M/L, A (rx == ry, no rotation), Z. */
-export function pathBounds(d) {
+function pathBounds(d) {
   const tok = d.replace(/,/g, ' ').split(/\s+/).filter(Boolean)
   const pts = []
   let cur = null
@@ -506,7 +506,7 @@ export function pathsBounds(paths) {
 
 // ---- what ships ------------------------------------------------------------
 /** Inherits the CSS `color` of the container. The house black is set by the consumer. */
-export const FILL = 'currentColor'
+const FILL = 'currentColor'
 
 /**
  * The front plane alone: { pieces, viewBox, ink }, ready for svg().
