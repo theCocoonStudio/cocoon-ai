@@ -1,0 +1,20 @@
+# The one check a PR must pass, run where neither author has to remember it.
+# Make it a required status in the main ruleset and "the check passes" is a
+# fact on the PR page. Chrome is on the runner, so the export screenshot test
+# runs here too.
+name: check
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
