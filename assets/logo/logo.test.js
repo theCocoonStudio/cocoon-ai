@@ -10,11 +10,13 @@ import * as W from './wordmark.js'
 import { FONT, lockup, wordmark } from './lockup.js'
 import {
   AIR_TIERS,
+  LOGO_MODULE,
   SIZES,
   SPEC,
   checkLockups,
   checkSpec,
   gapFor,
+  logoModule,
   render,
   trailWorst,
 } from './build.js'
@@ -31,6 +33,10 @@ describe('the shipped files', () => {
     expect(shipped.sort()).toEqual(Object.keys(files).sort())
     for (const f of shipped)
       expect(readFileSync(join(here, f), 'utf8'), f).toBe(files[f])
+  })
+
+  it('include the logo mesh data module, byte for byte', () => {
+    expect(readFileSync(LOGO_MODULE, 'utf8')).toBe(logoModule())
   })
 })
 
