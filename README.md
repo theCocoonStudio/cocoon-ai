@@ -24,6 +24,54 @@ Every `package.json` script, what it does, and where to read more.
 
 Components are general React 19: nothing in `src/` assumes a bundler. Anything a bundler would normally supply (env values, asset URLs, lazy imports) arrives as an input. The build stamps `"use client"` onto `dist/index.js` so a Next consumer gets a client boundary and a Vite consumer ignores it.
 
+## Consuming the package
+
+What reaches the browser is decided twice: this build sets what is in `dist/index.js` (one ESM module, minified, `sideEffects: false`, every module-scope call marked `/* @__PURE__ */`), and the site's bundler decides how much of that file survives into a chunk. Turbopack, webpack and Vite all read both signals. Nothing on the consumer's side needs configuring; the import shape is what matters.
+
+**Static, named.** The form for anything on first paint, the nav logo included. Several names on one line are fine; what matters is that they are named.
+
+```js
+import { CocoonIcon, CocoonLogoGroup } from 'cocoon-ai'
+```
+
+**Namespace.** Bundlers track member access on a namespace, so this still shakes, but it is the form that breaks first. Prefer the named list.
+
+```js
+import * as cocoon from 'cocoon-ai' // cocoon.CocoonIcon
+```
+
+**Dynamic `import()`.** Once the module goes through a promise, the bundler cannot see which export the callback reads, so the lazy chunk carries all of cocoon-ai. Rollup and rolldown recognise the narrow case where the export is destructured directly in the `.then` parameter; do not count on it elsewhere.
+
+```js
+const { MorphTargetsGroup } = await import('cocoon-ai') // whole package in the chunk
+```
+
+**`React.lazy` and `next/dynamic`.** Same rule, same fix: make the lazy boundary a one-line module of your own that re-exports one name. The import from cocoon-ai is static and named again, so the chunk holds that component and what it reaches.
+
+```js
+// components/MorphTargetsGroup.js
+export { MorphTargetsGroup as default } from 'cocoon-ai'
+```
+
+```jsx
+import { lazy } from 'react'
+const MorphTargetsGroup = lazy(
+  () => import('./components/MorphTargetsGroup.js'),
+)
+
+import dynamic from 'next/dynamic'
+const MorphTargetsGroup = dynamic(
+  () => import('./components/MorphTargetsGroup.js'),
+  { ssr: false },
+)
+```
+
+Lazy is for what sits below the fold. The nav logo is on every page's first paint, so deferring it adds a request and a frame without the logo.
+
+Measured with rolldown, react and three external, what a consumer pulls from `dist/index.js`: `VERSION` alone 469 bytes, `CocoonIcon` alone 13 kB, `CocoonLogoGroup` alone 37 kB, everything 60 kB, minified before gzip.
+
+Two things the package cannot change. The React Compiler does not touch `node_modules`, so these components are not auto-memoised the way the site's own are; the heavy work is under explicit `useMemo` keyed on values instead. And the weight in any scene is `three`, not this package: `WebGLRenderer` alone keeps about 490 kB minified, 122 kB gzipped, of it, and a mesh in the nav brings that to every route. A site whose Canvas already mounts on every page has paid it.
+
 ## Layout
 
 ```
