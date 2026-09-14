@@ -27,7 +27,8 @@
     "assets": "npm run assets:icons && npm run assets:logo",
     "assets:icons": "node assets/icons/build.js",
     "assets:logo": "node assets/logo/build.js",
-    "export:logo": "node assets/logo/export.js"
+    "export:logo": "node assets/logo/export.js",
+    "export:logo-group": "node assets/logo/export-group.js"
   },
   "peerDependencies": {
     "react": "19.2.4",
