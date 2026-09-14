@@ -3,7 +3,7 @@
 // the front triangle with its centroid at the origin on the 1000 box, sharp and
 // filleted, and the wordmark's contours in font units with their holes.
 
-export const LOGO = Object.freeze({
+export const LOGO = /* @__PURE__ */ Object.freeze({
   triangle: {
     box: 1000,
     sharp: [[556.377,247.715],[-443.623,247.715],[-112.754,-495.430]],

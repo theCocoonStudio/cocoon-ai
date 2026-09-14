@@ -30,7 +30,7 @@
  */
 
 /** House scene and subject defaults. */
-export const HAZE_DEFAULTS = Object.freeze({
+export const HAZE_DEFAULTS = /* @__PURE__ */ Object.freeze({
   planes: 4,
   depth: 2 / 3,
   radius: 1.9 / 3, // the 1.90 camera offset of the old model, chosen on the spread sheets
@@ -51,7 +51,7 @@ export const HAZE_DEFAULTS = Object.freeze({
 })
 
 /** Named haze totals: the fraction of surface radiance surviving the whole row. */
-export const HAZE_CUTS = Object.freeze({
+export const HAZE_CUTS = /* @__PURE__ */ Object.freeze({
   vapour: 0.1, // 0.275² until 2026-09-06; see the logo spec's tone table
   dense: 0.15 ** 2,
 })

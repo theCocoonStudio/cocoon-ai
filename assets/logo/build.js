@@ -166,7 +166,7 @@ export function logoModule(data = logoData()) {
     `// The logo as outlines for the mesh, y up, chord error ${LOGO_TOL} design units:\n` +
     `// the front triangle with its centroid at the origin on the ${t.box} box, sharp and\n` +
     `// filleted, and the wordmark's contours in font units with their holes.\n\n` +
-    `export const LOGO = Object.freeze({\n` +
+    `export const LOGO = /* @__PURE__ */ Object.freeze({\n` +
     `  triangle: {\n    box: ${t.box},\n    sharp: ${pts(t.sharp, 3)},\n    outline: ${pts(t.outline, 3)},\n  },\n` +
     `  wordmark: {\n    bounds: [${w.bounds.map((v) => fmt(v, 2)).join(', ')}],\n` +
     `    xHeight: { top: ${w.xHeight.top}, bottom: ${w.xHeight.bottom} },\n    stem: ${w.stem},\n` +
