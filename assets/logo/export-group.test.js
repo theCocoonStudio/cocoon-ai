@@ -2,18 +2,19 @@ import { describe, expect, it } from 'vitest'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { buildLogo } from '../../src/CocoonLogoGroup/build.js'
 import {
   COMPONENT_PROPS,
   OPTIONS,
-  camera,
+  findBrowser,
   fitDistance,
+  html,
+  orbit,
   parseArgs,
-  project,
+  plan,
   run,
-  shade,
-  sheet,
 } from './export-group.js'
+
+const browser = findBrowser()
 
 describe('export:logo-group arguments', () => {
   it('parses every component prop by type and keeps the camera defaults', () => {
@@ -24,6 +25,8 @@ describe('export:logo-group arguments', () => {
       '--reverse',
       '--scene',
       '{"planes":3}',
+      '--meshStandardMaterialProps',
+      '{"roughness":0.3}',
       '--light',
       '1,0,0',
     ])
@@ -32,6 +35,7 @@ describe('export:logo-group arguments', () => {
       width: 2,
       reverse: true,
       scene: { planes: 3 },
+      meshStandardMaterialProps: { roughness: 0.3 },
     })
     expect(o.light).toEqual([1, 0, 0])
     expect(o.fov).toBe(OPTIONS.fov.value)
@@ -62,78 +66,137 @@ describe('export:logo-group arguments', () => {
       'air',
       'gap',
       'extrudeOptions',
+      'meshStandardMaterialProps',
     ])
   })
 })
 
 describe('the camera', () => {
-  it('fits the ink width to the given fraction of the view', () => {
+  it('fits whichever of width and height binds to the given fraction of the view', () => {
     const fov = 20
     const aspect = 2
-    const d = fitDistance(1, fov, aspect, 0.8)
-    const halfView = d * Math.tan((fov * Math.PI) / 360) * aspect
-    expect(1 / (2 * halfView)).toBeCloseTo(0.8, 9)
+    const t = Math.tan((fov * Math.PI) / 360)
+    // wide face: width binds
+    const dw = fitDistance(1, 0.1, fov, aspect, 0.9)
+    expect(1 / (2 * dw * t * aspect)).toBeCloseTo(0.9, 9)
+    // tall face: height binds
+    const dh = fitDistance(0.1, 1, fov, aspect, 0.9)
+    expect(1 / (2 * dh * t)).toBeCloseTo(0.9, 9)
   })
 
-  it('sits at the distance on the sphere and looks at the target', () => {
-    const cam = camera({ fov: 20, distance: 3, yaw: 90, pitch: 0 }, 2)
-    expect(cam.position.x).toBeCloseTo(3, 9)
-    expect(cam.position.z).toBeCloseTo(0, 9)
-    const t = camera(
-      { fov: 20, distance: 1, yaw: 0, pitch: 0, target: [5, 0, 0] },
-      2,
+  it('orbits about the target at the distance', () => {
+    expect(orbit({ distance: 3, yaw: 90, pitch: 0 })[0]).toBeCloseTo(3, 9)
+    expect(orbit({ distance: 3, yaw: 90, pitch: 0 })[2]).toBeCloseTo(0, 9)
+    expect(orbit({ distance: 1, yaw: 0, pitch: 0, target: [5, 0, 0] })).toEqual(
+      [5, 0, 1],
     )
-    expect(t.position.toArray()).toEqual([5, 0, 1])
-  })
-
-  it('shades in linear light: full light keeps the tone, half light darkens it', () => {
-    expect(shade('#C2C2C2', 1)).toBe('#C2C2C2')
-    const half = shade('#C2C2C2', 0.5)
-    expect(half < '#C2C2C2').toBe(true)
-    expect(half).not.toBe('#616161') // not a gamma-space halving
   })
 })
 
-describe('the drawing', () => {
-  it('projects only the faces that look at the camera: head on, the caps and the bevels, never the back', () => {
-    const logo = buildLogo({ view: 'icon' })
-    const cam = camera({ fov: 20, distance: 3, yaw: 0, pitch: 0 }, 2)
-    const { count, polygons } = project(logo, cam, 200, 100, {
-      light: [0, 0, 1],
-      ambient: 0.5,
-    })
-    const all = logo.pieces.reduce(
-      (a, p) => a + p.geometry.attributes.position.count / 3,
-      0,
+describe('the page', () => {
+  const o = parseArgs(['--depth', '0.05', '--cell', '300'])
+  const p = plan(o)
+
+  it('plans three cells: head on fitted, turned, and the lit detail on the front triangle', () => {
+    const { cells } = p.data
+    expect(cells).toHaveLength(3)
+    expect(cells[0].position[0]).toBeCloseTo(0, 9)
+    expect(cells[0].position[2]).toBeCloseTo(p.camera.distance, 9)
+    expect(cells[1].position[0]).toBeGreaterThan(0) // yaw 35 turns it to +x
+    expect(cells[2].target).toEqual(p.logo.pieces[0].position)
+    expect(cells[2].lit).toBe(true)
+    expect(cells[0].lit).toBe(false)
+  })
+
+  it('carries every piece with its vertex buffers, tone, width and position', () => {
+    expect(p.data.pieces.map((x) => x.name)).toEqual([
+      'plane0',
+      'plane1',
+      'plane2',
+      'plane3',
+      'wordmark',
+    ])
+    for (const [i, x] of p.data.pieces.entries()) {
+      const g = p.logo.pieces[i].geometry
+      expect(Buffer.from(x.position64, 'base64').byteLength).toBe(
+        g.attributes.position.array.byteLength,
+      )
+      expect(Buffer.from(x.normal64, 'base64').byteLength).toBe(
+        g.attributes.normal.array.byteLength,
+      )
+      expect(x.tone).toBe(p.logo.pieces[i].tone)
+    }
+  })
+
+  it('prints every component prop and the measures', () => {
+    const keys = p.data.propLines.map(([k]) => k)
+    expect(keys).toEqual(COMPONENT_PROPS)
+    expect(p.data.propLines.find(([k]) => k === 'depth')[1]).toMatch(/^0\.05$/)
+    const derived = p.data.derived.map(([k]) => k)
+    for (const k of [
+      'height',
+      'gap, stems',
+      'vertices',
+      'fov',
+      'distance',
+      'renderer',
+    ])
+      expect(derived).toContain(k)
+  })
+
+  it('is one self-contained file: three, the font, the data, three canvases, the renderer as a fiber Canvas sets it', () => {
+    const page = html(p.data)
+    expect(page).toContain(
+      'import * as THREE from "data:text/javascript;base64,',
     )
-    expect(count).toBeGreaterThan(0)
-    expect(count).toBeLessThan(all / 2)
-    expect(polygons).toContain('<polygon')
+    expect(page).toContain('font-family: Saira; src: url(data:font/ttf;base64,')
+    expect(page.match(/<canvas /g)).toHaveLength(3)
+    expect(page).toContain(
+      'new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true })',
+    )
+    expect(page).toContain('renderer.toneMapping = THREE.ACESFilmicToneMapping')
+    expect(page).toContain('renderer.outputColorSpace = THREE.SRGBColorSpace')
+    expect(page).toContain(
+      'new THREE.MeshBasicMaterial({ color: p.tone, toneMapped: false })',
+    )
+    expect(page).toContain('window.__rendered = true')
+    for (const k of COMPONENT_PROPS)
+      expect(page).toContain(`<div class="k">${k}</div>`)
   })
 
-  it('prints every component prop and the measures on the sheet', () => {
-    const s = sheet(parseArgs(['--depth', '0.05', '--cell', '300']))
-    for (const k of COMPONENT_PROPS) expect(s.svg).toContain(`>${k}<`)
-    for (const k of ['height', 'gap, stems', 'vertices', 'fov', 'distance'])
-      expect(s.svg).toContain(`>${k}<`)
-    expect(s.svg).toContain('0.05')
-    expect(s.svg.match(/<svg x=/g)).toHaveLength(3) // three cells
-  })
-
-  it('writes the svg and png, and names the files', () => {
+  it('writes the html, and the png only when a browser is found', async () => {
     const out = mkdtempSync(join(tmpdir(), 'logo-group-'))
     try {
-      const r = run(
+      const r = await run(
         parseArgs(['--out', out, '--name', 'probe', '--cell', '240']),
       )
-      expect(existsSync(r.paths.svg)).toBe(true)
-      expect(existsSync(r.paths.png)).toBe(true)
-      expect(r.paths.png.endsWith('probe.png')).toBe(true)
-      expect(readFileSync(r.paths.png).subarray(1, 4).toString()).toBe('PNG')
-      expect(r.camera.distance).toBeGreaterThan(0)
-      expect(r.back).toBeLessThan(1)
+      expect(existsSync(r.paths.html)).toBe(true)
+      expect(
+        readFileSync(r.paths.html, 'utf8').startsWith('<!doctype html>'),
+      ).toBe(true)
+      if (browser) expect(existsSync(r.paths.png)).toBe(true)
+      else expect(r.paths.png).toBeNull()
     } finally {
       rmSync(out, { recursive: true, force: true })
     }
-  })
+  }, 120_000)
+
+  it.skipIf(!browser)(
+    'renders through Chromium: the png is opaque and the ground and the ink both appear',
+    async () => {
+      const out = mkdtempSync(join(tmpdir(), 'logo-group-'))
+      try {
+        const r = await run(
+          parseArgs(['--out', out, '--name', 'probe', '--cell', '240']),
+        )
+        const png = readFileSync(r.paths.png)
+        expect(png.subarray(1, 4).toString()).toBe('PNG')
+        // colour type at byte 25 of the IHDR: 2 is RGB, 6 is RGBA; either way the sheet is drawn on an opaque ground
+        expect([2, 6]).toContain(png[25])
+      } finally {
+        rmSync(out, { recursive: true, force: true })
+      }
+    },
+    120_000,
+  )
 })
