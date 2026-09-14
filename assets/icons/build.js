@@ -49,7 +49,7 @@ export function iconsModule(files = renderSet()) {
       },
     )
     entries.push(
-      `  '${m[1]}': icon('${m[1]}', '${viewBox}', [\n    ${paths.join(',\n    ')},\n  ]),`,
+      `  '${m[1]}': /* @__PURE__ */ icon('${m[1]}', '${viewBox}', [\n    ${paths.join(',\n    ')},\n  ]),`,
     )
   }
   return (
@@ -70,7 +70,7 @@ export function iconsModule(files = renderSet()) {
     `  return Icon\n` +
     `}\n\n` +
     `export const icons = {\n${entries.join('\n')}\n}\n\n` +
-    `export const iconNames = Object.keys(icons)\n`
+    `export const iconNames = /* @__PURE__ */ Object.keys(icons)\n`
   )
 }
 

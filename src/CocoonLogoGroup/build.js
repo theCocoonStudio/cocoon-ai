@@ -26,7 +26,7 @@ import { LOGO } from './logo.js'
 /** The scene keys the `scene` prop may carry; the rest of HAZE_DEFAULTS is CSS. */
 export const SCENE_KEYS = ['planes', 'depth', 'radius', 'angle', 'perspective']
 
-export const DEFAULTS = Object.freeze({
+export const DEFAULTS = /* @__PURE__ */ Object.freeze({
   view: 'lockup',
   width: 1,
   depth: null, // DEPTH_RATIO of the ink height
