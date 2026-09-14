@@ -22,12 +22,12 @@ import * as fontkit from 'fontkit'
 import { fmt } from '../lib/fmt.js'
 import { simplifyPolyline } from '../../src/utils/simplifyPolyline.js'
 
-export const SE_N = 3.5 // superellipse exponent
-export const EPS_DEG = 65 // inner wedge half-angle; the arc covers 360 - 2·eps
-export const D_RATIO = 260 / 201.5 // loop centre offset as a multiple of a
-export const WEAVE_GAP = 45 // clear space each side of the over-stroke
-export const MARK_SB = 75 // side bearing each side of the mark
-export const RF_RATIO = 0.71 // fillet radius as a multiple of a
+const SE_N = 3.5 // superellipse exponent
+const EPS_DEG = 65 // inner wedge half-angle; the arc covers 360 - 2·eps
+const D_RATIO = 260 / 201.5 // loop centre offset as a multiple of a
+const WEAVE_GAP = 45 // clear space each side of the over-stroke
+const MARK_SB = 75 // side bearing each side of the mark
+const RF_RATIO = 0.71 // fillet radius as a multiple of a
 const FLAT = 1200 // samples per loop arc
 
 // ---- small vector helpers (numpy stand-ins) --------------------------------
@@ -41,7 +41,7 @@ const norm = (v) => Math.sqrt(v[0] * v[0] + v[1] * v[1])
 const otRound = (v) => Math.floor(v + 0.5)
 
 // ---- font ------------------------------------------------------------------
-export function instance(path, wght, wdth) {
+function instance(path, wght, wdth) {
   return fontkit.openSync(path).getVariation({ wght, wdth })
 }
 
@@ -82,7 +82,7 @@ function unrounded(fn) {
 }
 
 /** Flattened contours of a glyph: [[[x, y], ...], ...]. */
-export function glyphContours(font, char) {
+function glyphContours(font, char) {
   const glyph = font.glyphForCodePoint(char.codePointAt(0))
   const commands = unrounded(() => glyph.path.commands)
   const contours = []
@@ -134,7 +134,7 @@ const extent = (pts, i) => {
 }
 
 /** [a, b, sv, sh] from the instanced o. */
-export function oMetrics(font) {
+function oMetrics(font) {
   const cs = glyphContours(font, 'o').sort((p, q) => {
     const [pl, ph] = extent(p, 0)
     const [ql, qh] = extent(q, 0)
@@ -196,7 +196,7 @@ const seg = (p0, p1, n) =>
   ])
 
 /** Closed lemniscate centreline as { left, connPos, right, connNeg }. */
-export function markCentreline(
+function markCentreline(
   a,
   b,
   { n = SE_N, epsDeg = EPS_DEG, dRatio = D_RATIO, rfRatio = RF_RATIO } = {},
@@ -278,7 +278,7 @@ function trimHead(poly, s, band) {
 }
 
 /** Mark outline as one closed polygon, origin-centred, nonzero fill. */
-export function buildMark(a, b, sv, sh, { gap = WEAVE_GAP, ...kw } = {}) {
+function buildMark(a, b, sv, sh, { gap = WEAVE_GAP, ...kw } = {}) {
   const { left, connPos, right, connNeg } = markCentreline(a, b, kw)
   const hx = sv / 2
   const hy = sh / 2
@@ -311,9 +311,6 @@ export function buildMark(a, b, sv, sh, { gap = WEAVE_GAP, ...kw } = {}) {
   }
   return { outline: [...pieces[0], ...[...pieces[1]].reverse()], centre }
 }
-
-/** Ramer–Douglas–Peucker simplification; the util is the canon. */
-export const rdp = simplifyPolyline
 
 // ---- composition -----------------------------------------------------------
 /** { pieces, meta }: pieces is a list of glyphs, each a list of contours. */
@@ -355,7 +352,7 @@ export function toSvgPath(pieces, tol = 0.05, prec = 1) {
   for (const contours of pieces)
     for (const c of contours)
       out.push(
-        `M ${rdp(c, tol)
+        `M ${simplifyPolyline(c, tol)
           .map((p) => `${fmt(p[0], prec)} ${fmt(-p[1], prec)}`)
           .join(' L ')} Z`,
       )
