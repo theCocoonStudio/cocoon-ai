@@ -22,7 +22,7 @@ export const STEM = 71.1
 export const XH_TOP = 518
 export const XH_BOT = -8
 export const XH = XH_TOP - XH_BOT // 526
-export const XH_MID = (XH_TOP + XH_BOT) / 2 // 255
+const XH_MID = (XH_TOP + XH_BOT) / 2 // 255
 
 const cache = new Map()
 /**

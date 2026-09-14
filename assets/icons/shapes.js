@@ -72,7 +72,7 @@ export function arrow(
 }
 
 /** A stack of n horizontal bars, top-aligned at y = 0. */
-export function bars(
+function bars(
   n,
   length,
   bar = BAR,
@@ -103,7 +103,7 @@ function arc(cx, cy, rx, ry, a0, a1, n = 24) {
 
 // ---- the set ---------------------------------------------------------------
 /** exit / close. A plus turned 45 degrees, arms corner to corner. */
-export function cross(bar = BAR) {
+function cross(bar = BAR) {
   const h = bar / 2
   const a = BOX / Math.SQRT2 - bar / 2
   const plus = [
@@ -123,7 +123,7 @@ export function cross(bar = BAR) {
   return [rot(plus, 45)]
 }
 
-export function arrowRight(bar = BAR) {
+function arrowRight(bar = BAR) {
   return [arrow([BOX, BOX / 2], [0, BOX / 2], bar)]
 }
 
@@ -131,12 +131,12 @@ export function arrowLeft(bar = BAR) {
   return mirrorX(arrowRight(bar))
 }
 
-export function arrowUp(bar = BAR) {
+function arrowUp(bar = BAR) {
   return [rot(arrowRight(bar)[0], -90, BOX / 2, BOX / 2)]
 }
 
 /** An up arrow under a rule as wide as the arrowhead, so the pair recedes as one object. */
-export function scrollTop(bar = BAR) {
+function scrollTop(bar = BAR) {
   const headW = bar * 4
   const headLen = bar * 2.6
   const gap = bar * 0.6
@@ -147,12 +147,12 @@ export function scrollTop(bar = BAR) {
   ]
 }
 
-export function menu(bar = BAR) {
+function menu(bar = BAR) {
   return bars(3, BOX, bar)
 }
 
 /** Marker plus rule, three rows; the markers keep it from reading as menu. */
-export function toc(bar = BAR) {
+function toc(bar = BAR) {
   const m = bar * 1.15
   const lead = m + bar * 1.15
   const out = []
@@ -200,7 +200,7 @@ export function settings(bar = BAR, teeth = 8) {
 }
 
 /** A filled disc with the i knocked out, so the plane behind shows through. */
-export function info(bar = BAR) {
+function info(bar = BAR) {
   const R = BOX / 2
   const w = bar * 0.92
   const dotR = (w / 2) * 1.06
@@ -211,37 +211,13 @@ export function info(bar = BAR) {
   ]
 }
 
-/** The conventional external-link frame. Not in SET: a hollow shape fills with its own echoes. */
-export function launchFrame(bar = BAR) {
-  const t = bar
-  const [x0, y0, x1, y1] = [0, BOX * 0.24, BOX * 0.76, BOX]
-  const cutX = x1 - t
-  const cutY = y0 + t
-  const frame = [
-    [x0, y0],
-    [cutX - t * 1.05, y0],
-    [cutX - t * 1.05, y0 + t],
-    [x0 + t, y0 + t],
-    [x0 + t, y1 - t],
-    [x1 - t, y1 - t],
-    [x1 - t, cutY + t * 1.05],
-    [x1, cutY + t * 1.05],
-    [x1, y1],
-    [x0, y1],
-  ]
-  return [
-    frame,
-    arrow([BOX, 0], [BOX * 0.6, BOX * 0.4], bar, bar * 3, bar * 2.1),
-  ]
-}
-
 /**
  * A filled panel with its top-right corner knocked out and the arrow leaving
  * through the notch, up and right. Chosen 2026-09-06 from explorations/launch.png
  * over the unioned panel below: at 16 px the notch reads as leaving the box,
  * where the union read as a square with a nub.
  */
-export function launchNotch(bar = BAR) {
+function launchNotch(bar = BAR) {
   const x1 = BOX * 0.74
   const y0 = BOX * 0.26
   const n = BOX * 0.34
@@ -269,7 +245,7 @@ export function launchSolid(bar = BAR) {
 }
 
 /** A solid house with the doorway knocked out; the roof overhangs by one stroke each side. */
-export function home(bar = BAR) {
+function home(bar = BAR) {
   const eave = BOX * 0.43
   const wall = bar
   const doorW = BOX * 0.23
@@ -290,7 +266,7 @@ export function home(bar = BAR) {
 }
 
 /** Lens ring plus handle in two fill groups. Walls at 1.55 strokes keep the aperture under the ceiling. */
-export function search(bar = BAR, wall = bar * 1.55) {
+function search(bar = BAR, wall = bar * 1.55) {
   const R = BOX * 0.38
   const cx = R
   const cy = R
@@ -313,7 +289,7 @@ export function search(bar = BAR, wall = bar * 1.55) {
 }
 
 /** Head and shoulders, both solid. The bust is a drawn half-ellipse. */
-export function account(bar = BAR) {
+function account(bar = BAR) {
   const headR = BOX * 0.205
   const headCy = headR + BOX * 0.03
   const gap = bar * 0.62
