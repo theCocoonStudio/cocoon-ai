@@ -14,6 +14,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { png } from '../lib/raster.js'
 import { fmt } from '../lib/fmt.js'
+import { config } from '../../cocoon.config.js'
 import * as H from '../lib/haze.js'
 import { INK } from '../lib/haze.js'
 import { simplifyPolyline } from '../../src/utils/simplifyPolyline.js'
@@ -33,10 +34,10 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-export const SQUARE_PAD = 60
-export const SIZES = [0.9, 1.0, 1.1]
+export const SQUARE_PAD = config.mark.squarePad
+export const SIZES = config.lockup.sizes
 /** Tiers are named by clear air, in stems; the gap that delivers it is derived. */
-export const AIR_TIERS = [1, 2, 3]
+export const AIR_TIERS = config.lockup.airTiers
 export const CUTS = { vapour: { cut: 'vapour' }, dense: { cut: 'dense' } }
 /**
  * PNG previews: name -> [width, source file, background]. The lockup previews

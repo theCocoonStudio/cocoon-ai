@@ -26,6 +26,12 @@ Every `package.json` script, what it does, and where to read more.
 
 Components are general React 19: nothing in `src/` assumes a bundler. Anything a bundler would normally supply (env values, asset URLs, lazy imports) arrives as an input. The build stamps `"use client"` onto `dist/index.js` so a Next consumer gets a client boundary and a Vite consumer ignores it.
 
+## Configuration
+
+`cocoon.config.js` at the root is the one place a design default is stated: the scene, the ink and the two cuts, the mark's apex and fillet, the wordmark's Saira instance, the lockup's sizes, air tiers and defaults, the favicon tile, the icon stroke, the logo mesh's defaults and the export camera. The scene module, the haze engine, the asset builds, the export scripts and the components import it; no file restates a number, and `src/utils/config.test.js` checks that each reader takes its value from there.
+
+To change a default: edit the file, `npm run assets`, `npm test`, and look at the previews. A scene change moves the four plain icon files, which the logo build refuses to overwrite; delete them first, as `assets/logo/README.md` says. The file is committed, since a design default belongs to the repo and not to a machine.
+
 ## Consuming the package
 
 What reaches the browser is decided twice: this build sets what is in `dist/index.js` (one ESM module, minified, `sideEffects: false`, every module-scope call marked `/* @__PURE__ */`), and the site's bundler decides how much of that file survives into a chunk. Turbopack, webpack and Vite all read both signals. Nothing on the consumer's side needs configuring; the import shape is what matters.
@@ -77,6 +83,7 @@ Two things the package cannot change. The React Compiler does not touch `node_mo
 ## Layout
 
 ```
+cocoon.config.js              every design default, read by src/, assets/ and the scripts; see Configuration
 src/
   index.js                    public entry; one named export per component
   <Component>/

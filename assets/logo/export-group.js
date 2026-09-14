@@ -34,6 +34,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { buildLogo } from '../../src/CocoonLogoGroup/build.js'
 import { FONT } from './lockup.js'
+import { config } from '../../cocoon.config.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const OUT_DIR = join(here, 'explorations', 'export')
@@ -81,7 +82,11 @@ export const OPTIONS = {
     doc: 'an object swaps in the lit material with these props',
   },
   // the camera and the sheet
-  fov: { type: 'number', doc: 'vertical field of view, degrees', value: 20 },
+  fov: {
+    type: 'number',
+    doc: 'vertical field of view, degrees',
+    value: config.logoGroupExport.fov,
+  },
   distance: {
     type: 'number',
     doc: 'camera distance, world units; default fits the ink to fill',
@@ -89,29 +94,33 @@ export const OPTIONS = {
   fill: {
     type: 'number',
     doc: 'fraction of the head-on view the ink fills, width or height, whichever binds',
-    value: 0.9,
+    value: config.logoGroupExport.fill,
   },
   yaw: {
     type: 'number',
     doc: 'turned cells: rotation about y, degrees',
-    value: 35,
+    value: config.logoGroupExport.yaw,
   },
   pitch: {
     type: 'number',
     doc: 'turned cells: rotation about x, degrees',
-    value: 20,
+    value: config.logoGroupExport.pitch,
   },
   light: {
     type: 'vector',
     doc: 'direction the light comes from, x,y,z',
-    value: [-0.4, 0.6, 1],
+    value: config.logoGroupExport.light,
   },
   ambient: {
     type: 'number',
     doc: 'ambient light intensity for the lit cells',
-    value: 0.6,
+    value: config.logoGroupExport.ambient,
   },
-  cell: { type: 'number', doc: 'cell width, px; cells are 2:1', value: 900 },
+  cell: {
+    type: 'number',
+    doc: 'cell width, px; cells are 2:1',
+    value: config.logoGroupExport.cell,
+  },
   browser: {
     type: 'string',
     doc: 'the Chromium executable for the screenshot',

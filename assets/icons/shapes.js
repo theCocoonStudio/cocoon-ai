@@ -11,8 +11,9 @@
  * weight means changing BAR alone. The build checks that claim.
  */
 import { circle, hole } from '../lib/haze.js'
+import { config } from '../../cocoon.config.js'
 
-export const BAR = 0.15 * 1000
+export const BAR = config.icons.bar * 1000
 export const BOX = 1000
 
 const RAD = Math.PI / 180

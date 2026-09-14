@@ -27,6 +27,7 @@ import {
   hazeTones,
 } from '../../src/utils/hazePlanes.js'
 import { fmt } from './fmt.js'
+import { config } from '../../cocoon.config.js'
 
 // ---- scene -----------------------------------------------------------------
 export const SIDE = 1000 // design box; the larger dimension of a shape fills it
@@ -35,11 +36,13 @@ export const DEPTH = HAZE_DEFAULTS.depth
 export const RADIUS = HAZE_DEFAULTS.radius // in front-shape widths
 export const ANGLE = HAZE_DEFAULTS.angle // degrees, 0 right, 90 down
 export const PERSPECTIVE = HAZE_DEFAULTS.perspective
-export const CORNER_R = 0.02 // front fillet radius, fraction of the box
+export const CORNER_R = config.mark.corner // front fillet radius, fraction of the box
 
-export const INK = '#141414'
+export const INK = config.ink
 /** Haze colour per cut. The transmittance totals live in HAZE_CUTS. */
-export const CUT_GROUND = { vapour: '#FFFFFF', dense: '#E8E8E8' }
+export const CUT_GROUND = Object.fromEntries(
+  Object.entries(config.cuts).map(([name, cut]) => [name, cut.ground]),
+)
 
 const hypot = (dx, dy) => Math.sqrt(dx * dx + dy * dy)
 
