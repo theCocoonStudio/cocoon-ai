@@ -86,6 +86,8 @@ The geometries are the component's: disposed on unmount and when a rebuild repla
 
 Throw from render, naming the prop: a `view` other than the two; a colour `hazeResolve` refuses; `width`, `depth`, `maxSize` or `size` not above 0; `eps`, `air` or `gap` negative; `scene.planes` not a whole number of at least 1; an unknown `cut`. Owner: the nearest error boundary above the Canvas.
 
-## Camera
+## Canvas
 
-See `docs/export-logo-group.md` for the camera the export script recommends.
+Nothing beyond a default `<Canvas>`. The component uses built-in materials and no shaders, so fiber's defaults are the setup it was checked against: `antialias`, ACES filmic tone mapping, sRGB output, opaque or transparent as you choose. With the basic material no light is needed and none is read; `toneMapped` is off on it so the tones come through the tone mapping unchanged. With `meshStandardMaterialProps` the meshes are lit like any other, so give the scene a light or they render black. A `frameloop` of `demand` is fine: nothing here animates, and the owner that moves the group invalidates. Colour management stays at three's default; the hex tones are sRGB and `color` converts them.
+
+For the camera that shows the flat logo, and a page that renders the component's exact geometry with these settings, see `docs/export-logo-group.md`.

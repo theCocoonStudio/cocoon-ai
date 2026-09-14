@@ -351,7 +351,8 @@ export function html(data) {
   .cell .label { height: 18px; margin-bottom: 6px; }
   .text { display: flex; gap: 24px; margin-top: 24px; }
   .text .col { display: grid; grid-template-columns: 150px auto; column-gap: 12px; width: ${data.W}px; white-space: pre; }
-  #save { margin-top: 18px; font: inherit; }
+  .setup { max-width: ${2 * data.W + 24}px; margin-top: 18px; }
+  .setup code { font-family: ui-monospace, monospace; font-size: 12px; }
 </style>
 <body>
 <div id="sheet">
@@ -364,6 +365,9 @@ ${col(data.propLines)}
     <div class="col">
 ${col(data.derived)}
     </div>
+  </div>
+  <div class="setup">
+    <p><b>Canvas setup.</b> Each cell is <code>new WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true })</code> with <code>toneMapping = ACESFilmicToneMapping</code>, <code>outputColorSpace = SRGBColorSpace</code>, pixel ratio 1 and the ground as the clear colour, which is what a react-three-fiber <code>&lt;Canvas&gt;</code> sets by default. The camera is <code>PerspectiveCamera(fov, 2, 0.01, 100)</code>. The component needs nothing beyond that: built-in materials, no lights for the basic material (its <code>toneMapped</code> is off so the tones survive the tone mapping), one ambient and one directional light where <code>meshStandardMaterial</code> is used. The geometry is the exact buffers <code>buildLogo</code> produced; nothing is redrawn here.</p>
   </div>
 </div>
 <script type="module">
