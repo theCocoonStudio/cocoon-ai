@@ -25,7 +25,7 @@ function Blob({ scroll, scanned }) {
 
 ## Inputs
 
-**Children.** Exactly one `<mesh>`. Its declared geometry is the base. Targets go inside the mesh as `<primitive object={geometry} attach='userData-target0' />`, then `target1`, `target2` ..., contiguous from 0. A gap ends the list and, in development, logs a warning naming the ignored keys.
+**Children.** `children` is exactly one `<mesh>`. Its declared geometry is the base. Targets go inside the mesh as `<primitive object={geometry} attach='userData-target0' />`, then `target1`, `target2` ..., contiguous from 0. A gap ends the list and, in development, logs a warning naming the ignored keys.
 
 **Props.**
 

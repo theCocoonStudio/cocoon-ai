@@ -32,6 +32,16 @@ Components are general React 19: nothing in `src/` assumes a bundler. Anything a
 
 To change a default: edit the file, `npm run assets`, `npm test`, and look at the previews. A scene change moves the four plain icon files, which the logo build refuses to overwrite; delete them first, as `assets/logo/README.md` says. The file is committed, since a design default belongs to the repo and not to a machine.
 
+## What checks what
+
+Three layers, each with its own scope, so a rule lives in one place.
+
+- **The build, `npm run check`.** Everything a script can decide yes or no from the repository alone: lint, format, knip, the tests, the bundle. That includes the repo's structure, as tests in `src/structure.test.js`: every script has a README row, every README link resolves, every component folder has its four files and its doc and its export, every prop a component declares is named in its doc, every config value is read by something. A failure names the file and line it came from and the file the fix goes in. Nothing here needs judgment; if a check does, it is not in the build.
+- **The review, `.claude/skills/pr-review`.** Everything that needs judgment: whether the change matches its claim, whether a test tests the right thing, whether a doc is true rather than present, whether a name means the same in every place, and the attack beyond the checklist. The review's first floor item is that the build passes, so it never repeats the build's work.
+- **CI.** Runs the build on every PR and on `main`, so "the check passes" is a status on the PR rather than a claim in its body. Made a required status in the ruleset, it binds. The workflow file is added once the GitHub App can write workflows.
+
+There is no pre-commit hook. The check is one command and the review requires it; a hook would be a second copy of the same rules on two machines. If a red commit ever lands, that is the day to add one, and it would run only the fast subset: format, lint, knip.
+
 ## Consuming the package
 
 What reaches the browser is decided twice: this build sets what is in `dist/index.js` (one ESM module, minified, `sideEffects: false`, every module-scope call marked `/* @__PURE__ */`), and the site's bundler decides how much of that file survives into a chunk. Turbopack, webpack and Vite all read both signals. Nothing on the consumer's side needs configuring; the import shape is what matters.
@@ -93,6 +103,7 @@ src/
     <Component>.test.jsx      tests, named by spec id
     *.js                      helpers used only by this component
   utils/                      reusable, React-free functions with their own tests; not exported unless something outside needs them
+  structure.test.js           the repo's structure as tests; see What checks what
 docs/
   <Component>.md              API doc: props, handle, dispose rules, limits
   utils/<util>.md             API doc for a util worth reading about on its own; a folder, so a util and a component of the same name never collide on a case-insensitive disk
