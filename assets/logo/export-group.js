@@ -1,39 +1,59 @@
 #!/usr/bin/env node
 /**
- * export:logo-group — draw the CocoonLogoGroup mesh through a perspective
- * camera, in Node, with every prop value printed on the sheet.
+ * export:logo-group — render the CocoonLogoGroup mesh with three's own
+ * WebGLRenderer and print every prop value beside it.
  *
  *   npm run export:logo-group
  *   npm run export:logo-group -- --view icon --depth 0.08 --yaw 50
  *   npm run export:logo-group -- --scene '{"planes":3}' --extrudeOptions '{"bevelSegments":2}'
+ *   npm run export:logo-group -- --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
  *
- * No GL: the geometry the component would mount is built by the same
- * buildLogo, every triangle is projected with a three PerspectiveCamera,
- * shaded by one directional light, sorted back to front and written as SVG
- * polygons, then rasterised with resvg. Three cells: the head-on view a nav
- * would show, a turned view that shows the depth, and the front triangle
- * turned and close, which shows the bevel. The
- * text block under them lists every prop as resolved, the measures that
- * follow from them, and the camera.
+ * The geometry the component would mount is built by the same buildLogo,
+ * then written into one self-contained HTML page: three inlined, the vertex
+ * buffers inlined, the labels set in the repo's Saira. The page renders three
+ * cells with a PerspectiveCamera through WebGLRenderer, the renderer set up
+ * as a fiber Canvas sets it, ACES tone mapping and sRGB output, on an opaque
+ * ground: the head-on view a nav would show, fitted to the viewport at the
+ * camera's distance; the same turned, which shows the depth; and the front
+ * triangle turned and close under a light, which shows the bevel.
+ *
+ * The PNG is a screenshot of that page, taken by a headless Chromium through
+ * puppeteer-core, so it is the render and nothing else. No Chromium and the
+ * HTML is still written; open it in any browser. `--browser` names the
+ * executable; otherwise COCOON_BROWSER, then the usual paths, are tried.
  *
  * `--<prop> <value>` for every component prop; `--scene` and
  * `--extrudeOptions` take JSON. The camera: `--fov` degrees, `--distance`
- * world units (default: the ink fills `--fill` of the head-on view), `--yaw`
- * and `--pitch` degrees for the turned cell, `--light x,y,z` the direction
+ * world units (default: the ink fits `--fill` of the head-on view), `--yaw`
+ * and `--pitch` degrees for the turned cells, `--light x,y,z` the direction
  * the light comes from. `--cell` is the cell width in px.
  */
-import { mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
-import { PerspectiveCamera, Vector3 } from 'three'
-import { png } from '../lib/raster.js'
-import { fmt } from '../lib/fmt.js'
 import { buildLogo } from '../../src/CocoonLogoGroup/build.js'
 import { FONT } from './lockup.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const OUT_DIR = join(here, 'explorations', 'export')
+export const THREE_MODULE = join(
+  here,
+  '..',
+  '..',
+  'node_modules',
+  'three',
+  'build',
+  'three.module.min.js',
+)
+/** Where a Chromium usually is, tried in order after --browser and COCOON_BROWSER. */
+export const BROWSERS = [
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+]
 
 /** Every option: how its value parses, and what it is. Component props first. */
 export const OPTIONS = {
@@ -52,7 +72,7 @@ export const OPTIONS = {
   surface: { type: 'string', doc: 'hex, the near end of the ramp' },
   ground: {
     type: 'string',
-    doc: 'hex, the far end of the ramp; also the sheet background',
+    doc: 'hex, the far end of the ramp; also the clear colour',
   },
   size: { type: 'number', doc: 'lockup: icon height in x-height bands' },
   air: { type: 'number', doc: 'lockup: clear air in stems' },
@@ -61,6 +81,10 @@ export const OPTIONS = {
     doc: 'lockup: front-edge gap in stems, replaces the derivation',
   },
   extrudeOptions: { type: 'json', doc: 'merged over the extrusion defaults' },
+  meshStandardMaterialProps: {
+    type: 'json',
+    doc: 'an object swaps in the lit material with these props',
+  },
   // the camera and the sheet
   fov: { type: 'number', doc: 'vertical field of view, degrees', value: 20 },
   distance: {
@@ -69,17 +93,17 @@ export const OPTIONS = {
   },
   fill: {
     type: 'number',
-    doc: 'fraction of the head-on view the ink width fills',
-    value: 0.8,
+    doc: 'fraction of the head-on view the ink fills, width or height, whichever binds',
+    value: 0.9,
   },
   yaw: {
     type: 'number',
-    doc: 'turned cell: rotation about y, degrees',
+    doc: 'turned cells: rotation about y, degrees',
     value: 35,
   },
   pitch: {
     type: 'number',
-    doc: 'turned cell: rotation about x, degrees',
+    doc: 'turned cells: rotation about x, degrees',
     value: 20,
   },
   light: {
@@ -89,24 +113,28 @@ export const OPTIONS = {
   },
   ambient: {
     type: 'number',
-    doc: 'light that reaches every face, 0 to 1',
-    value: 0.55,
+    doc: 'ambient light intensity for the lit cells',
+    value: 0.6,
   },
-  cell: { type: 'number', doc: 'cell width, px', value: 900 },
+  cell: { type: 'number', doc: 'cell width, px; cells are 2:1', value: 900 },
+  browser: {
+    type: 'string',
+    doc: 'the Chromium executable for the screenshot',
+  },
   out: { type: 'string', doc: 'output folder', value: OUT_DIR },
   name: { type: 'string', doc: 'file stem', value: 'cocoon-logo-group' },
 }
-export const COMPONENT_PROPS = Object.keys(OPTIONS).slice(0, 15)
+export const COMPONENT_PROPS = Object.keys(OPTIONS).slice(0, 16)
 
-/** Parse argv after the script name into { props, camera, out, name }. */
+/** Parse argv after the script name into { props, ...options }. */
 export function parseArgs(argv) {
   const o = {}
   for (const [k, v] of Object.entries(OPTIONS)) if ('value' in v) o[k] = v.value
   for (let i = 0; i < argv.length; i++) {
-    let a = argv[i]
+    const a = argv[i]
     if (a === '-h' || a === '--help') return { help: true }
     if (!a.startsWith('--')) throw new Error(`unexpected argument ${a}`)
-    let [key, inline] = a.slice(2).split(/=(.*)/s)
+    const [key, inline] = a.slice(2).split(/=(.*)/s)
     const spec = OPTIONS[key]
     if (!spec) throw new Error(`unknown option --${key}`)
     let raw
@@ -140,171 +168,100 @@ export function parseArgs(argv) {
 export function help() {
   const rows = Object.entries(OPTIONS).map(
     ([k, v]) =>
-      `  --${k.padEnd(16)} ${v.doc}${'value' in v ? ` (default ${JSON.stringify(v.value)})` : ''}`,
+      `  --${k.padEnd(26)} ${v.doc}${'value' in v ? ` (default ${JSON.stringify(v.value)})` : ''}`,
   )
-  return `export:logo-group — the logo mesh through a perspective camera\n\n${rows.join('\n')}\n`
-}
-
-// ---- colour ----------------------------------------------------------------
-const hexToRgb = (h) =>
-  [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
-const srgbToLin = (c) =>
-  c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-const linToSrgb = (v) =>
-  v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055
-/** A tone under a light level, mixed in linear light. */
-export function shade(hex, level) {
-  return (
-    '#' +
-    hexToRgb(hex)
-      .map((c) =>
-        Math.round(
-          255 * Math.max(0, Math.min(1, linToSrgb(srgbToLin(c) * level))),
-        )
-          .toString(16)
-          .padStart(2, '0'),
-      )
-      .join('')
-      .toUpperCase()
-  )
+  return `export:logo-group — the logo mesh rendered by three, with every prop printed\n\n${rows.join('\n')}\n`
 }
 
 // ---- camera ----------------------------------------------------------------
 const rad = (deg) => (deg * Math.PI) / 180
 
-/** The distance at which `width` fills `fill` of a view of this fov and aspect, head on. */
-export function fitDistance(width, fov, aspect, fill) {
-  return width / fill / 2 / (Math.tan(rad(fov) / 2) * aspect)
+/**
+ * The distance at which a `width` x `height` face fills `fill` of a view of
+ * this vertical fov and aspect, head on: whichever of width and height binds.
+ */
+export function fitDistance(width, height, fov, aspect, fill) {
+  const t = Math.tan(rad(fov) / 2)
+  return Math.max(width / (2 * t * aspect), height / (2 * t)) / fill
 }
 
-/** A camera on a sphere of `distance` about `target`, turned by yaw about y and pitch about x. */
-export function camera(
-  { fov, distance, yaw, pitch, target = [0, 0, 0] },
-  aspect,
-) {
-  const cam = new PerspectiveCamera(fov, aspect, distance / 100, distance * 100)
-  cam.position.set(
+/** Camera position on a sphere of `distance` about `target`, turned by yaw about y and pitch about x. */
+export function orbit({ distance, yaw, pitch, target = [0, 0, 0] }) {
+  return [
     target[0] + distance * Math.sin(rad(yaw)) * Math.cos(rad(pitch)),
     target[1] + distance * Math.sin(rad(pitch)),
     target[2] + distance * Math.cos(rad(yaw)) * Math.cos(rad(pitch)),
-  )
-  cam.lookAt(...target)
-  cam.updateMatrixWorld(true)
-  cam.updateProjectionMatrix()
-  return cam
+  ]
 }
 
-/**
- * Every visible triangle of the built logo as an SVG polygon in a W x H px
- * view, shaded, sorted back to front. Returns { polygons, count }.
- */
-export function project(logo, cam, W, H, { light, ambient }) {
-  const L = new Vector3(...light).normalize()
-  const eye = cam.position
-  const a = new Vector3()
-  const b = new Vector3()
-  const c = new Vector3()
-  const n = new Vector3()
-  const e1 = new Vector3()
-  const e2 = new Vector3()
-  const mid = new Vector3()
-  const tris = []
-  for (const p of logo.pieces) {
-    const pos = p.geometry.attributes.position
-    const [px, py, pz] = p.position
-    const w = p.width
-    const at = (v, i) =>
-      v.set(pos.getX(i) * w + px, pos.getY(i) * w + py, pos.getZ(i) * w + pz)
-    for (let t = 0; t + 2 < pos.count; t += 3) {
-      at(a, t)
-      at(b, t + 1)
-      at(c, t + 2)
-      n.crossVectors(e1.subVectors(b, a), e2.subVectors(c, a))
-      if (n.lengthSq() === 0) continue
-      n.normalize()
-      mid
-        .addVectors(a, b)
-        .add(c)
-        .multiplyScalar(1 / 3)
-      if (n.dot(e1.subVectors(eye, mid)) <= 0) continue // faces away
-      const level = ambient + (1 - ambient) * Math.max(0, n.dot(L))
-      const depth = mid.distanceTo(eye)
-      const pts = [a, b, c].map((v) => {
-        const q = v.clone().project(cam)
-        return `${fmt(((q.x + 1) / 2) * W, 2)},${fmt(((1 - q.y) / 2) * H, 2)}`
-      })
-      tris.push({ depth, fill: shade(p.tone, level), pts: pts.join(' ') })
-    }
-  }
-  tris.sort((u, v) => v.depth - u.depth)
-  return {
-    // A hairline stroke in the fill hides the seams antialiasing leaves between neighbours.
-    polygons: tris
-      .map(
-        (t) =>
-          `<polygon points="${t.pts}" fill="${t.fill}" stroke="${t.fill}" stroke-width="0.7" stroke-linejoin="round"/>`,
-      )
-      .join(''),
-    count: tris.length,
-  }
-}
-
+// ---- the page --------------------------------------------------------------
+const r4 = (v) => (typeof v === 'number' ? Number(v.toFixed(4)) : v)
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-const r4 = (v) => (typeof v === 'number' ? Number(v.toFixed(4)) : v)
+const b64 = (buf) =>
+  Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength).toString('base64')
 
 /**
- * The sheet: the head-on cell, the turned cell, and the text block. Returns
- * { svg, width, height, values, camera }.
+ * Everything the page needs, as data: the pieces with their vertex buffers,
+ * the cells with their cameras, the labels. Returns { data, logo, buildMs }.
  */
-export function sheet(o) {
+export function plan(o) {
   const t0 = performance.now()
   const logo = buildLogo(o.props)
   const buildMs = performance.now() - t0
   const W = o.cell
   const H = Math.round(W / 2)
   const aspect = W / H
-  const distance = o.distance ?? fitDistance(logo.width, o.fov, aspect, o.fill)
+  const distance =
+    o.distance ?? fitDistance(logo.width, logo.height, o.fov, aspect, o.fill)
   const front = logo.pieces[0]
-  const cams = [
-    { label: 'head on, yaw 0 pitch 0', yaw: 0, pitch: 0, distance },
+  const lit = !!o.props.meshStandardMaterialProps
+  const cells = [
+    {
+      label: 'head on, yaw 0 pitch 0, the ink fitted to the view',
+      position: orbit({ distance, yaw: 0, pitch: 0 }),
+      target: [0, 0, 0],
+      lit,
+    },
     {
       label: `turned, yaw ${o.yaw} pitch ${o.pitch}`,
-      yaw: o.yaw,
-      pitch: o.pitch,
-      distance,
+      position: orbit({ distance, yaw: o.yaw, pitch: o.pitch }),
+      target: [0, 0, 0],
+      lit,
     },
     {
-      label: `detail: the front triangle, turned, ${r4(front.width * 3)} wide in view`,
-      yaw: o.yaw,
-      pitch: o.pitch,
-      distance: fitDistance(front.width * 3, o.fov, aspect, 1),
+      label: `detail: the front triangle, turned, lit with meshStandardMaterial to show the bevel`,
+      position: orbit({
+        distance: fitDistance(
+          front.width * 2.4,
+          front.width * 2.4,
+          o.fov,
+          aspect,
+          1,
+        ),
+        yaw: o.yaw,
+        pitch: o.pitch,
+        target: front.position,
+      }),
       target: front.position,
+      lit: true,
     },
   ]
-  const PAD = 24
-  const GUT = 24
-  const LINE = 18
-  const opts = logo.options
-  const ground = opts.reverse ? opts.surface : opts.ground
-  const ink = opts.reverse ? opts.ground : opts.surface
-  let cells = ''
-  let x = PAD
-  let triangles = 0
-  for (const cm of cams) {
-    const cam = camera({ fov: o.fov, ...cm }, aspect)
-    const { polygons, count } = project(logo, cam, W, H, o)
-    triangles = Math.max(triangles, count)
-    cells +=
-      `\n  <text x="${x}" y="${PAD + 14}" font-size="13" fill="${ink}">${esc(cm.label)}</text>` +
-      `\n  <svg x="${x}" y="${PAD + LINE}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
-      `<rect width="${W}" height="${H}" fill="none" stroke="${ink}" stroke-opacity="0.15"/>${polygons}</svg>`
-    x += W + GUT
-  }
+  const pieces = logo.pieces.map((p) => ({
+    name: p.name,
+    tone: p.tone,
+    width: p.width,
+    position: p.position,
+    position64: b64(p.geometry.attributes.position.array),
+    normal64: b64(p.geometry.attributes.normal.array),
+  }))
   const vertices = logo.pieces.map((p) => p.geometry.attributes.position.count)
+  const opts = logo.options
   const propLines = COMPONENT_PROPS.map((k) => {
     const v =
-      k === 'scene' || k === 'extrudeOptions'
+      k === 'scene' ||
+      k === 'extrudeOptions' ||
+      k === 'meshStandardMaterialProps'
         ? JSON.stringify(opts[k] ?? null, (_, x) => r4(x))
             .replace(/[{}"]/g, '')
             .replace(/,/g, ', ')
@@ -324,7 +281,6 @@ export function sheet(o) {
       'vertices',
       `${vertices.join(' + ')} = ${vertices.reduce((s, v) => s + v, 0)}`,
     ],
-    ['triangles drawn', triangles],
     ['build', `${buildMs.toFixed(1)} ms`],
     ['', ''],
     ['fov', `${o.fov} deg`],
@@ -333,61 +289,185 @@ export function sheet(o) {
       `${r4(distance)}${o.distance == null ? `   (ink fills ${o.fill} of the head-on view)` : ''}`,
     ],
     ['back plane reads', `${(back * 100).toFixed(2)} % of the front, head on`],
-    ['light from', `${o.light.join(', ')}   ambient ${o.ambient}`],
+    [
+      'light from',
+      `${o.light.join(', ')}   ambient ${o.ambient}   (lit cells only)`,
+    ],
     [
       'bevel, world',
       `${r4(front.extrude.bevelSize * front.width)}   segments ${front.extrude.bevelSegments}`,
     ],
+    [
+      'renderer',
+      'WebGLRenderer, antialias, ACESFilmic tone mapping, sRGB output, as a fiber Canvas',
+    ],
   ]
-  const textTop = PAD + LINE + H + PAD
-  const col = (lines, cx) =>
-    lines
-      .map(
-        ([k, v], i) =>
-          `\n  <text x="${cx}" y="${textTop + i * LINE}" font-size="13" fill="${ink}">${esc(k)}</text>` +
-          `<text x="${cx + 150}" y="${textTop + i * LINE}" font-size="13" fill="${ink}" xml:space="preserve">${esc(v)}</text>`,
-      )
-      .join('')
-  const width = PAD + cams.length * (W + GUT) - GUT + PAD
-  const height =
-    textTop + Math.max(propLines.length, derived.length) * LINE + PAD
-  const svg =
-    `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" font-family="Saira">` +
-    `\n  <rect width="${width}" height="${height}" fill="${ground}"/>` +
-    cells +
-    col(propLines, PAD) +
-    col(derived, PAD + W + GUT) +
-    `\n</svg>\n`
+  const ground = opts.reverse ? opts.surface : opts.ground
+  const ink = opts.reverse ? opts.ground : opts.surface
   return {
-    svg,
-    width,
-    height,
-    values: opts,
+    data: {
+      W,
+      H,
+      fov: o.fov,
+      ground,
+      ink,
+      light: o.light,
+      ambient: o.ambient,
+      standard: o.props.meshStandardMaterialProps || null,
+      cells,
+      pieces,
+      propLines,
+      derived,
+    },
+    logo,
+    buildMs,
     camera: { fov: o.fov, distance, yaw: o.yaw, pitch: o.pitch },
     back,
-    buildMs,
     vertices,
   }
 }
 
-/** Write `<name>.svg` and `<name>.png` into `out`. */
-export function run(o) {
-  const s = sheet(o)
-  mkdirSync(o.out, { recursive: true })
-  const paths = {
-    svg: join(o.out, `${o.name}.svg`),
-    png: join(o.out, `${o.name}.png`),
+/** The self-contained page for a plan. */
+export function html(data) {
+  const three = readFileSync(THREE_MODULE, 'utf8')
+  const font = readFileSync(FONT).toString('base64')
+  const col = (lines) =>
+    lines
+      .map(
+        ([k, v]) =>
+          `<div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>`,
+      )
+      .join('\n')
+  return `<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>cocoon logo group</title>
+<style>
+  @font-face { font-family: Saira; src: url(data:font/ttf;base64,${font}) format('truetype'); font-weight: 100 900; font-stretch: 50% 125%; }
+  html, body { margin: 0; background: ${data.ground}; color: ${data.ink}; font: 13px/18px Saira, sans-serif; }
+  #sheet { display: inline-block; padding: 24px; }
+  .cells { display: flex; gap: 24px; }
+  .cell canvas { display: block; width: ${data.W}px; height: ${data.H}px; outline: 1px solid ${data.ink}20; }
+  .cell .label { height: 18px; margin-bottom: 6px; }
+  .text { display: flex; gap: 24px; margin-top: 24px; }
+  .text .col { display: grid; grid-template-columns: 150px auto; column-gap: 12px; width: ${data.W}px; white-space: pre; }
+  #save { margin-top: 18px; font: inherit; }
+</style>
+<body>
+<div id="sheet">
+  <div class="cells">${data.cells.map((c, i) => `\n    <div class="cell"><div class="label">${esc(c.label)}</div><canvas id="c${i}" width="${data.W}" height="${data.H}"></canvas></div>`).join('')}
+  </div>
+  <div class="text">
+    <div class="col">
+${col(data.propLines)}
+    </div>
+    <div class="col">
+${col(data.derived)}
+    </div>
+  </div>
+</div>
+<script type="module">
+import * as THREE from "data:text/javascript;base64,${Buffer.from(three).toString('base64')}";
+const DATA = ${JSON.stringify(data)};
+const f32 = (s) => { const b = Uint8Array.from(atob(s), (c) => c.charCodeAt(0)); return new Float32Array(b.buffer, 0, b.byteLength / 4); };
+const geometries = DATA.pieces.map((p) => {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(f32(p.position64), 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(f32(p.normal64), 3));
+  return g;
+});
+function scene(lit) {
+  const s = new THREE.Scene();
+  const group = new THREE.Group();
+  DATA.pieces.forEach((p, i) => {
+    const material = lit
+      ? new THREE.MeshStandardMaterial({ color: p.tone, ...(DATA.standard || {}) })
+      : new THREE.MeshBasicMaterial({ color: p.tone, toneMapped: false });
+    const mesh = new THREE.Mesh(geometries[i], material);
+    mesh.name = p.name;
+    mesh.position.fromArray(p.position);
+    mesh.scale.setScalar(p.width);
+    group.add(mesh);
+  });
+  s.add(group);
+  if (lit) {
+    s.add(new THREE.AmbientLight(0xffffff, DATA.ambient));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+    sun.position.fromArray(DATA.light);
+    s.add(sun);
   }
-  writeFileSync(paths.svg, s.svg)
-  writeFileSync(
-    paths.png,
-    png(s.svg, {
-      width: s.width,
-      background: s.values.reverse ? s.values.surface : s.values.ground,
-      fonts: { files: [FONT], family: 'Saira' },
-    }),
-  )
-  return { paths, ...s }
+  return s;
+}
+DATA.cells.forEach((c, i) => {
+  const canvas = document.getElementById('c' + i);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(1);
+  renderer.setSize(DATA.W, DATA.H, false);
+  renderer.setClearColor(DATA.ground, 1);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; // what a fiber Canvas sets
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const camera = new THREE.PerspectiveCamera(DATA.fov, DATA.W / DATA.H, 0.01, 100);
+  camera.position.fromArray(c.position);
+  camera.lookAt(...c.target);
+  renderer.render(scene(c.lit), camera);
+});
+window.__rendered = true;
+</script>
+</body>
+</html>
+`
+}
+
+/** The Chromium to use, or null. */
+export function findBrowser(given) {
+  for (const p of [given, process.env.COCOON_BROWSER, ...BROWSERS])
+    if (p && existsSync(p)) return p
+  return null
+}
+
+/** Screenshot the page's #sheet with a headless Chromium. Returns the PNG buffer. */
+export async function screenshot(htmlPath, browser) {
+  const { default: puppeteer } = await import('puppeteer-core')
+  const b = await puppeteer.launch({
+    executablePath: browser,
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--use-gl=angle',
+      '--use-angle=swiftshader',
+      '--enable-unsafe-swiftshader',
+      '--ignore-gpu-blocklist',
+      '--hide-scrollbars',
+    ],
+  })
+  try {
+    const page = await b.newPage()
+    await page.setViewport({ width: 800, height: 600, deviceScaleFactor: 1 })
+    await page.goto(pathToFileURL(resolve(htmlPath)).href, {
+      waitUntil: 'load',
+    })
+    await page.waitForFunction('window.__rendered === true', {
+      timeout: 60_000,
+    })
+    const sheet = await page.$('#sheet')
+    return await sheet.screenshot({ type: 'png', omitBackground: false })
+  } finally {
+    await b.close()
+  }
+}
+
+/** Write `<name>.html` and, with a browser, `<name>.png` into `out`. */
+export async function run(o) {
+  const p = plan(o)
+  mkdirSync(o.out, { recursive: true })
+  const paths = { html: join(o.out, `${o.name}.html`), png: null }
+  writeFileSync(paths.html, html(p.data))
+  const browser = findBrowser(o.browser)
+  if (browser) {
+    paths.png = join(o.out, `${o.name}.png`)
+    writeFileSync(paths.png, await screenshot(paths.html, browser))
+  }
+  return { paths, browser, ...p }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -396,13 +476,17 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(help())
     process.exit(0)
   }
-  const r = run(o)
+  const r = await run(o)
   console.log(
-    `${r.values.view}: ${r.vertices.reduce((s, v) => s + v, 0)} vertices, built in ${r.buildMs.toFixed(1)} ms`,
+    `${r.logo.options.view}: ${r.vertices.reduce((s, v) => s + v, 0)} vertices, built in ${r.buildMs.toFixed(1)} ms`,
   )
   console.log(
     `camera: fov ${r.camera.fov} deg, distance ${r4(r.camera.distance)}; the back plane reads ${(r.back * 100).toFixed(2)} % of the front head on`,
   )
-  console.log(r.paths.svg)
-  console.log(r.paths.png)
+  console.log(r.paths.html)
+  if (r.paths.png) console.log(`${r.paths.png}   (${r.browser})`)
+  else
+    console.log(
+      'no Chromium found: open the html in a browser, or pass --browser <executable> for the png',
+    )
 }
