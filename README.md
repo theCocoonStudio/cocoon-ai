@@ -102,7 +102,7 @@ assets/                       the studio's marks, produced by the scripts beside
   lib/                        the four-plane engine shared by the icons and the logo
   icons/                      the UI icon set: shapes.js in, 26 SVGs and a contact sheet out
   logo/                       the mark, favicons, wordmark and lockups
-.claude/skills/               the skill that builds components from specs
+.claude/skills/               the skills: react-component-from-spec builds a component from its spec; pr-review is how a PR is reviewed here, by either author
 ```
 
 ## To reproduce
