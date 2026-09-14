@@ -37,15 +37,10 @@ import { FONT } from './lockup.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const OUT_DIR = join(here, 'explorations', 'export')
-export const THREE_MODULE = join(
-  here,
-  '..',
-  '..',
-  'node_modules',
-  'three',
-  'build',
-  'three.module.min.js',
-)
+const THREE_BUILD = join(here, '..', '..', 'node_modules', 'three', 'build')
+export const THREE_MODULE = join(THREE_BUILD, 'three.module.min.js')
+/** The module above imports this one by a relative path, which a data: URL cannot resolve. */
+export const THREE_CORE = join(THREE_BUILD, 'three.core.min.js')
 /** Where a Chromium usually is, tried in order after --browser and COCOON_BROWSER. */
 export const BROWSERS = [
   '/usr/bin/chromium',
@@ -327,9 +322,32 @@ export function plan(o) {
   }
 }
 
+const dataUrl = (js) =>
+  `data:text/javascript;base64,${Buffer.from(js).toString('base64')}`
+
+/**
+ * three as one module the page can import from a data: URL: the build's
+ * module with its two references to ./three.core.min.js pointed at the core
+ * inlined the same way. Anything else the build imports would fail here,
+ * and the test imports the result in Node to prove it loads.
+ */
+export function threeModule() {
+  const core = readFileSync(THREE_CORE, 'utf8')
+  const module = readFileSync(THREE_MODULE, 'utf8')
+  const refs = module.split('"./three.core.min.js"').length - 1
+  if (refs === 0)
+    throw new Error(
+      `${THREE_MODULE} no longer references ./three.core.min.js; check how three's build is split`,
+    )
+  return module.replaceAll(
+    '"./three.core.min.js"',
+    JSON.stringify(dataUrl(core)),
+  )
+}
+
 /** The self-contained page for a plan. */
 export function html(data) {
-  const three = readFileSync(THREE_MODULE, 'utf8')
+  const three = threeModule()
   const font = readFileSync(FONT).toString('base64')
   const col = (lines) =>
     lines
@@ -371,7 +389,7 @@ ${col(data.derived)}
   </div>
 </div>
 <script type="module">
-import * as THREE from "data:text/javascript;base64,${Buffer.from(three).toString('base64')}";
+import * as THREE from "${dataUrl(three)}";
 const DATA = ${JSON.stringify(data)};
 const f32 = (s) => { const b = Uint8Array.from(atob(s), (c) => c.charCodeAt(0)); return new Float32Array(b.buffer, 0, b.byteLength / 4); };
 const geometries = DATA.pieces.map((p) => {
