@@ -7,9 +7,11 @@ The cocoon mark and wordmark, and every derived file. `cocoon-logo-spec.md` is t
 - `mark.js` — the four-triangle mark through the shared engine, the square canvas, and the favicon.
 - `wordmark.js` — the wordmark cut from Saira at `wght 350 / wdth 107` through fontkit, with the infinity mark derived from the instanced `o`.
 - `lockup.js` — icon left of the wordmark, anchored in the wordmark's own units.
-- `build.js` — `node assets/logo/build.js [outdir]`. Emits 45 SVGs and 7 PNG previews, and refuses if the four plain icon files change or the spec's tier table disagrees with the generator.
+- `build.js` — `node assets/logo/build.js [outdir]`. Emits 45 SVGs and 7 PNG previews, and refuses if the four plain icon files change or the spec's tier table disagrees with the generator. Also writes `src/CocoonLogoGroup/logo.js`, the front triangle and the wordmark as outlines for the mesh, at 0.05 units of chord error.
 - `export.js` — `npm run export:logo -- --radius 0.63 -b 0.05 -c 2`. Renders the lockup or the icon at chosen scene values into one SVG, and a sheet of neighbours around each chosen value into another, with a PNG. Parameters: `depth`, `radius`, `angle`, `perspective`, `planes`, `corner`, `haze`, `apex`, and for the lockup `size`, `gap`, `air`, `wght` and `wdth`. Each is `--<name> <value>[:<buffer>[:<count>]]`; `-b` and `-c` set the buffer and count for the rest. `--help` lists the options; `docs/export-logo.md` explains every parameter. Output goes to `explorations/export/`, which is not committed.
 - `export.test.js` — the argument grammar, the sweep, the chosen file equal to the shipped lockup and icon at the shipped scene, and the sheet's cell count.
+- `export-group.js` — `npm run export:logo-group -- --view icon --yaw 50`. Draws the `CocoonLogoGroup` mesh through a perspective camera in Node, no GPU: head on, turned, and the front triangle close, with every prop value printed under them. `docs/export-logo-group.md` explains the options and the camera. Output goes to `explorations/export/`.
+- `export-group.test.js` — the arguments, the camera fit, the shading, the culling, the sheet's text, the files written.
 - `logo.test.js` — the rebuild regression, the triangle's geometry, the ramps, the lockup rule with a hand-picked gap proven to fail, and the wordmark against the fontTools cut.
 - `Saira-VariableFont_wdth,wght.ttf`, `OFL.txt` — the source font and its licence. Needed to recut the wordmark; not needed at render time.
 - `fixtures/cocoon-wordmark.fonttools.svg` — the wordmark as the original Python generator cut it. The test rasterises both at 1800 px; they differ in zero pixels.
@@ -23,7 +25,7 @@ The cocoon mark and wordmark, and every derived file. `cocoon-logo-spec.md` is t
 
 ## Recutting
 
-The mark's scene is `src/utils/hazePlanes.js`; the triangle is `mark.js`. The wordmark's instance is `WORD_WGHT` and `WORD_WDTH` in `lockup.js`, and the mark's ratios are the constants at the top of `wordmark.js`. After any change: `npm run assets:logo`, read the output, `npm test`, and look at the PNGs. A change to the scene moves the four plain icon files, which the build refuses to overwrite; delete them first, and expect the icon set to move too: `npm run assets` rebuilds both.
+The mark's scene is `src/utils/hazePlanes.js`; the triangle is `mark.js`. The wordmark's outlines are simplified with `src/utils/simplifyPolyline.js`, the same pass the logo mesh runs at mount. The wordmark's instance is `WORD_WGHT` and `WORD_WDTH` in `lockup.js`, and the mark's ratios are the constants at the top of `wordmark.js`. After any change: `npm run assets:logo`, read the output, `npm test`, and look at the PNGs. A change to the scene moves the four plain icon files, which the build refuses to overwrite; delete them first, and expect the icon set to move too: `npm run assets` rebuilds both.
 
 A note on fontkit: it rounds each variation delta to whole units as it applies it, where fontTools summed them in floating point. `wordmark.js` switches that rounding off while an outline decodes. That is what makes the stem come out at 71.10, as the spec states, rather than 71.
 

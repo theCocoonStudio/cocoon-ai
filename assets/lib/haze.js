@@ -400,6 +400,67 @@ function arcExtremes(p0, p1, r, large, sweep) {
   return pts
 }
 
+/**
+ * The points along a circular arc from p0 to p1, p0 excluded, p1 included,
+ * spaced so no chord sits further than `tol` from the arc. Same centre
+ * construction as arcExtremes.
+ */
+function arcPoints(p0, p1, r, large, sweep, tol) {
+  const [x0, y0] = p0
+  const [x1, y1] = p1
+  const dx2 = (x0 - x1) / 2
+  const dy2 = (y0 - y1) / 2
+  const q = dx2 * dx2 + dy2 * dy2
+  if (q < 1e-18) return [p1]
+  r = Math.max(r, Math.sqrt(q))
+  let k = Math.sqrt(Math.max(r * r - q, 0) / q)
+  if (large === sweep) k = -k
+  const cx = k * dy2 + (x0 + x1) / 2
+  const cy = -k * dx2 + (y0 + y1) / 2
+  const a0 = Math.atan2(y0 - cy, x0 - cx)
+  let da = Math.atan2(y1 - cy, x1 - cx) - a0
+  if (sweep && da < 0) da += 2 * Math.PI
+  if (!sweep && da > 0) da -= 2 * Math.PI
+  const step = 2 * Math.acos(Math.max(-1, Math.min(1, 1 - tol / r)))
+  const n = Math.max(1, Math.ceil(Math.abs(da) / step))
+  const pts = []
+  for (let i = 1; i < n; i++) {
+    const a = a0 + (da * i) / n
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)])
+  }
+  pts.push(p1)
+  return pts
+}
+
+/**
+ * One closed subpath as a polyline: M/L kept, every A sampled within `tol`,
+ * Z implied, the first point not repeated. The subset this module emits.
+ */
+export function flattenPath(d, tol = 0.05) {
+  const tok = d.replace(/,/g, ' ').split(/\s+/).filter(Boolean)
+  const pts = []
+  let i = 0
+  while (i < tok.length) {
+    const c = tok[i]
+    if (c === 'M' || c === 'L') {
+      pts.push([Number(tok[i + 1]), Number(tok[i + 2])])
+      i += 3
+    } else if (c === 'A') {
+      const r = Number(tok[i + 1])
+      const large = Math.trunc(Number(tok[i + 4]))
+      const sweep = Math.trunc(Number(tok[i + 5]))
+      const nxt = [Number(tok[i + 6]), Number(tok[i + 7])]
+      pts.push(...arcPoints(pts[pts.length - 1], nxt, r, large, sweep, tol))
+      i += 8
+    } else if (c === 'Z') i += 1
+    else throw new Error(`unhandled path command ${c} in ${d.slice(0, 60)}`)
+  }
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  if (Math.hypot(first[0] - last[0], first[1] - last[1]) < 1e-9) pts.pop()
+  return pts
+}
+
 /** Bounds of one path string over the subset this module emits: M/L, A (rx == ry, no rotation), Z. */
 export function pathBounds(d) {
   const tok = d.replace(/,/g, ' ').split(/\s+/).filter(Boolean)

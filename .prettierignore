@@ -7,3 +7,4 @@ assets/**/*.svg
 assets/icons/preview.html
 assets/**/*.ttf
 src/CocoonIcon/icons.js
+src/CocoonLogoGroup/logo.js
