@@ -517,6 +517,7 @@ Scene output is tested with `@react-three/test-renderer`: `create(element)` rend
 | `dispose.<name>` | That object's `dispose` called on unmount, and on the old one when rebuilt; **not called** on an unrelated re-render; a `dispose={null}` object is untouched |
 | `handle.dispose` / `dispose.after` | One call disposes every listed object; a second call disposes nothing new; after it, frames write nothing and the after-state holds; unmount afterwards does not throw |
 | `bridge.*` | Content appears at the far end, in the stated order; gone after unmount |
+| Two instances | Mounted twice in one root, or alternated frame by frame: neither's writes reach the other; nothing at module scope is written. Every scene component and hook, since a second instance is always within a consumer's reach |
 | `library.export` | The name is importable from `src/index.js` |
 | `library.generated` | The committed module equals what the generator emits, byte for byte |
 | `budget.*` | The measure holds under its stated condition; the median of several runs when a cold run is JIT, and the resolved spec says which |
