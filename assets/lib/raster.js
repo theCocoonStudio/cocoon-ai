@@ -14,24 +14,11 @@ export function rasterize(svgText, { width, background = 'white' } = {}) {
   return { width: img.width, height: img.height, pixels: img.pixels }
 }
 
-/**
- * Render SVG text to a PNG buffer. `fonts` names font files for any <text>
- * in the SVG, the first family the default; without it text is not drawn,
- * since the container has no system fonts.
- */
-export function png(svgText, { width, background = 'white', fonts } = {}) {
+/** Render SVG text to a PNG buffer. */
+export function png(svgText, { width, background = 'white' } = {}) {
   const r = new Resvg(svgText, {
     fitTo: width ? { mode: 'width', value: width } : { mode: 'original' },
     background,
-    ...(fonts
-      ? {
-          font: {
-            fontFiles: fonts.files,
-            defaultFontFamily: fonts.family,
-            loadSystemFonts: false,
-          },
-        }
-      : null),
   })
   return r.render().asPng()
 }

@@ -21,7 +21,7 @@ The cells, left to right:
 2. **turned** — the same distance, turned by `yaw` about y and `pitch` about x, which shows the depth and the plane stacking.
 3. **detail** — the front triangle, turned the same way, framed close and lit with `meshStandardMaterial`, since a flat material shows no bevel. The label says so.
 
-Under them, two columns: every component prop as resolved, `(default)` marked where you did not set it, and the measures that follow: height, depth, the derived gap, the tones, vertices per piece, the build time, the camera, and what the renderer is set to.
+Under them, a note stating that setup exactly, so the page documents what it was rendered with, then two columns: every component prop as resolved, `(default)` marked where you did not set it, and the measures that follow: height, depth, the derived gap, the tones, vertices per piece, the build time, the camera, and what the renderer is set to.
 
 The PNG is a screenshot of that page taken by a headless Chromium through `puppeteer-core`, so it is the render and nothing else. Chromium's SwiftShader draws WebGL 2 without a GPU. With no Chromium the HTML is still written and opens in any browser; the render is the same.
 
