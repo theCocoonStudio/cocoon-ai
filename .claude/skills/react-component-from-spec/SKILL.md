@@ -103,7 +103,7 @@ exits.handler-failures: none
 
 ### Scene sections
 
-Required whenever `imports.*` pulls in `three`, `@react-three/*`, or `tunnel-rat`; omitted entirely otherwise. `library` is required for every component, because this repo is a package. A DOM-side component never carries `none` for six sections it has no use for.
+Required whenever `imports.*` pulls in `three`, `@react-three/*`, or `tunnel-rat`; omitted entirely otherwise. `library` is required for every component, because this repo is a package; `budget` is present when a cost is stated and omitted otherwise. A DOM-side component never carries `none` for six sections it has no use for.
 
 ```markdown
 ## refs                              # inputs read imperatively — a change never renders
@@ -138,6 +138,12 @@ bridge: none
 ## library
 library.export: named `Ribbon` from src/index.js
 library.side-effects: none           # none | what runs at module scope and why it must
+library.helper: none                 # none | a pure module beside the component that another artifact also renders from, e.g. src/Ribbon/build.js
+library.generated: none              # none | a data module a script writes, who writes it, and that it is never hand-edited
+library.script: none                 # none | a repo script that draws or exports what the component renders, its npm name and its output folder
+
+## budget                            # measured costs, each with its number, its condition and its test
+budget.1: mount build under 20 ms at the default maxSize — the median of five builds in the tests
 ```
 
 ---
@@ -169,6 +175,8 @@ Each row is answerable by reading the spec input alone.
 | Bridges have a far end | A `bridge.*` line that does not name where the content lands |
 | Suspends match the assets | `useGLTF`, `useTexture`, `useFBX`, or `useLoader` imported with `exits.suspends: never` |
 | Library export named | `library.export` missing |
+| Library artifacts named | A pure module, a generated data module or a script is used by the component or its tests and no `library.helper`, `library.generated` or `library.script` line names it |
+| Budgets have a test | A `budget.*` line with no number, no condition, or nothing that measures it |
 
 ---
 
@@ -419,6 +427,11 @@ This repo is a package, so the component's public surface is not only its props.
 - **`library.export`** names the export added to `src/index.js` — a named export, matching the component name, the one line outside the component's own files that this skill writes.
 - **`library.side-effects`** declares anything that runs at module scope and must run: an `extend()` registering a custom element, a `shaderMaterial` definition. `package.json` says `sideEffects: false`, so a module whose exports go unused is dropped whole, together with whatever it registered. `none` is the expected value; anything else is a NOTE in the report.
 - Imports come only from the declared peers, which are all optional. That is already covered by the imports check; it is named here because a new peer is a `package.json` change, and that is a report, not something this skill does.
+- **`library.helper`, `library.generated`, `library.script`** name the artifacts around the component that are not the component: a pure module it renders from and a script also renders from, so the two cannot differ; a data module a build writes, kept out of the formatter and guarded byte for byte by a test; a script that draws what the component would mount, so a visual decision is made by looking. `none` when there is none. They exist because CocoonLogoGroup needed all three and the model had no line for them.
+
+### Budgets
+
+A `budget.*` line is a cost the component must stay under: a number, the condition it holds under, and how it is measured. It is tested like a contract, and the test is written on what the budget is for. A first build in Node includes the JIT warming on the code path and can run at twice the warm figure; a budget on mount cost takes the median of several builds and the resolved spec records the cold figure beside it, so the number a reader sees is the one the budget means.
 
 ### Unenforceable contracts
 
@@ -505,6 +518,8 @@ Scene output is tested with `@react-three/test-renderer`: `create(element)` rend
 | `handle.dispose` / `dispose.after` | One call disposes every listed object; a second call disposes nothing new; after it, frames write nothing and the after-state holds; unmount afterwards does not throw |
 | `bridge.*` | Content appears at the far end, in the stated order; gone after unmount |
 | `library.export` | The name is importable from `src/index.js` |
+| `library.generated` | The committed module equals what the generator emits, byte for byte |
+| `budget.*` | The measure holds under its stated condition; the median of several runs when a cold run is JIT, and the resolved spec says which |
 | Tier ② and ③ mitigations | The throw throws with its message; the dev warning fires |
 
 Unenforceable contracts aren't testable — testing them means testing the parent — but their *mitigations* are, which is another reason to prefer tiers ② and ③.
