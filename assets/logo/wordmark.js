@@ -20,6 +20,7 @@
  */
 import * as fontkit from 'fontkit'
 import { fmt } from '../lib/fmt.js'
+import { simplifyPolyline } from '../../src/utils/simplifyPolyline.js'
 
 export const SE_N = 3.5 // superellipse exponent
 export const EPS_DEG = 65 // inner wedge half-angle; the arc covers 360 - 2·eps
@@ -311,41 +312,8 @@ export function buildMark(a, b, sv, sh, { gap = WEAVE_GAP, ...kw } = {}) {
   return { outline: [...pieces[0], ...[...pieces[1]].reverse()], centre }
 }
 
-/** Ramer-Douglas-Peucker simplification. */
-export function rdp(pts, tol = 0.05) {
-  const n = pts.length
-  if (n < 3) return pts
-  const keep = new Array(n).fill(false)
-  keep[0] = keep[n - 1] = true
-  const stack = [[0, n - 1]]
-  while (stack.length) {
-    const [i, j] = stack.pop()
-    if (j <= i + 1) continue
-    const p = pts[i]
-    const q = pts[j]
-    const seg_ = [q[0] - p[0], q[1] - p[1]]
-    const L = Math.sqrt(seg_[0] * seg_[0] + seg_[1] * seg_[1])
-    let k = -1
-    let best = -1
-    for (let m = i + 1; m < j; m++) {
-      const v = [pts[m][0] - p[0], pts[m][1] - p[1]]
-      const d =
-        L < 1e-12
-          ? Math.sqrt(v[0] * v[0] + v[1] * v[1])
-          : Math.abs(seg_[0] * v[1] - seg_[1] * v[0]) / L
-      if (d > best) {
-        best = d
-        k = m
-      }
-    }
-    if (best > tol) {
-      keep[k] = true
-      stack.push([i, k])
-      stack.push([k, j])
-    }
-  }
-  return pts.filter((_, i) => keep[i])
-}
+/** Ramer–Douglas–Peucker simplification; the util is the canon. */
+export const rdp = simplifyPolyline
 
 // ---- composition -----------------------------------------------------------
 /** { pieces, meta }: pieces is a list of glyphs, each a list of contours. */
