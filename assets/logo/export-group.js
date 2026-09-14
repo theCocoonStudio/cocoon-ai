@@ -225,7 +225,7 @@ export function plan(o) {
       lit,
     },
     {
-      label: `detail: the front triangle, turned, lit with meshStandardMaterial to show the bevel`,
+      label: `detail: the front triangle, turned, lit with meshStandardMaterial${lit ? '' : ' at roughness 0.35'} to show the bevel`,
       position: orbit({
         distance: fitDistance(
           front.width * 2.4,
@@ -368,7 +368,7 @@ export function html(data) {
   .cell canvas { display: block; width: ${data.W}px; height: ${data.H}px; outline: 1px solid ${data.ink}20; }
   .cell .label { height: 18px; margin-bottom: 6px; }
   .text { display: flex; gap: 24px; margin-top: 24px; }
-  .text .col { display: grid; grid-template-columns: 150px auto; column-gap: 12px; width: ${data.W}px; white-space: pre; }
+  .text .col { display: grid; grid-template-columns: 200px auto; column-gap: 12px; width: ${data.W}px; white-space: pre; }
   .setup { max-width: ${2 * data.W + 24}px; margin-top: 18px; }
   .setup code { font-family: ui-monospace, monospace; font-size: 12px; }
 </style>
@@ -402,8 +402,10 @@ function scene(lit) {
   const s = new THREE.Scene();
   const group = new THREE.Group();
   DATA.pieces.forEach((p, i) => {
+    // Lit cells take the given standard props; the detail cell, lit only to show
+    // the bevel, lowers roughness so a black edge still catches the light.
     const material = lit
-      ? new THREE.MeshStandardMaterial({ color: p.tone, ...(DATA.standard || {}) })
+      ? new THREE.MeshStandardMaterial({ color: p.tone, ...(DATA.standard || { roughness: 0.35 }) })
       : new THREE.MeshBasicMaterial({ color: p.tone, toneMapped: false });
     const mesh = new THREE.Mesh(geometries[i], material);
     mesh.name = p.name;
