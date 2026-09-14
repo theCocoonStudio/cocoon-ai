@@ -8,6 +8,7 @@ import {
   findBrowser,
   fitDistance,
   html,
+  threeModule,
   orbit,
   parseArgs,
   plan,
@@ -163,6 +164,20 @@ describe('the page', () => {
     for (const k of COMPONENT_PROPS)
       expect(page).toContain(`<div class="k">${k}</div>`)
   })
+
+  it('inlines a three that loads on its own: no relative import survives, and Node imports it from its data: URL', async () => {
+    const js = threeModule()
+    expect(js).not.toContain('./three.core.min.js')
+    const page = html(p.data)
+    expect(page).not.toContain('./three.core.min.js')
+    const url = page.match(
+      /import \* as THREE from "(data:text\/javascript;base64,[^"]+)"/,
+    )[1]
+    const THREE = await import(url)
+    expect(typeof THREE.REVISION).toBe('string')
+    expect(typeof THREE.WebGLRenderer).toBe('function')
+    expect(typeof THREE.MeshStandardMaterial).toBe('function')
+  }, 60_000)
 
   it('writes the html, and the png only when a browser is found', async () => {
     const out = mkdtempSync(join(tmpdir(), 'logo-group-'))
