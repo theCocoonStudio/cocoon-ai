@@ -9,7 +9,7 @@ import { decimateGeometry } from '../utils/decimateGeometry.js'
  */
 
 /**
- * @typedef {object} MorphTargetsHandle
+ * @typedef {object} MorphTargetsGroupHandle
  * @property {Mesh | null} mesh              the wrapped mesh; null before mount
  * @property {BufferGeometry | null} geometry the merged geometry on the mesh; null before mount and after dispose()
  * @property {(index: number, value: number) => void} set
@@ -20,7 +20,7 @@ import { decimateGeometry } from '../utils/decimateGeometry.js'
  */
 
 /**
- * @typedef {object} MorphTargetsProps
+ * @typedef {object} MorphTargetsGroupProps
  * @property {import('react').ReactNode} children   exactly one <mesh>; its declared geometry is the base;
  *   targets go inside it as `<primitive object={geometry} attach="userData-target0" />`, target1, target2 ...
  * @property {BufferGeometry[]} [targets]           the alternative to child targets; ignored when child targets exist
@@ -30,7 +30,7 @@ import { decimateGeometry } from '../utils/decimateGeometry.js'
  *   'base' keeps the base as authored; 'lower' decimates the base down to the smallest target when a target has fewer vertices
  * @property {boolean} [normals=true]               also build a normal morph attribute per target
  * @property {'throw' | 'render'} [exit='throw']    on a bad input: throw to the nearest error boundary, or leave the mesh untouched
- * @property {import('react').Ref<MorphTargetsHandle>} [ref]
+ * @property {import('react').Ref<MorphTargetsGroupHandle>} [ref]
  */
 
 const DEV = process.env.NODE_ENV !== 'production'
@@ -66,7 +66,7 @@ function vertexCount(g) {
 }
 
 function warn(message) {
-  if (DEV) console.warn(`MorphTargets: ${message}`)
+  if (DEV) console.warn(`MorphTargetsGroup: ${message}`)
 }
 
 /**
@@ -75,11 +75,13 @@ function warn(message) {
  */
 function build(base, targets, { reduce, match, normals }) {
   if (!base?.attributes?.position)
-    throw new Error('MorphTargets: base geometry has no position attribute')
+    throw new Error(
+      'MorphTargetsGroup: base geometry has no position attribute',
+    )
   for (const t of targets) {
     if (!t?.attributes?.position)
       throw new Error(
-        'MorphTargets: a target geometry has no position attribute',
+        'MorphTargetsGroup: a target geometry has no position attribute',
       )
   }
 
@@ -117,7 +119,7 @@ function build(base, targets, { reduce, match, normals }) {
       const have = vertexCount(target)
       if (have < count) {
         throw new Error(
-          `MorphTargets: target ${i} has ${have} vertices, fewer than the ${count} it must match; decimate cannot add vertices`,
+          `MorphTargetsGroup: target ${i} has ${have} vertices, fewer than the ${count} it must match; decimate cannot add vertices`,
         )
       }
       if (DEV && have > WARN_DECIMATE_VERTICES)
@@ -146,9 +148,9 @@ function build(base, targets, { reduce, match, normals }) {
  * Nothing runs per frame: the owner drives the influences through the handle
  * or the mesh directly.
  *
- * @param {MorphTargetsProps} props
+ * @param {MorphTargetsGroupProps} props
  */
-export function MorphTargets({
+export function MorphTargetsGroup({
   children,
   targets,
   reduce = 'resample',
@@ -183,7 +185,7 @@ export function MorphTargets({
     meshRef.current = mesh
 
     const fail = (message) => {
-      if (exit === 'throw') throw new Error(`MorphTargets: ${message}`)
+      if (exit === 'throw') throw new Error(`MorphTargetsGroup: ${message}`)
     }
 
     if (!mesh) return fail('child is not a mesh')

@@ -1,6 +1,6 @@
-# MorphTargets — resolved
+# MorphTargetsGroup — resolved
 
-Built against `MorphTargets.spec.md` plus the entries below. Test names carry the spec ids; `contracts.*` at tier ② or ③ have tests too.
+Built against `MorphTargetsGroup.spec.md` plus the entries below. Test names carry the spec ids; `contracts.*` at tier ② or ③ have tests too.
 
 ## contracts
 

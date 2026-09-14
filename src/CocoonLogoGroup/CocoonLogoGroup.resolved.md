@@ -35,4 +35,4 @@ notes.5: the fidelity test rasterises the mesh's front caps as SVG polygons over
 
 gaps.1: `library.helper`, `library.generated` and `library.script` are not fields of the skill's model; the spec needed a home for the pure builder the script shares, the generated data module and the export script, and the report proposes them
 gaps.2: no field expresses a performance budget; contracts.1 is written as a contract with a test because that is the nearest shape
-gaps.3: `states.*` on a scene component, as MorphTargets found: the DOM states do not apply and `states.icon`, `states.standard` are invented ids
+gaps.3: `states.*` on a scene component, as MorphTargetsGroup found: the DOM states do not apply and `states.icon`, `states.standard` are invented ids

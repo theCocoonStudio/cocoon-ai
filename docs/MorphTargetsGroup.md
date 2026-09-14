@@ -1,10 +1,10 @@
-# MorphTargets
+# MorphTargetsGroup
 
 Wraps one mesh and turns further geometries into its morph targets. The mesh keeps its declared geometry as the base. Every target is fitted to the base's vertex count, so `mesh.morphTargetInfluences[i]` blends the mesh toward target `i`. Nothing runs per frame: the owner drives the influences.
 
 ```jsx
 import { useFrame } from '@react-three/fiber'
-import { MorphTargets } from 'cocoon-ai'
+import { MorphTargetsGroup } from 'cocoon-ai'
 
 function Blob({ scroll, scanned }) {
   const morph = useRef(null)
@@ -12,13 +12,13 @@ function Blob({ scroll, scanned }) {
     morph.current?.set(0, scroll.current) // handle is null until mounted
   })
   return (
-    <MorphTargets ref={morph}>
+    <MorphTargetsGroup ref={morph}>
       <mesh>
         <sphereGeometry args={[1, 32, 24]} />
         <primitive object={scanned} attach='userData-target0' />
         <meshStandardMaterial />
       </mesh>
-    </MorphTargets>
+    </MorphTargetsGroup>
   )
 }
 ```
@@ -29,14 +29,14 @@ function Blob({ scroll, scanned }) {
 
 **Props.**
 
-| Prop      | Type                       | Default      | Meaning                                                                                                                                                                                                                                                                                                                                                 |
-| --------- | -------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `targets` | `BufferGeometry[]`         | none         | Targets, when the mesh carries none as children. Ignored when child targets exist.                                                                                                                                                                                                                                                                      |
-| `reduce`  | `'resample' \| 'decimate'` | `'resample'` | How a target is fitted to the base count. `resample`: for every base vertex, take the nearest target vertex. Exact and cheap; a target much denser than the base gets sparse. `decimate`: edge-collapse the target down to the base count first (three's SimplifyModifier), then take nearest vertices. Keeps the target's shape; slow on large meshes. |
-| `match`   | `'base' \| 'lower'`        | `'base'`     | `base`: the base stays as authored. `lower`: when a target has fewer vertices than the base, the base is decimated down to it and renders reduced.                                                                                                                                                                                                      |
-| `normals` | `boolean`                  | `true`       | Also build a normal morph attribute per target, so shading follows the morph. Target normals are computed when the target has none.                                                                                                                                                                                                                     |
-| `exit`    | `'throw' \| 'render'`      | `'throw'`    | On a bad input (see below): throw to the nearest error boundary, or leave the mesh exactly as declared.                                                                                                                                                                                                                                                 |
-| `ref`     | `Ref<MorphTargetsHandle>`  |              | The handle.                                                                                                                                                                                                                                                                                                                                             |
+| Prop      | Type                           | Default      | Meaning                                                                                                                                                                                                                                                                                                                                                 |
+| --------- | ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `targets` | `BufferGeometry[]`             | none         | Targets, when the mesh carries none as children. Ignored when child targets exist.                                                                                                                                                                                                                                                                      |
+| `reduce`  | `'resample' \| 'decimate'`     | `'resample'` | How a target is fitted to the base count. `resample`: for every base vertex, take the nearest target vertex. Exact and cheap; a target much denser than the base gets sparse. `decimate`: edge-collapse the target down to the base count first (three's SimplifyModifier), then take nearest vertices. Keeps the target's shape; slow on large meshes. |
+| `match`   | `'base' \| 'lower'`            | `'base'`     | `base`: the base stays as authored. `lower`: when a target has fewer vertices than the base, the base is decimated down to it and renders reduced.                                                                                                                                                                                                      |
+| `normals` | `boolean`                      | `true`       | Also build a normal morph attribute per target, so shading follows the morph. Target normals are computed when the target has none.                                                                                                                                                                                                                     |
+| `exit`    | `'throw' \| 'render'`          | `'throw'`    | On a bad input (see below): throw to the nearest error boundary, or leave the mesh exactly as declared.                                                                                                                                                                                                                                                 |
+| `ref`     | `Ref<MorphTargetsGroupHandle>` |              | The handle.                                                                                                                                                                                                                                                                                                                                             |
 
 Indexed and non-indexed geometries are both accepted. The output is always indexed. A non-indexed base has its duplicate vertices merged first, and that merged count is what targets are fitted to.
 

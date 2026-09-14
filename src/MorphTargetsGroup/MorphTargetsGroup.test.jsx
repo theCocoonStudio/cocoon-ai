@@ -8,7 +8,7 @@ import {
   SphereGeometry,
   TorusGeometry,
 } from 'three'
-import { MorphTargets } from './index.jsx'
+import { MorphTargetsGroup } from './index.jsx'
 
 const BOX_COUNT = 24 // BoxGeometry(1,1,1) is indexed with 24 vertices
 
@@ -19,7 +19,7 @@ function Scene({
   ...props
 }) {
   return (
-    <MorphTargets ref={handle} {...props}>
+    <MorphTargetsGroup ref={handle} {...props}>
       <mesh name='wrapped'>
         {base}
         {targets.map((g, i) => (
@@ -27,7 +27,7 @@ function Scene({
         ))}
         <meshStandardMaterial />
       </mesh>
-    </MorphTargets>
+    </MorphTargetsGroup>
   )
 }
 
@@ -43,7 +43,7 @@ async function mount(props = {}) {
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('MorphTargets', () => {
+describe('MorphTargetsGroup', () => {
   it('[markup.1] renders a group with the mesh and its material inside unchanged', async () => {
     const { group, mesh } = await mount()
     expect(group.isGroup).toBe(true)
@@ -147,11 +147,11 @@ describe('MorphTargets', () => {
     const handle = createRef()
     const sphere = new SphereGeometry(1, 8, 6)
     const renderer = await ReactThreeTestRenderer.create(
-      <MorphTargets ref={handle} targets={[sphere]}>
+      <MorphTargetsGroup ref={handle} targets={[sphere]}>
         <mesh>
           <boxGeometry />
         </mesh>
-      </MorphTargets>,
+      </MorphTargetsGroup>,
     )
     const mesh = renderer.scene.children[0].instance.children[0]
     expect(mesh.geometry.morphAttributes.position).toHaveLength(1)
@@ -161,7 +161,7 @@ describe('MorphTargets', () => {
   it('[props.1] [slots.2] ignores the targets prop when child targets exist', async () => {
     const handle = createRef()
     const renderer = await ReactThreeTestRenderer.create(
-      <MorphTargets
+      <MorphTargetsGroup
         ref={handle}
         targets={[new SphereGeometry(1, 8, 6), new TorusGeometry()]}
       >
@@ -172,7 +172,7 @@ describe('MorphTargets', () => {
             attach='userData-target0'
           />
         </mesh>
-      </MorphTargets>,
+      </MorphTargetsGroup>,
     )
     const m = renderer.scene.children[0].instance.children[0]
     expect(m.geometry.morphAttributes.position).toHaveLength(1)
@@ -181,7 +181,7 @@ describe('MorphTargets', () => {
   it('[slots.2] reads child targets contiguously from 0; a gap ends the list', async () => {
     const handle = createRef()
     const renderer = await ReactThreeTestRenderer.create(
-      <MorphTargets ref={handle}>
+      <MorphTargetsGroup ref={handle}>
         <mesh>
           <boxGeometry />
           <primitive
@@ -190,7 +190,7 @@ describe('MorphTargets', () => {
           />
           <primitive object={new TorusGeometry()} attach='userData-target2' />
         </mesh>
-      </MorphTargets>,
+      </MorphTargetsGroup>,
     )
     const m = renderer.scene.children[0].instance.children[0]
     expect(m.geometry.morphAttributes.position).toHaveLength(1)
@@ -199,7 +199,7 @@ describe('MorphTargets', () => {
   it('[contracts.4] warns in development about a child target after a gap', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     await ReactThreeTestRenderer.create(
-      <MorphTargets>
+      <MorphTargetsGroup>
         <mesh>
           <boxGeometry />
           <primitive
@@ -208,7 +208,7 @@ describe('MorphTargets', () => {
           />
           <primitive object={new TorusGeometry()} attach='userData-target2' />
         </mesh>
-      </MorphTargets>,
+      </MorphTargetsGroup>,
     )
     expect(warn).toHaveBeenCalledWith(
       expect.stringMatching(/contiguous from target0; ignoring target2/),
@@ -239,9 +239,9 @@ describe('MorphTargets', () => {
     it('throws when the child is not a mesh', async () => {
       await expect(
         ReactThreeTestRenderer.create(
-          <MorphTargets targets={[new SphereGeometry(1, 8, 6)]}>
+          <MorphTargetsGroup targets={[new SphereGeometry(1, 8, 6)]}>
             <group />
-          </MorphTargets>,
+          </MorphTargetsGroup>,
         ),
       ).rejects.toThrow(/not a mesh/)
     })
@@ -249,11 +249,11 @@ describe('MorphTargets', () => {
     it('throws when no target is found', async () => {
       await expect(
         ReactThreeTestRenderer.create(
-          <MorphTargets>
+          <MorphTargetsGroup>
             <mesh>
               <boxGeometry />
             </mesh>
-          </MorphTargets>,
+          </MorphTargetsGroup>,
         ),
       ).rejects.toThrow(/no target geometry/)
     })
@@ -282,19 +282,19 @@ describe('MorphTargets', () => {
       expect(mesh.morphTargetInfluences).toBeUndefined()
       expect(handle.current.geometry).toBeNull()
       const noTargets = await ReactThreeTestRenderer.create(
-        <MorphTargets exit='render'>
+        <MorphTargetsGroup exit='render'>
           <mesh>
             <primitive object={box} attach='geometry' />
           </mesh>
-        </MorphTargets>,
+        </MorphTargetsGroup>,
       )
       expect(noTargets.scene.children[0].instance.children[0].geometry).toBe(
         box,
       )
       const notMesh = await ReactThreeTestRenderer.create(
-        <MorphTargets exit='render' targets={[small()]}>
+        <MorphTargetsGroup exit='render' targets={[small()]}>
           <group name='g' />
-        </MorphTargets>,
+        </MorphTargetsGroup>,
       )
       expect(notMesh.scene.children[0].instance.children[0].name).toBe('g')
     })
@@ -420,7 +420,9 @@ describe('MorphTargets', () => {
   describe('[effects.2]', () => {
     // fiber itself warns once about THREE.Clock; only our own warnings count
     const ours = (spy) =>
-      spy.mock.calls.flat().filter((m) => String(m).startsWith('MorphTargets:'))
+      spy.mock.calls
+        .flat()
+        .filter((m) => String(m).startsWith('MorphTargetsGroup:'))
     function bigBase(count) {
       const g = new BufferGeometry()
       g.setAttribute(
@@ -460,7 +462,7 @@ describe('MorphTargets', () => {
     it('is absent in production builds', async () => {
       vi.stubEnv('NODE_ENV', 'production')
       vi.resetModules()
-      const { MorphTargets: Prod } = await import('./index.jsx')
+      const { MorphTargetsGroup: Prod } = await import('./index.jsx')
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
       await ReactThreeTestRenderer.create(
         <Prod targets={[tri(), tri(), tri()]} normals={false}>
@@ -566,7 +568,7 @@ describe('MorphTargets', () => {
 
   it('[library.export] is a named export of src/index.js', async () => {
     const lib = await import('../index.js')
-    expect(typeof lib.MorphTargets).toBe('function')
-    expect(lib.MorphTargets.name).toBe('MorphTargets')
+    expect(typeof lib.MorphTargetsGroup).toBe('function')
+    expect(lib.MorphTargetsGroup.name).toBe('MorphTargetsGroup')
   })
 })
