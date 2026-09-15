@@ -101,7 +101,7 @@ src/
     <Component>.spec.md       the spec it was built from
     <Component>.resolved.md   what was derived from the spec: contracts, defaults, notes, gaps
     <Component>.test.jsx      tests, named by spec id
-    *.js                      helpers used only by this component
+    *.*                       helpers and assets used only by this component
   utils/                      reusable, React-free functions with their own tests; not exported unless something outside needs them
   structure.test.js           the repo's structure as tests; see What checks what
 docs/
