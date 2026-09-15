@@ -57,8 +57,12 @@ function declaredProps(file) {
 }
 
 describe('component folders', () => {
+  // utils/ holds React-free functions and test/ holds test helpers; the rest are components.
   const components = readdirSync(join(ROOT, 'src')).filter(
-    (d) => d !== 'utils' && statSync(join(ROOT, 'src', d)).isDirectory(),
+    (d) =>
+      d !== 'utils' &&
+      d !== 'test' &&
+      statSync(join(ROOT, 'src', d)).isDirectory(),
   )
   const index = read('src/index.js')
 

@@ -103,6 +103,7 @@ src/
     <Component>.test.jsx      tests, named by spec id
     *.*                       helpers and assets used only by this component
   utils/                      reusable, React-free functions with their own tests; not exported unless something outside needs them
+  test/                       helpers for tests, not shipped: browser.js bundles a page and drives a headless Chromium so shader output can be read as pixels
   structure.test.js           the repo's structure as tests; see What checks what
 docs/
   <Component>.md              API doc: props, handle, dispose rules, limits
