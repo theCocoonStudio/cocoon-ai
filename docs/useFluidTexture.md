@@ -79,3 +79,5 @@ const {
 ```
 
 There are 5 frames computed on mount regardless of props in order to compile every program and allocate every target up front, so the stutter lands during the loading screen rather than on the first pointer move.
+
+`isBounce` draws the wall, four line segments one cell inside the edge that write zero velocity on the rim, in the advection pass and again in the pressure pass, the frame's last write of velocity. Drawn only in the first, the projection step wrote over it and the wall was gone by the end of the frame; the wall test in `useFluidTexture.browser.test.js` measures it.

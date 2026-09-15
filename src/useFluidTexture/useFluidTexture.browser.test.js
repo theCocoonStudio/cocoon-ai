@@ -60,29 +60,31 @@ describe.skipIf(!browser)('useFluidTexture in the browser', () => {
     expect(region(img, 0, 0, 1, 1)).toBeGreaterThan(250)
   }, 60_000)
 
-  it('the wall instrument: pushing toward the left wall, isBounce changes what happens at the rim', async () => {
+  it('the wall: with isBounce the rim ends the frame at rest and the flow beside it is slowed; without it the flow runs to the edge', async () => {
+    // One texel per pixel, so column 0 is the rim cell. Force −5 toward the left wall, 40 steps.
     const run = async (isBounce) => {
       await site.reload((b) => {
-        window.__opts = { isBounce: b }
-        window.__force = { x: -2, y: 0 }
+        window.__opts = { isBounce: b, fboWidth: 96, fboHeight: 96 }
+        window.__force = { x: -5, y: 0 }
         window.__center = { x: -0.6, y: 0 }
         window.__radius = 40
       }, isBounce)
       await site.evaluate(() => window.__fluid.step(40))
       const img = await site.evaluate(() => window.__fluid.read())
-      // The rim is the outermost two columns; two cells in, the sign of the difference flips.
       return {
-        rim: region(img, 0, 0.35, 2 / img.width, 0.65),
-        inside: region(img, 0.05, 0.35, 0.2, 0.65),
+        rim: region(img, 0, 0.35, 1 / img.width, 0.65),
+        near: region(img, 1 / img.width, 0.35, 4 / img.width, 0.65),
+        inside: region(img, 8 / img.width, 0.35, 0.2, 0.65),
       }
     }
     const bounce = await run(true)
     const open = await run(false)
     // Both runs moved the fluid toward the wall.
-    expect(bounce.inside).toBeLessThan(250)
-    expect(open.inside).toBeLessThan(250)
-    // The two settings must not produce the same rim; which way is the investigation's question.
-    // Measured: bounce rim 228, open rim 243, at these settings.
-    expect(Math.abs(bounce.rim - open.rim)).toBeGreaterThan(5)
+    expect(bounce.inside).toBeLessThan(240)
+    expect(open.inside).toBeLessThan(240)
+    // The wall holds: the rim cell is at rest at the frame's end, since the projection pass draws it last.
+    expect(bounce.rim).toBeGreaterThanOrEqual(254)
+    // And it slows the flow beside it; open lets the flow run to the edge. Measured 216 against 189.
+    expect(bounce.near).toBeGreaterThan(open.near + 10)
   }, 120_000)
 })
