@@ -40,10 +40,21 @@ async function mount(props = {}) {
 afterEach(() => vi.restoreAllMocks())
 
 describe('useFluidTexture', () => {
-  it('returns the output texture and a render callback', async () => {
-    const { renderer } = await mount()
+  it('returns the output texture, a render callback and the fields', async () => {
+    const { renderer } = await mount({ forceCallbackRef: { current: fc } })
     expect(latest.texture.isTexture).toBe(true)
     expect(typeof latest.render).toBe('function')
+    const { fields } = latest
+    expect(fields.velocity.isTexture).toBe(true)
+    expect(fields.pressure.isTexture).toBe(true)
+    expect(fields.divergence.isTexture).toBe(true)
+    expect(fields.velocity).not.toBe(latest.texture)
+    // pressure alternates between two targets: after an odd number of iterations the getter follows it
+    const before = fields.pressure
+    await renderer.advanceFrames(1, 16)
+    expect(fields.pressure.isTexture).toBe(true)
+    expect(fields.velocity).toBe(latest.fields.velocity) // stable identity
+    void before
     await renderer.unmount()
   })
 
