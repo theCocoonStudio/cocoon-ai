@@ -362,6 +362,10 @@ export const useFluidTexture = ({
   })
   void wallsBound
 
+  // what the last step left in each field, for the fields the hook exposes;
+  // a ref, since the render callback writes it outside React's render
+  const last = useRef({ pressure: pressure0 })
+
   // render callback
   const render = useCallback(
     (state, delta) => {
@@ -470,6 +474,7 @@ export const useFluidTexture = ({
         followWall(poissonPass, 'pressure').setFBO(p_out).render(gl)
       }
       const pressure = p_out
+      last.current.pressure = p_out
 
       // pressure pass
       pressurePass.updateUniforms({
@@ -565,5 +570,20 @@ export const useFluidTexture = ({
     ],
   )
 
-  return { texture: output.texture, render }
+  // The fields, for consumers that want more than the picture: velocity for
+  // displacement or refraction, pressure and divergence for their own looks.
+  // Getters, since pressure alternates between two targets step by step.
+  const [fields] = useState(() => ({
+    get velocity() {
+      return vel0.texture
+    },
+    get pressure() {
+      return last.current.pressure.texture
+    },
+    get divergence() {
+      return div.texture
+    },
+  }))
+
+  return { texture: output.texture, render, fields }
 }

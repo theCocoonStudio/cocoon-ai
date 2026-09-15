@@ -13,7 +13,7 @@ function Fluid() {
     center: window.__center ?? { x: 0, y: 0 },
     radius: window.__radius,
   }))
-  const { texture, render } = useFluidTexture({
+  const { texture, render, fields } = useFluidTexture({
     forceCallbackRef: forceRef,
     fboWidth: 64,
     fboHeight: 64,
@@ -21,6 +21,7 @@ function Fluid() {
     ...(window.__opts ?? {}),
   })
   const { gl, scene, camera, size } = useThree()
+  const material = useRef(null)
   useEffect(() => {
     const clock = { t: 0, getElapsedTime: () => clock.t }
     const state = { clock, pointer: null }
@@ -48,15 +49,33 @@ function Fluid() {
           }
         return { width: w, height: h, grey }
       },
+      /** Draw the velocity's x component to the canvas, mid grey at rest, and return grey levels. */
+      readVelocityX() {
+        const shown = material.current
+        const saved = shown.map
+        shown.map = fields.velocity
+        shown.onBeforeCompile = (shader) => {
+          shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <map_fragment>',
+            'vec2 v = texture2D(map, vMapUv).xy; diffuseColor = vec4(vec3(v.x * 0.5 + 0.5), 1.0);',
+          )
+        }
+        shown.needsUpdate = true
+        const img = window.__fluid.read()
+        shown.map = saved
+        shown.onBeforeCompile = () => {}
+        shown.needsUpdate = true
+        return img
+      },
       size: { width: size.width, height: size.height },
     }
     window.__ready = true
-  }, [gl, scene, camera, render, size])
+  }, [gl, scene, camera, render, size, fields])
   return (
     <mesh>
       <planeGeometry args={[2, 2]} />
       {/* toneMapped off: the output pass's white must read as 255, not ACES's 226 */}
-      <meshBasicMaterial map={texture} toneMapped={false} />
+      <meshBasicMaterial ref={material} map={texture} toneMapped={false} />
     </mesh>
   )
 }

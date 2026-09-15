@@ -57,9 +57,9 @@ const defaultForceCallback = (delta, clock, pointer, pointerDiff) => ({
 
 ## Returns
 
-`{ texture, render}`
+`{ texture, render, fields }`
 
-`texture` is the output FBO's texture. `render(state, delta)` is a callback to imperatively, manually run frames.
+`texture` is the output FBO's texture, the picture: white where the fluid is still, darker where it moves. `render(state, delta)` is a callback to imperatively, manually run frames. `fields` holds the simulation's own textures for consumers that want more than the picture, each a getter read when used, since pressure alternates between two targets: `fields.velocity`, the projected velocity of the last step, RG in the FBO's type, for displacement or refraction; `fields.pressure`, the last Jacobi iteration's pressure; `fields.divergence`, the divergence the pressure was solved from. All three include the wall cells on the rim.
 
 ## Notes
 
