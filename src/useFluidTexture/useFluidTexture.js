@@ -12,6 +12,7 @@ import { pressurePassConfig } from './PressurePass.canvas'
 import { outputPassConfig } from './OutputPass.canvas'
 import { ShaderPass } from './ShaderPass'
 import { FrameSplitter } from './frame'
+import { bindWall, followWall } from './boundary.js'
 
 // force calculation default
 const defaultForceCallback = (delta, clock, pointer, pointerDiff) => ({
@@ -184,25 +185,6 @@ export const useFluidTexture = ({
         isBFECC: uniforms.BFECC,
       })
       .setFBO(vel1)
-      .modifyChildren((children) => {
-        children.visible = isBounce
-        children.material.uniforms = {
-          boundarySpace: {
-            value: uniforms.cellScale,
-          },
-          px: {
-            value: uniforms.cellScale,
-          },
-          fboSize: {
-            value: uniforms.fboSize,
-          },
-          velocity: {
-            value: vel0.texture,
-          },
-          dt: uniforms.dt,
-          isBFECC: uniforms.BFECC,
-        }
-      })
   })
   const [forcePass] = useState(() => {
     const uniforms = Uniforms.get()
@@ -351,10 +333,6 @@ export const useFluidTexture = ({
         dt: uniforms.dt,
       })
       .setFBO(vel0)
-      .modifyChildren((children) => {
-        children.visible = isBounce
-        children.material.uniforms = { px: { value: uniforms.cellScale } }
-      })
   })
   const [outputPass] = useState(() =>
     new ShaderPass({
@@ -366,25 +344,38 @@ export const useFluidTexture = ({
         velocity: {
           value: vel0.texture,
         },
-        boundarySpace: {
-          value: new Vector2(0, 0),
+        px: {
+          value: Uniforms.get().cellScale,
         },
       })
       .setFBO(output),
   )
+
+  // the walls: velocity copies its neighbour negated, pressure copies it as is
+  const [wallsBound] = useState(() => {
+    const px = { value: Uniforms.get().cellScale }
+    bindWall(advectionPass, 'velocity', px, -1)
+    bindWall(viscousPass, 'velocity_new', px, -1)
+    bindWall(poissonPass, 'pressure', px, 1)
+    bindWall(pressurePass, 'velocity', px, -1)
+    return true
+  })
+  void wallsBound
 
   // render callback
   const render = useCallback(
     (state, delta) => {
       const uniforms = Uniforms.get()
       // advection pass
-      advectionPass.modifyChildren((children) => {
-        children.visible = isBounce
-        children.material.uniforms = advectionPass.uniforms
-      })
-      pressurePass.modifyChildren((children) => {
-        children.visible = isBounce
-      })
+      for (const pass of [
+        advectionPass,
+        viscousPass,
+        poissonPass,
+        pressurePass,
+      ])
+        pass.modifyChildren((wall) => {
+          wall.visible = isBounce
+        })
       advectionPass.render(gl)
 
       // external force pass
@@ -448,14 +439,12 @@ export const useFluidTexture = ({
             fbo_in = visc1
             fbo_out = visc0
           }
-          viscousPass
-            .updateUniforms({
-              velocity_new: {
-                value: fbo_in.texture,
-              },
-            })
-            .setFBO(fbo_out)
-            .render(gl)
+          viscousPass.updateUniforms({
+            velocity_new: {
+              value: fbo_in.texture,
+            },
+          })
+          followWall(viscousPass, 'velocity_new').setFBO(fbo_out).render(gl)
         }
         vel = fbo_out
       }
@@ -477,24 +466,21 @@ export const useFluidTexture = ({
           p_in = pressure1
           p_out = pressure0
         }
-        poissonPass
-          .updateUniforms({ pressure: { value: p_in.texture } })
-          .setFBO(p_out)
-          .render(gl)
+        poissonPass.updateUniforms({ pressure: { value: p_in.texture } })
+        followWall(poissonPass, 'pressure').setFBO(p_out).render(gl)
       }
       const pressure = p_out
 
       // pressure pass
-      pressurePass
-        .updateUniforms({
-          velocity: {
-            value: vel.texture,
-          },
-          pressure: {
-            value: pressure.texture,
-          },
-        })
-        .render(gl)
+      pressurePass.updateUniforms({
+        velocity: {
+          value: vel.texture,
+        },
+        pressure: {
+          value: pressure.texture,
+        },
+      })
+      followWall(pressurePass, 'velocity').render(gl)
 
       // output pass
       outputPass.render(gl)

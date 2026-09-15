@@ -1,5 +1,6 @@
 import fragmentShader from './glsl/poisson.frag?raw'
 import vertexShader from './glsl/face.vert?raw'
+import { boundaryChildren, disposeBoundary } from './boundary.js'
 
 const materialConfig = {
   vertexShader,
@@ -23,4 +24,6 @@ const materialConfig = {
 export const poissonPassConfig = {
   materialConfig,
   fboConfig: { isNull: true },
+  children: boundaryChildren,
+  onDispose: disposeBoundary,
 }
