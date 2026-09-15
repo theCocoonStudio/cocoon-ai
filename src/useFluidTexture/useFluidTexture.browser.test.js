@@ -87,6 +87,26 @@ describe.skipIf(!browser)('useFluidTexture in the browser', () => {
     // The rim is not shown: the first column is fluid under both settings, no white line. Measured 211 and 190.
     expect(bounce.edge).toBeLessThan(250)
     expect(open.edge).toBeLessThan(250)
-    // What this instrument cannot see: the normal component alone. It reads speed, and the fluid the wall stops still moves along it.
+  }, 120_000)
+
+  it('the wall reverses the flow beside it: the normal velocity in the first fluid cell changes sign', async () => {
+    // fields.velocity drawn as its x component, mid grey for zero: above 128 flows right, away from the left wall.
+    const vx = async (isBounce) => {
+      await site.reload((b) => {
+        window.__opts = { isBounce: b, fboWidth: 96, fboHeight: 96 }
+        window.__force = { x: -5, y: 0 }
+        window.__center = { x: -0.6, y: 0 }
+        window.__radius = 40
+      }, isBounce)
+      await site.evaluate(() => window.__fluid.step(40))
+      const img = await site.evaluate(() => window.__fluid.readVelocityX())
+      return region(img, 1 / img.width, 0.35, 2 / img.width, 0.65)
+    }
+    const bounce = await vx(true)
+    const open = await vx(false)
+    // Measured 180 with the wall, 100 without: the wall turns the flow around, the open edge lets it through.
+    expect(bounce).toBeGreaterThan(128 + 20)
+    expect(open).toBeLessThan(128 - 20)
+    expect(site.errors).toEqual([])
   }, 120_000)
 })
