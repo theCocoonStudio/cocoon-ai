@@ -15,6 +15,10 @@ import lineFrag from './glsl/boundary.frag?raw'
  * that was the boundary bug of 2026-09-15, found by the wall test.
  *
  * The material's uniforms table is bound by the owner: `line.vert` reads `px`.
+ *
+ * Reference: Harris, "Fast Fluid Dynamics Simulation on the GPU", GPU Gems
+ * ch. 38 §38.3, the boundary program of Listing 38-5; docs/useFluidTexture.md
+ * has the citation and what this wall still leaves out.
  */
 export function boundaryChildren() {
   const positionBuffer = new Float32Array([
