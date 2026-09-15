@@ -351,6 +351,10 @@ export const useFluidTexture = ({
         dt: uniforms.dt,
       })
       .setFBO(vel0)
+      .modifyChildren((children) => {
+        children.visible = isBounce
+        children.material.uniforms = { px: { value: uniforms.cellScale } }
+      })
   })
   const [outputPass] = useState(() =>
     new ShaderPass({
@@ -377,6 +381,9 @@ export const useFluidTexture = ({
       advectionPass.modifyChildren((children) => {
         children.visible = isBounce
         children.material.uniforms = advectionPass.uniforms
+      })
+      pressurePass.modifyChildren((children) => {
+        children.visible = isBounce
       })
       advectionPass.render(gl)
 

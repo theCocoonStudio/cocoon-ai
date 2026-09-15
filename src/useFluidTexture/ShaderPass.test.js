@@ -4,6 +4,7 @@ import { ShaderPass } from './ShaderPass.js'
 import { forcePassConfig } from './ForcePass.canvas'
 import { viscousPassConfig } from './ViscousPass.canvas'
 import { advectionPassConfig } from './AdvectionPass.canvas'
+import { pressurePassConfig } from './PressurePass.canvas'
 
 // The pass is the unit under the hook: a material, a quad, a scene, a camera
 // and a target, with a uniforms table it owns. No GL is needed for any of
@@ -63,11 +64,17 @@ describe('ShaderPass uniforms', () => {
 })
 
 describe('ShaderPass objects', () => {
-  it('builds the advection boundary as a child with its own geometry and material', () => {
-    const p = new ShaderPass({ ...advectionPassConfig })
-    expect(p.children.isLineSegments).toBe(true)
-    expect(p.children.material).not.toBe(p.material)
-    expect(p.scene.children).toContain(p.children)
+  it('builds the wall as a child of the advection pass and of the pressure pass, the last to write velocity', () => {
+    for (const config of [advectionPassConfig, pressurePassConfig]) {
+      const p = new ShaderPass({ ...config })
+      expect(p.children.isLineSegments).toBe(true)
+      expect(p.children.material).not.toBe(p.material)
+      expect(p.scene.children).toContain(p.children)
+      // drawn after the quad: added to the scene second
+      expect(p.scene.children.indexOf(p.children)).toBeGreaterThan(
+        p.scene.children.indexOf(p.mesh),
+      )
+    }
   })
 
   it('takes a render target through setFBO and reports it', () => {
