@@ -1,5 +1,6 @@
 import fragmentShader from './glsl/viscous.frag?raw'
 import vertexShader from './glsl/face.vert?raw'
+import { boundaryChildren, disposeBoundary } from './boundary.js'
 
 const materialConfig = {
   vertexShader,
@@ -29,4 +30,6 @@ const materialConfig = {
 export const viscousPassConfig = {
   materialConfig,
   fboConfig: { isNull: true },
+  children: boundaryChildren,
+  onDispose: disposeBoundary,
 }
