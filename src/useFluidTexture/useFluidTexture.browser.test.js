@@ -60,8 +60,8 @@ describe.skipIf(!browser)('useFluidTexture in the browser', () => {
     expect(region(img, 0, 0, 1, 1)).toBeGreaterThan(250)
   }, 60_000)
 
-  it('the wall: with isBounce the rim ends the frame at rest and the flow beside it is slowed; without it the flow runs to the edge', async () => {
-    // One texel per pixel, so column 0 is the rim cell. Force −5 toward the left wall, 40 steps.
+  it('the wall: with isBounce the flow beside the wall is slowed, without it the flow runs to the edge, and the rim is never in the picture', async () => {
+    // One texel per pixel. The output samples the interior, so column 0 is the first fluid cell, not the wall.
     const run = async (isBounce) => {
       await site.reload((b) => {
         window.__opts = { isBounce: b, fboWidth: 96, fboHeight: 96 }
@@ -72,7 +72,7 @@ describe.skipIf(!browser)('useFluidTexture in the browser', () => {
       await site.evaluate(() => window.__fluid.step(40))
       const img = await site.evaluate(() => window.__fluid.read())
       return {
-        rim: region(img, 0, 0.35, 1 / img.width, 0.65),
+        edge: region(img, 0, 0.35, 1 / img.width, 0.65),
         near: region(img, 1 / img.width, 0.35, 4 / img.width, 0.65),
         inside: region(img, 8 / img.width, 0.35, 0.2, 0.65),
       }
@@ -82,9 +82,11 @@ describe.skipIf(!browser)('useFluidTexture in the browser', () => {
     // Both runs moved the fluid toward the wall.
     expect(bounce.inside).toBeLessThan(240)
     expect(open.inside).toBeLessThan(240)
-    // The wall holds: the rim cell is at rest at the frame's end, since the projection pass draws it last.
-    expect(bounce.rim).toBeGreaterThanOrEqual(254)
-    // And it slows the flow beside it; open lets the flow run to the edge. Measured 216 against 189.
+    // The wall slows the flow beside it; open lets it run to the edge. Measured 205 against 187.
     expect(bounce.near).toBeGreaterThan(open.near + 10)
+    // The rim is not shown: the first column is fluid under both settings, no white line. Measured 211 and 190.
+    expect(bounce.edge).toBeLessThan(250)
+    expect(open.edge).toBeLessThan(250)
+    // What this instrument cannot see: the normal component alone. It reads speed, and the fluid the wall stops still moves along it.
   }, 120_000)
 })

@@ -1,6 +1,5 @@
-import { Vector2 } from 'three'
 import fragmentShader from './glsl/color.frag?raw'
-import vertexShader from './glsl/face.vert?raw'
+import vertexShader from './glsl/output.vert?raw'
 
 const materialConfig = {
   vertexShader,
@@ -9,8 +8,8 @@ const materialConfig = {
     velocity: {
       value: null,
     },
-    boundarySpace: {
-      value: new Vector2(),
+    px: {
+      value: null,
     },
   },
 }

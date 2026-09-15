@@ -5,6 +5,8 @@ import { forcePassConfig } from './ForcePass.canvas'
 import { viscousPassConfig } from './ViscousPass.canvas'
 import { advectionPassConfig } from './AdvectionPass.canvas'
 import { pressurePassConfig } from './PressurePass.canvas'
+import { viscousPassConfig as viscousWithWall } from './ViscousPass.canvas'
+import { poissonPassConfig } from './PoissonPass.canvas'
 
 // The pass is the unit under the hook: a material, a quad, a scene, a camera
 // and a target, with a uniforms table it owns. No GL is needed for any of
@@ -64,11 +66,17 @@ describe('ShaderPass uniforms', () => {
 })
 
 describe('ShaderPass objects', () => {
-  it('builds the wall as a child of the advection pass and of the pressure pass, the last to write velocity', () => {
-    for (const config of [advectionPassConfig, pressurePassConfig]) {
+  it('builds the wall as a child of every pass that writes velocity or pressure, drawn after the quad', () => {
+    for (const config of [
+      advectionPassConfig,
+      viscousWithWall,
+      poissonPassConfig,
+      pressurePassConfig,
+    ]) {
       const p = new ShaderPass({ ...config })
       expect(p.children.isLineSegments).toBe(true)
       expect(p.children.material).not.toBe(p.material)
+      expect(p.children.geometry.attributes.inward.count).toBe(8)
       expect(p.scene.children).toContain(p.children)
       // drawn after the quad: added to the scene second
       expect(p.scene.children.indexOf(p.children)).toBeGreaterThan(
