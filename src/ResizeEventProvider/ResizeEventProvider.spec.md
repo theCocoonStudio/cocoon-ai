@@ -16,7 +16,7 @@ imports.2: import { ResizeEventContext } from './ResizeEventContext'
 ## props
 
 props.1: debugMode — React ref to a boolean, optional; while `ref.current` is true an observer entry with no subscription throws instead of being dropped; a ref because the observer callback is created once
-props.2: quiet — boolean, optional, default false; when true an invalid subscription is ignored instead of throwing
+props.2: quiet — boolean, optional, default false; when true an invalid subscription is ignored instead of throwing: not an element or a matching selector, or a key already subscribed to a different element
 props.passthrough: no
 props.ref: none
 
@@ -34,7 +34,7 @@ context.hook.1: useResizeEvent(key, element?) — with an element, subscribes it
 ## state
 
 state.1: subscriptions — object keyed by key, initial {}
-state.2: elementToKeys — WeakMap<Element, Set<string>>, internal, one set of keys per element
+state.2: elementToKeys — WeakMap<Element, Set<string>>, internal, one set of keys per element; and keyToElement — Map<string, Element>, one element per key
 state.3: observer — one ResizeObserver, created on the first subscription, never during render
 state.reset: none
 
@@ -64,7 +64,7 @@ effects.4: useResizeEvent cleanup — unsubscribes only what it subscribed; a re
 
 ## exits
 
-exits.throws: subscribe with a non-element and quiet false throws; the observer callback throws on an entry with no keys while debugMode.current is true
+exits.throws: subscribe with a non-element, or with a key already subscribed to a different element, throws unless quiet; the observer callback throws on an entry with no keys while debugMode.current is true
 exits.suspends: never
 exits.handler-failures: none
 

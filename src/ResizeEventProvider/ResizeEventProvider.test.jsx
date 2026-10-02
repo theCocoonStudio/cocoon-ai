@@ -270,3 +270,60 @@ describe('exits', () => {
     )
   })
 })
+
+describe('one element per key', () => {
+  it('exits.throws a key subscribed to a second element throws, and is ignored with quiet', () => {
+    expect(() =>
+      render(
+        <ResizeEventProvider>
+          <Consumer key='a' name='same' />
+          <Consumer key='b' name='same' />
+        </ResizeEventProvider>,
+      ),
+    ).toThrow('key "same" is already subscribed to another element')
+    cleanup()
+    render(
+      <ResizeEventProvider quiet>
+        <Consumer key='a' name='same' />
+        <Consumer key='b' name='same' />
+      </ResizeEventProvider>,
+    )
+    // the first keeps the key; the second element is never observed
+    expect(_subscriptions.length).toBe(1)
+    const [first] = screen.getAllByTestId('same-el')
+    expect(_subscriptions[0]).toBe(first)
+    fire([entry(first, 8, 8)])
+    expect(screen.getAllByTestId('same-width')[0].innerHTML).toBe('8')
+  })
+
+  it('effects.4 the hook moves a key to a new element without throwing', () => {
+    const Mover = ({ which }) => {
+      const a = useRef()
+      const b = useRef()
+      const { subscribe, unsubscribe } = useContext(ResizeEventContext)
+      useLayoutEffect(() => {
+        const el = which === 'a' ? a.current : b.current
+        subscribe('moving', el)
+        return () => unsubscribe('moving', el)
+      }, [which, subscribe, unsubscribe])
+      return (
+        <>
+          <div ref={a} data-testid='a' />
+          <div ref={b} data-testid='b' />
+        </>
+      )
+    }
+    const { rerender } = render(
+      <ResizeEventProvider>
+        <Mover which='a' />
+      </ResizeEventProvider>,
+    )
+    expect(_subscriptions).toEqual([screen.getByTestId('a')])
+    rerender(
+      <ResizeEventProvider>
+        <Mover which='b' />
+      </ResizeEventProvider>,
+    )
+    expect(_subscriptions).toEqual([screen.getByTestId('b')])
+  })
+})
