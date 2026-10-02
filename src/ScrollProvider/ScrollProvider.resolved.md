@@ -12,6 +12,7 @@ Written after the code, 2026-10-02, from PR #40, its review and Izzy's answers o
 - `toggleFeatureAnimations` is reserved and toggles nothing (props.3; Izzy on #40, item 6: "that's fine for now"). The doc says so; `AnimationFeature` is exported for use by hand.
 - The loop is cancelled on unmount through a ref the next frame reads (effects.3; Izzy's point 9 on #40). Test: `effects.3 no frame runs after unmount`.
 - The provider renders on the server: nothing touches `window`, `document` or `ResizeObserver` during render; the wrapped `ResizeEventProvider` creates its observer on the first subscription. Test: `ssr: ScrollProvider renders on the server`.
+- The same contracts hold in a real browser: `ScrollProvider.browser.test.js` drives the page `ScrollProvider.browser-entry.jsx` through headless Chromium with real scrolling, real frames and a real `ResizeObserver` (the loop stops when scrolling stops; a resize of the sections re-runs the features at the same scrollTop). Skipped where no Chromium is, as the fluid tests are.
 
 ## defaults
 
@@ -32,4 +33,3 @@ Written after the code, 2026-10-02, from PR #40, its review and Izzy's answers o
 - Window scrolling: not supported; the scroll element must be an element.
 - Section ranges by offsets rather than summed heights: deferred, see notes.
 - `toggleFeatureAnimations`: reserved, not wired.
-- No browser test: every test drives mocked `requestAnimationFrame`, `ResizeObserver` and element metrics under jsdom.

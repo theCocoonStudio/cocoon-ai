@@ -26,4 +26,4 @@ Written after the code, 2026-10-02, from PR #40 and its review; the decisions be
 
 ## gaps
 
-- No test under a real `ResizeObserver`; every test drives a mock's callback. The browser harness in `src/test/` could host one when a layout-dependent consumer needs it.
+- Under a real `ResizeObserver` the hook is exercised once, in `src/ScrollProvider/ScrollProvider.browser.test.js` (an element resized from 50 to 80 wide); the provider's own edge cases run against the mock only.
