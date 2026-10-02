@@ -55,6 +55,8 @@ async function bundle(entry) {
     root: resolve(import.meta.dirname, '..', '..'),
     mode: 'production',
     logLevel: 'silent',
+    // the repo's `@` alias for src/, as vite.config.js declares it; the config file is not read here
+    resolve: { alias: { '@': resolve(import.meta.dirname, '..') } },
     esbuild: { jsx: 'automatic', jsxDev: false },
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },
     build: {
