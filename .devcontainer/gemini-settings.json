@@ -1,0 +1,8 @@
+{
+  "general": { "enableAutoUpdate": false },
+  "privacy": { "usageStatisticsEnabled": false },
+  "security": {
+    "auth": { "selectedType": "gemini-api-key" },
+    "folderTrust": { "enabled": false }
+  }
+}

@@ -158,23 +158,28 @@ while read -r cidr; do
 done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 
 # 4b. Named hosts, resolved once now. This is the complete list of non-GitHub
-#     destinations the agent may talk to:
-#       registry.npmjs.org    npm install
-#       api.anthropic.com     the model API
-#       claude.ai             OAuth login flow
-#       platform.claude.com   OAuth login flow / console
-#       console.anthropic.com OAuth login flow / console
-#     Telemetry hosts (Sentry, Statsig) are deliberately absent;
-#     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 in run.sh stops Claude trying.
+#     destinations the agent may talk to, chosen by the agent name run.sh passes
+#     as $1 (claude by default). Each container gets only its own model host.
+#       registry.npmjs.org                npm install (both)
+#       api.anthropic.com                 the Claude model API
+#       claude.ai                         OAuth login flow
+#       platform.claude.com               OAuth login flow / console
+#       console.anthropic.com             OAuth login flow / console
+#       generativelanguage.googleapis.com the Gemini API, with an API key (gemini only)
+#     Telemetry hosts are deliberately absent for both: Sentry and Statsig for Claude
+#     (CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 in run.sh stops it trying) and
+#     play.googleapis.com for Gemini (usage statistics are off in gemini-settings.json).
 #     Each answer is validated as a dotted quad. Private answers would be caught by
 #     section 3 anyway, but a host that fails to resolve aborts the start, because
 #     starting with a partial allowlist would look like a firewall bug later.
-for domain in \
-    "registry.npmjs.org" \
-    "api.anthropic.com" \
-    "claude.ai" \
-    "platform.claude.com" \
-    "console.anthropic.com"; do
+AGENT="${1:-claude}"
+DOMAINS=("registry.npmjs.org")
+case "$AGENT" in
+    claude) DOMAINS+=("api.anthropic.com" "claude.ai" "platform.claude.com" "console.anthropic.com") ;;
+    gemini) DOMAINS+=("generativelanguage.googleapis.com") ;;
+    *) echo "ERROR: unknown agent '$AGENT' (claude or gemini)"; exit 1 ;;
+esac
+for domain in "${DOMAINS[@]}"; do
     echo "Resolving $domain..."
     ips=$(dig +noall +answer A "$domain" | awk '$4 == "A" {print $5}')
     if [ -z "$ips" ]; then

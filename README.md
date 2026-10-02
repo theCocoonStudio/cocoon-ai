@@ -157,7 +157,7 @@ This was the bridge while the dedicated machine came online. Same sandbox, weake
 A separate Debian machine that exists only to run the agent. The container above runs there too; the box is the outer wall, the container is the inner one.
 
 - nothing of mine on the box except a clone of this repo and the GitHub App's private key
-- Claude Code runs only inside the `.devcontainer/` sandbox, started with `.devcontainer/run.sh claude`
+- Claude Code runs only inside the `.devcontainer/` sandbox, started with `.devcontainer/run.sh claude`; Gemini CLI runs in the same sandbox, started with `.devcontainer/run.sh gemini`, as a second agent with its own identity (see below)
 - non-sudo login user that only runs the container; a separate account, used only for maintenance, is the sole sudoer. No Docker on the box: the container runs under rootless podman, so there is no privileged daemon in the path and container root is an unprivileged subordinate uid on the host
 - reached from my Mac over ssh, or remote desktop via the Windows App: directly on the LAN at home, and from outside through Tailscale, which terminates on the NAS and routes to the box locally. The box itself runs no Tailscale. Wake-on-LAN from an always-on LAN device
 - `main` ruleset: PRs only, one approving review, no force-push, no bypass. Authors can't approve their own PRs, so Claude reviews mine and I review Claude's.
@@ -169,6 +169,17 @@ Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHu
 `run.sh` signs a short-lived JWT with the key, exchanges it for a 1-hour installation token, and passes only that token into the container as `GH_TOKEN`. A session that outlives the token loses push/PR access until `run.sh` is started again. Nothing is written to disk inside the sandbox.
 
 Commits, branches, and PRs made by Claude are attributed to the bot, so I can review and approve them as a different user, which the old PAT on my own account never allowed. `COCOON_NO_GITHUB=1` starts a session with no credential at all.
+
+### Two agents, one sandbox
+
+Gemini joined in October 2026. Same image, same rules, and nothing shared that would blur who did what:
+
+- a second GitHub App, `cocoon-gemini`, with its own private key on the box and its own bot user, so a review or approval by one agent is never mistakable for the other's; the ruleset counts them as two users
+- `run.sh gemini` mints that App's token the same way, passes the Gemini API key in the environment only (from `GEMINI_API_KEY` or a `~/.tokens` line, read rather than sourced), and starts the container as `cocoon-gemini[bot]`
+- each agent's container gets only its own model host in the firewall: the Anthropic hosts for Claude, `generativelanguage.googleapis.com` for Gemini; the npm registry and GitHub for both; no telemetry host for either
+- the Gemini CLI is pinned in the Dockerfile and was audited before it went in; its system settings file turns usage statistics and auto-update off and fixes API-key auth, and is root-owned so the agent cannot change it
+- separate config volumes; both containers bind-mount this working tree, so they run one at a time until a second clone is set up
+- Claude has the last say on rigour until Gemini is caught up on the review skill and the records; both agents' sessions are exported to the records repo
 
 Neither layer limits what Claude can do to the code: it has the full repo, the full toolchain, and GitHub. What it doesn't have is anything else.
 

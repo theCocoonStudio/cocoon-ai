@@ -2,7 +2,9 @@
 # Runs as `node` on every container start.
 set -euo pipefail
 
-sudo /usr/local/bin/init-firewall.sh
+# COCOON_AGENT (claude, the default, or gemini) is set by run.sh and picks the agent's
+# model host in the allowlist; nothing else differs between the two.
+sudo /usr/local/bin/init-firewall.sh "${COCOON_AGENT:-claude}"
 
 # GH_TOKEN, if set, is a GitHub App installation token minted on the host by run.sh
 # (1-hour lifetime) or a fine-grained PAT. It lives only in this process's env; nothing is
@@ -18,6 +20,16 @@ if [ -n "${GH_TOKEN:-}" ]; then
   esac
 else
   echo "gh: no GH_TOKEN set; git push / gh pr will not work this session"
+fi
+
+# The Gemini agent authenticates to its API with GEMINI_API_KEY, passed in by run.sh the
+# same way as GH_TOKEN: environment only, never on disk here.
+if [ "${COCOON_AGENT:-claude}" = gemini ]; then
+  if [ -n "${GEMINI_API_KEY:-}" ]; then
+    echo "gemini: GEMINI_API_KEY set for this session (env only)"
+  else
+    echo "gemini: no GEMINI_API_KEY set; the CLI cannot reach the model"
+  fi
 fi
 
 # node_modules lives in a named volume, not the bind-mounted repo: installed once, persists across runs.
