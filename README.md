@@ -157,7 +157,7 @@ This was the bridge while the dedicated machine came online. Same sandbox, weake
 A separate Debian machine that exists only to run the agent. The container above runs there too; the box is the outer wall, the container is the inner one.
 
 - nothing of mine on the box except a clone of this repo and the GitHub App's private key
-- Claude Code runs only inside the `.devcontainer/` sandbox, started with `.devcontainer/run.sh claude`
+- Claude Code runs only inside the `.devcontainer/` sandbox, started with `cocoon claude`: a launcher installed once by hand from [`.devcontainer/host/cocoon-launch.sh`](.devcontainer/host/cocoon-launch.sh) into `~/bin`, which fetches `origin/main` and runs main's reviewed `.devcontainer/` from an export, never the working tree's. The tree is mounted as data. Why: the agent writes the tree, and twice a restart executed its unreviewed sandbox scripts on the host (the records' security log, 2026-09-03 and 2026-10-02)
 - non-sudo login user that only runs the container; a separate account, used only for maintenance, is the sole sudoer. No Docker on the box: the container runs under rootless podman, so there is no privileged daemon in the path and container root is an unprivileged subordinate uid on the host
 - reached from my Mac over ssh, or remote desktop via the Windows App: directly on the LAN at home, and from outside through Tailscale, which terminates on the NAS and routes to the box locally. The box itself runs no Tailscale. Wake-on-LAN from an always-on LAN device
 - `main` ruleset: PRs only, one approving review, no force-push, no bypass. Authors can't approve their own PRs, so Claude reviews mine and I review Claude's.
