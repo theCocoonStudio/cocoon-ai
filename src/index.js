@@ -12,3 +12,4 @@ export {
   ResizeEventProvider,
   useResizeEvent,
 } from './ResizeEventProvider/index.jsx'
+export { ScrollProvider, useScroll } from './ScrollProvider/index.jsx'
