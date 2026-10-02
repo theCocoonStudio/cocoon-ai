@@ -1,6 +1,7 @@
 #!/bin/bash
 # Build (if needed) and drop into the sandbox. Rootless podman. Usage:
-#   .devcontainer/run.sh                 # shell
+#   cocoon                               # shell, through the installed launcher (see host/cocoon-launch.sh)
+#   .devcontainer/run.sh                 # shell, from the tree: only for a tree you have reviewed
 #   .devcontainer/run.sh claude          # straight into Claude
 #
 # GitHub access: a GitHub App installation token, minted HERE on the host from the App's
@@ -12,7 +13,11 @@
 #   COCOON_APP_ID, COCOON_APP_KEY, COCOON_APP_ACCOUNT, COCOON_INSTALLATION_ID
 #   COCOON_NO_GITHUB=1  -> skip minting, start with no GitHub credential
 set -euo pipefail
-cd "$(dirname "$0")/.."
+# COCOON_REPO and COCOON_DEVCONTAINER are set by host/cocoon-launch.sh, which runs a
+# reviewed copy of this script and builds from a reviewed .devcontainer/ export,
+# never from the working tree. Run from the tree, both default to the tree.
+cd "${COCOON_REPO:-$(dirname "$0")/..}"
+DEVCONTAINER="${COCOON_DEVCONTAINER:-.devcontainer}"
 
 IMAGE=cocoon-ai-sandbox
 APP_ID="${COCOON_APP_ID:-4819921}"
@@ -23,7 +28,7 @@ BOT_EMAIL="324573615+cocoon-claude[bot]@users.noreply.github.com"   # <bot user 
 API=https://api.github.com
 
 # Always show the build log. Cached runs print one short line per step; a real rebuild shows everything.
-podman build -t "$IMAGE" .devcontainer
+podman build -t "$IMAGE" "$DEVCONTAINER"
 
 # The node_modules volume mounts INSIDE the bind-mounted repo. Under keep-id the runtime
 # (container root, not you) cannot create that mountpoint in a directory you own, so make it here.
