@@ -2,7 +2,7 @@
 // providers in a real document, real scrolling, a real ResizeObserver, real
 // frames. `window.__sectionHeight` (set before load) sizes the sections;
 // `window.__scroll` is what the test calls.
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ScrollProvider } from './ScrollProvider'
 import { useScroll } from './useScroll'
@@ -18,8 +18,10 @@ window.requestAnimationFrame = (cb) => {
 
 function Sections() {
   const { sections } = useScroll()
-  // the state value, so a test can read what a consumer renders
-  window.__index = sections.activeSectionIndex
+  // the state value, so a test can read what a consumer rendered; written after commit
+  useEffect(() => {
+    window.__index = sections.activeSectionIndex
+  })
   return null
 }
 
@@ -28,7 +30,9 @@ function Sized() {
   const [el, setEl] = useState()
   useLayoutEffect(() => setEl(ref.current), [])
   const { width, height } = useResizeEvent('sized', el)
-  window.__sized = { width, height }
+  useEffect(() => {
+    window.__sized = { width, height }
+  })
   return (
     <div
       ref={ref}
