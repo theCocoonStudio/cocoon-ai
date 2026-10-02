@@ -8,3 +8,7 @@ export { CocoonIcon, iconNames, icons } from './CocoonIcon/index.jsx'
 export { HazePlanes } from './HazePlanes/index.jsx'
 export { CocoonLogoGroup } from './CocoonLogoGroup/index.jsx'
 export { useFluidTexture } from './useFluidTexture/index.jsx'
+export {
+  ResizeEventProvider,
+  useResizeEvent,
+} from './ResizeEventProvider/index.jsx'
