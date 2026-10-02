@@ -15,7 +15,7 @@ export class SectionFeature {
   /**
    * calculates section scroll data
    *
-   * @param {HTMLElement} sectionContainer direct parent of static sections
+   * @param {HTMLElement} sectionContainer the scroll element; its first child is the static container whose children are the sections
    * @param {number} scrollHeight scroll element's scroll height
    * @param {number} clientHeight scroll element's client height
    * @returns {Array<object>} array of {min, max} scroll values for each section
@@ -168,7 +168,7 @@ export class SectionFeature {
     return this.#scrollDistance
   }
   get sectionData() {
-    return { ...this.#sectionData }
+    return [...this.#sectionData]
   }
 
   get activeSectionIndex() {
@@ -181,7 +181,7 @@ export class SectionFeature {
 
   get data() {
     return {
-      sectionData: { ...this.#sectionData },
+      sectionData: [...this.#sectionData],
       scrollDistance: this.#scrollDistance,
       scrollTop: this.#scrollTop,
       activeSectionIndex: this.#activeSectionIndex,
