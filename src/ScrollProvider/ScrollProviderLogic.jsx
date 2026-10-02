@@ -17,15 +17,15 @@ import { useResizeEvent } from '@/ResizeEventProvider'
  * @param {object} props
  * @param {import('react').ReactNode} [props.children] context consumers; if toggleFeatureSections=true, `<div id="div1"><div id="div2">[...sectionElements]</div></div>`, where div1 is a scroll element and div2 + children are statically-positioned elements with no margin or border
  * @param {import('react').Ref<undefined> | undefined} [props.ref] imperative handle exposed through the ref
- * @param {number | undefined} [props.eps=0.5] floating-point tolerance threshold for tracking scroll layout changes across frames
+ * @param {number | undefined} [props.eps] the smallest change of scrollTop, in CSS pixels, that counts as scrolling between two frames; by default one device pixel, 1 / devicePixelRatio, resolved on the client
  * @param {boolean | undefined} [props.toggleFeatureSections=false] feature toggle: whether section index boundary tracking is enabled
- * @param {boolean | undefined} [props.toggleFeatureAnimations=false] feature toggle: whether section index boundary tracking is enabled
+ * @param {boolean | undefined} [props.toggleFeatureAnimations=false] feature toggle, reserved: the animation feature is not wired yet, so this toggles nothing
  * @param {object | undefined} [props.containerProps={}] props to apply to the div container wrapping props.children. No props are assigned internally. A direct ref is available in both the context and the handle (_containerRef)
  *
  */
 export const ScrollProviderLogic = forwardRef(function ScrollProvider(
   {
-    eps = 0.5,
+    eps,
     toggleFeatureSections = false,
     toggleFeatureAnimations = false,
     containerProps = {},
@@ -76,7 +76,6 @@ export const ScrollProviderLogic = forwardRef(function ScrollProvider(
 
   const isLoopRunning = useRef(false)
   const prevScrollTop = useRef(-1)
-  const settleFramesLeft = useRef(0)
 
   const updateLoop = useCallback(() => {
     if (!element || killLoop.current) {
@@ -100,18 +99,15 @@ export const ScrollProviderLogic = forwardRef(function ScrollProvider(
     }
     // end feature calculations
 
+    // The loop runs while scrollTop moves by at least one threshold per frame and
+    // stops on the first frame it does not. No settle frames: the browser fires a
+    // scroll event for every frame in which the position changed, and that event
+    // restarts the loop, so a frame without movement is the end, not a pause.
+    const threshold = eps ?? 1 / (window.devicePixelRatio || 1)
     const hasScrollChanged =
-      Math.abs(currentScrollTop - prevScrollTop.current) >= eps
+      Math.abs(currentScrollTop - prevScrollTop.current) >= threshold
 
-    if (hasScrollChanged) {
-      settleFramesLeft.current = 5
-    } else if (settleFramesLeft.current > 0) {
-      settleFramesLeft.current -= 1
-    }
-
-    const shouldRecurse = hasScrollChanged || settleFramesLeft.current > 0
-
-    if (!shouldRecurse) {
+    if (!hasScrollChanged) {
       isLoopRunning.current = false
       return
     }
@@ -130,8 +126,9 @@ export const ScrollProviderLogic = forwardRef(function ScrollProvider(
     if (!element || isLoopRunning.current) return
 
     isLoopRunning.current = true
+    // the first frame always runs: it reads the position, updates the refs and the
+    // features, and continues only if the position moved again since this event
     prevScrollTop.current = element.scrollTop
-    settleFramesLeft.current = 5
 
     requestAnimationFrame(updateLoop)
   }, [element, updateLoop])
