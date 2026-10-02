@@ -4,9 +4,9 @@ import { ResizeEventContext } from './ResizeEventContext'
 /**
  * A hook that encapsulates ResizeEventProvider's subscription logic while returning the desired size declaratively
  *
- * @param {string} [key] a unique key to associate with a subscription
- * @param {HTMLElement | undefined} [element] if setting a subcription, the node being subscribed
- * @returns {object} {width, height} of the subscribed element, by key
+ * @param {string} key the key of a subscription: this component's own, when `element` is given, or another component's, to read its size
+ * @param {HTMLElement | undefined} [element] the element to subscribe under `key`; an element, not a ref, so hold it in state and set it from the ref in a layout effect. Undefined reads the size registered under `key` elsewhere
+ * @returns {{ width: number | undefined, height: number | undefined }} the size registered under `key`; both undefined until a subscription exists
  */
 export function useResizeEvent(key, element) {
   const {
@@ -15,17 +15,13 @@ export function useResizeEvent(key, element) {
     unsubscribe,
   } = useContext(ResizeEventContext)
 
-  // subscription logic
+  // subscription logic: only a consumer that subscribed unsubscribes, so a reader
+  // of someone else's key never removes their subscription
   useLayoutEffect(() => {
-    const oldKey = key
-    const oldElement = element
-    if (element instanceof HTMLElement) {
-      subscribe(key, element)
-    }
+    if (!(element instanceof HTMLElement)) return
+    subscribe(key, element)
     return () => {
-      if (oldElement instanceof HTMLElement) {
-        unsubscribe(oldKey, oldElement)
-      }
+      unsubscribe(key, element)
     }
   }, [element, key, subscribe, unsubscribe])
 
