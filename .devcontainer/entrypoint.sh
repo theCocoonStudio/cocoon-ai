@@ -26,12 +26,17 @@ if [ -f package-lock.json ] && [ ! -f node_modules/.package-lock.json ]; then
   npm ci --no-audit --no-fund
 fi
 
-# The cocoon-ai-records clone (session exports, incident log) lives in its own named volume
-# so it survives container rebuilds. Cloned once, on the first start that has a token.
-RECORDS=/home/node/cocoon-ai-records
-if [ -n "${GH_TOKEN:-}" ] && [ ! -d "$RECORDS/.git" ]; then
-  echo "cloning cocoon-ai-records (first run in this volume)..."
-  gh repo clone theCocoonStudio/cocoon-ai-records "$RECORDS" -- -q || echo "clone failed; will retry next start"
-fi
+# The cocoon-ai-records clone (session exports, incident log): cloned on the first start that
+# has a token. There is no named volume for it in run.sh today, so it is per container.
+# cocoon-ml (the ML repo) is cloned beside it the same way, so a session can review its PRs
+# without cloning by hand. Both clones live under /home/node, which is ephemeral: a fresh
+# container re-clones; local branches not pushed are lost (see the records convention).
+for repo in cocoon-ai-records cocoon-ml; do
+  dir=/home/node/$repo
+  if [ -n "${GH_TOKEN:-}" ] && [ ! -d "$dir/.git" ]; then
+    echo "cloning $repo (first run in this container)..."
+    gh repo clone "theCocoonStudio/$repo" "$dir" -- -q || echo "clone of $repo failed; will retry next start"
+  fi
+done
 
 exec "$@"
