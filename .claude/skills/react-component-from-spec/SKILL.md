@@ -518,6 +518,9 @@ Scene output is tested with `@react-three/test-renderer`: `create(element)` rend
 | `handle.dispose` / `dispose.after` | One call disposes every listed object; a second call disposes nothing new; after it, frames write nothing and the after-state holds; unmount afterwards does not throw |
 | `bridge.*` | Content appears at the far end, in the stated order; gone after unmount |
 | Two instances | Mounted twice in one root, or alternated frame by frame: neither's writes reach the other; nothing at module scope is written. Every scene component and hook, since a second instance is always within a consumer's reach |
+| Boolean props | Mounted with the prop on and with it off: the feature it toggles runs when on and is absent when off, and every branch behind the toggle executes in some test. A toggle nobody turns on in a test hides its whole feature from the build |
+| Server render | `renderToString` in a node environment does not throw; no browser global is touched before an effect. Every exported component, provider and hook, since the site renders under Next |
+| Doc examples | Each example in `docs/<Component>.md` runs as a test as written and does what the doc says |
 | `library.export` | The name is importable from `src/index.js` |
 | `library.generated` | The committed module equals what the generator emits, byte for byte |
 | `budget.*` | The measure holds under its stated condition; the median of several runs when a cold run is JIT, and the resolved spec says which |
