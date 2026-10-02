@@ -156,15 +156,15 @@ This was the bridge while the dedicated machine came online. Same sandbox, weake
 
 A separate Debian machine that exists only to run the agent. The container above runs there too; the box is the outer wall, the container is the inner one.
 
-- nothing of mine on the box except a clone of this repo and the GitHub App's private key
-- Claude Code runs only inside the `.devcontainer/` sandbox, started with `cocoon claude`: a launcher installed once by hand from [`.devcontainer/host/cocoon-launch.sh`](.devcontainer/host/cocoon-launch.sh) into `~/bin`, which fetches `origin/main` and runs main's reviewed `.devcontainer/` from an export, never the working tree's. The tree is mounted as data. Why: the agent writes the tree, and twice a restart executed its unreviewed sandbox scripts on the host (the records' security log, 2026-09-03 and 2026-10-02)
+- nothing of mine on the box except the GitHub App's private key and the launcher; no clone of this repo, and the login user has no git, so nothing the agent writes exists on the host
+- Claude Code runs only inside the `.devcontainer/` sandbox, started with `cocoon claude`: a launcher installed once by hand from [`.devcontainer/host/cocoon-launch.sh`](.devcontainer/host/cocoon-launch.sh) into `~/bin`, which downloads `main` from GitHub as a tarball and runs main's reviewed `.devcontainer/` from that download. The agent's working tree is a container volume the host never reads. Why: when the host built from a mounted tree the agent writes, a restart executed unreviewed sandbox scripts twice (the records' security log, 2026-09-03 and 2026-10-02), and a mounted `.git` would have let git hooks and config do the same
 - non-sudo login user that only runs the container; a separate account, used only for maintenance, is the sole sudoer. No Docker on the box: the container runs under rootless podman, so there is no privileged daemon in the path and container root is an unprivileged subordinate uid on the host
 - reached from my Mac over ssh, or remote desktop via the Windows App: directly on the LAN at home, and from outside through Tailscale, which terminates on the NAS and routes to the box locally. The box itself runs no Tailscale. Wake-on-LAN from an always-on LAN device
 - `main` ruleset: PRs only, one approving review, no force-push, no bypass. Authors can't approve their own PRs, so Claude reviews mine and I review Claude's.
 
 ### Auth: a GitHub App, not a PAT
 
-Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHub App installed on this org for `cocoon-ai` and `cocoon-ai-records` only. The App's private key stays on the box; it is never mounted into the container.
+Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHub App installed on this org for `cocoon-ai`, `cocoon-ai-records` and `cocoon-ml` only. The App's private key stays on the box; it is never mounted into the container.
 
 `run.sh` signs a short-lived JWT with the key, exchanges it for a 1-hour installation token, and passes only that token into the container as `GH_TOKEN`. A session that outlives the token loses push/PR access until `run.sh` is started again. Nothing is written to disk inside the sandbox.
 
@@ -172,10 +172,20 @@ Commits, branches, and PRs made by Claude are attributed to the bot, so I can re
 
 Neither layer limits what Claude can do to the code: it has the full repo, the full toolchain, and GitHub. What it doesn't have is anything else.
 
+### Next: the layers still to build
+
+In order, each a precondition for the one after it:
+
+1. **The launcher** (this change): the host runs only what is on `main`, and nothing the agent writes exists on the host.
+2. **A second agent.** Gemini joins in the same sandbox with its own GitHub App, its own bot identity, its own API key in the environment, and only its own model host in the firewall (PR #42). Claude has the last say on rigour until Gemini is caught up on the review skill and the records; both agents' sessions are exported to the records.
+3. **A Pi as the network choke point.** The box reaches the world only through a Raspberry Pi 4 that is the firewall, with network intrusion detection and prevention behind it and wireless intrusion prevention beside it. The sandbox's egress wall watches the container; the Pi watches the wire, for the paths neither of us has found yet.
+4. **Unattended time.** Once 1 and 3 are in, each agent gets a scheduled window, about half an hour a day, to update its PRs and the records with nobody watching. The launcher is what makes that safe: a scheduled restart builds from `main`, never from a tree.
+5. **A public mirror of the records**, rendered transcripts only, through a redaction step that refuses what it cannot classify; the raw transcripts stay private; the security log goes public once its open items are closed.
+
 ### A note on trust
 
 Security here isn't only about trusting the sandbox or the OS. It's about knowing they're not foolproof and can be broken. Containers escape, VMs have bugs, and an agent reading untrusted content (packages, web pages) can be steered. The layers above exist so that when one fails, the next one limits what's reachable: a scoped token instead of an account, a mounted repo instead of a home directory, a PR instead of a push. Review is the last layer, and it's the one that isn't automated.
 
-The security incident log and per-session transcript exports live in the private [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records) repo. Inside the sandbox it is cloned into a named volume at `/home/node/cocoon-ai-records` on first start, so the clone survives container rebuilds.
+The security incident log and per-session transcript exports live in the private [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records) repo. Inside the sandbox it is cloned to `/home/node/cocoon-ai-records` on a container's first start, beside `cocoon-ml`; neither is a volume, so anything not pushed is gone with the container. The workspace itself is a volume, cloned once and kept.
 
 These points shouldn't need be said. They should be salient. But they're often not, even at the Enterprise level, let alone a home office.

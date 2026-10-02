@@ -4,7 +4,8 @@ FROM node:22
 
 ARG TZ=America/New_York
 ENV TZ="$TZ"
-ARG CLAUDE_CODE_VERSION=latest
+# Pinned; bump on purpose, with the changelog read. 2.1.287 was the image's version on 2026-10-02.
+ARG CLAUDE_CODE_VERSION=2.1.287
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates curl git gh jq less nano procps sudo \
@@ -36,6 +37,10 @@ RUN chmod 0755 /usr/local/bin/init-firewall.sh /usr/local/bin/entrypoint.sh \
 
 USER node
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
+# After the global installs: the agent's npm never runs a package's install scripts.
+# The repo's lockfile needs none (checked 2026-10-02); a dependency that does is a
+# deliberate, reviewed exception, not a default.
+RUN npm config set ignore-scripts true
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["bash"]

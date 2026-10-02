@@ -20,18 +20,38 @@ else
   echo "gh: no GH_TOKEN set; git push / gh pr will not work this session"
 fi
 
-# node_modules lives in a named volume, not the bind-mounted repo: installed once, persists across runs.
-if [ -f package-lock.json ] && [ ! -f node_modules/.package-lock.json ]; then
-  echo "npm ci (first run in this volume)..."
-  npm ci --no-audit --no-fund
+# The workspace is a named volume, not a bind mount of anything on the host: the repo is
+# cloned into it on the first start and kept across runs and image rebuilds. Branches and
+# commits here reach the host only through GitHub, behind the ruleset's review.
+if [ ! -d /workspace/.git ]; then
+  echo "cloning cocoon-ai into the workspace volume (first start)..."
+  git clone -q https://github.com/theCocoonStudio/cocoon-ai.git /workspace
+fi
+cd /workspace
+
+# Dependencies: npm ci whenever the lockfile differs from the one last installed, which
+# also wipes node_modules, so a package pulled in by an old lockfile does not outlive it.
+# Lifecycle scripts are refused by the image's npm config (ignore-scripts); the lockfile
+# has no package that needs one (checked 2026-10-02, all 335 tests green without).
+if [ -f package-lock.json ]; then
+  want=$(sha256sum package-lock.json | cut -d' ' -f1)
+  have=$(cat node_modules/.cocoon-lockfile-sha 2>/dev/null || true)
+  if [ "$want" != "$have" ]; then
+    echo "npm ci (lockfile changed or first start)..."
+    npm ci --no-audit --no-fund
+    echo "$want" > node_modules/.cocoon-lockfile-sha
+  fi
 fi
 
-# The cocoon-ai-records clone (session exports, incident log) lives in its own named volume
-# so it survives container rebuilds. Cloned once, on the first start that has a token.
-RECORDS=/home/node/cocoon-ai-records
-if [ -n "${GH_TOKEN:-}" ] && [ ! -d "$RECORDS/.git" ]; then
-  echo "cloning cocoon-ai-records (first run in this volume)..."
-  gh repo clone theCocoonStudio/cocoon-ai-records "$RECORDS" -- -q || echo "clone failed; will retry next start"
-fi
+# cocoon-ai-records (exports, the logs) and cocoon-ml are cloned beside the workspace on
+# the first start that has a token. /home/node is not a volume: a fresh container
+# re-clones, and local branches not pushed are lost (the records convention says so).
+for repo in cocoon-ai-records cocoon-ml; do
+  dir=/home/node/$repo
+  if [ -n "${GH_TOKEN:-}" ] && [ ! -d "$dir/.git" ]; then
+    echo "cloning $repo (first start in this container)..."
+    gh repo clone "theCocoonStudio/$repo" "$dir" -- -q || echo "clone of $repo failed; will retry next start"
+  fi
+done
 
 exec "$@"
