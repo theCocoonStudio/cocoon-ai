@@ -38,7 +38,7 @@ function Readout() {
 | ----------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `children`  | undefined | consuming components                                                                                                                                                                                           |
 | `debugMode` | undefined | a React ref to a boolean; while `ref.current` is true, an observer entry with no subscription throws instead of being dropped. A ref because the observer callback is created once and reads the current value |
-| `quiet`     | false     | boolean; whether an invalid subscription (not an element, not a matching selector) is ignored instead of throwing                                                                                              |
+| `quiet`     | false     | boolean; whether an invalid subscription is ignored instead of throwing: a value that is not an element or a matching selector, or a key already subscribed to a different element                             |
 
 `useResizeEvent` params
 
@@ -50,6 +50,6 @@ With `element`, the hook subscribes that element under `key` and returns its siz
 
 Without `element`, the hook reads the size registered under `key` by another component. A reader never removes the owner's subscription when it unmounts. Both values are `undefined` until a subscription under `key` exists.
 
-Several keys may subscribe one element, and each receives every update. A key names one element at a time: subscribing a key again replaces its element.
+Several keys may subscribe one element, and each receives every update. A key names one element at a time: subscribing a key that is already subscribed to a different element throws (or is ignored under `quiet`); unsubscribe it first. The hook does this itself when its `element` or `key` changes.
 
 The observer is created on the first subscription, never during render, so the provider renders on the server. The observer is disconnected when the provider unmounts.

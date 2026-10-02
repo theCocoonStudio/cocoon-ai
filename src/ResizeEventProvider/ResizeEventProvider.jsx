@@ -6,7 +6,7 @@ import { ResizeEventContext } from './ResizeEventContext'
  *
  * @param {object} props
  * @param {import('react').Ref<boolean>} [props.debugMode] a ref to a boolean; while true, an observer entry with no subscription throws instead of being dropped. A ref, because the observer callback is created once and reads the current value
- * @param {boolean} [props.quiet=false] whether invalid subscriptions are ignored instead of throwing
+ * @param {boolean} [props.quiet=false] whether invalid subscriptions are ignored instead of throwing: a value that is not an element or a matching selector, or a key already subscribed to a different element
  * @param {import('react').ReactNode} [props.children] context consumers
  *
  */
@@ -17,6 +17,8 @@ export function ResizeEventProvider({ debugMode, quiet = false, children }) {
   // map holds a set of keys per element. Keys are not unique across elements either:
   // the subscriptions state is keyed by key, so a key names one element at a time.
   const elementToKeys = useRef(new WeakMap())
+  // and the reverse, one element per key, so a key cannot be subscribed to two elements at once
+  const keyToElement = useRef(new Map())
 
   // the debugMode ref prop is read through a local ref, so the observer callback,
   // created once, sees the current value without listing a ref read as a dependency
@@ -81,6 +83,17 @@ export function ResizeEventProvider({ debugMode, quiet = false, children }) {
         }
         return
       }
+      const current = keyToElement.current.get(key)
+      if (current && current !== resolved) {
+        if (!quiet) {
+          throw new Error(
+            `subscribe: key "${key}" is already subscribed to another element; unsubscribe it first`,
+          )
+        }
+        return
+      }
+      keyToElement.current.set(key, resolved)
+
       const keys = elementToKeys.current.get(resolved)
       if (keys) {
         keys.add(key)
@@ -104,6 +117,9 @@ export function ResizeEventProvider({ debugMode, quiet = false, children }) {
   )
 
   const unsubscribe = useCallback((key, element) => {
+    if (keyToElement.current.get(key) === element) {
+      keyToElement.current.delete(key)
+    }
     const keys = elementToKeys.current.get(element)
     if (keys) {
       keys.delete(key)
