@@ -157,7 +157,7 @@ This was the bridge while the dedicated machine came online. Same sandbox, weake
 A separate Debian machine that exists only to run the agent. The container above runs there too; the box is the outer wall, the container is the inner one.
 
 - nothing of mine on the box except the GitHub App's private key and the launcher; no clone of this repo, and the login user has no git, so nothing the agent writes exists on the host
-- Claude Code runs only inside the `.devcontainer/` sandbox, started with `cocoon claude`: a launcher installed once by hand from [`.devcontainer/host/cocoon-launch.sh`](.devcontainer/host/cocoon-launch.sh) into `~/bin`, which downloads `main` from GitHub as a tarball and runs main's reviewed `.devcontainer/` from that download. The agent's working tree is a container volume the host never reads. Why: when the host built from a mounted tree the agent writes, a restart executed unreviewed sandbox scripts twice (the records' security log, 2026-09-03 and 2026-10-02), and a mounted `.git` would have let git hooks and config do the same
+- Claude Code runs only inside the `.devcontainer/` sandbox, started with `cocoon claude` (and Gemini CLI with `cocoon gemini`, see below): a launcher installed once by hand from [`.devcontainer/host/cocoon-launch.sh`](.devcontainer/host/cocoon-launch.sh) into `~/bin`, which downloads `main` from GitHub as a tarball and runs main's reviewed `.devcontainer/` from that download. The agent's working tree is a container volume the host never reads. Why: when the host built from a mounted tree the agent writes, a restart executed unreviewed sandbox scripts twice (the records' security log, 2026-09-03 and 2026-10-02), and a mounted `.git` would have let git hooks and config do the same
 - nothing in the launcher or the run script is configurable from the environment: every value is hardcoded and a change is a PR, so what runs is always what was reviewed. The agent CLIs are pinned in the Dockerfile; a session-start hook reports when npm has a newer release, and the bump is a PR with the changelog read
 - non-sudo login user that only runs the container; a separate account, used only for maintenance, is the sole sudoer. No Docker on the box: the container runs under rootless podman, so there is no privileged daemon in the path and container root is an unprivileged subordinate uid on the host
 - reached from my Mac over ssh, or remote desktop via the Windows App: directly on the LAN at home, and from outside through Tailscale, which terminates on the NAS and routes to the box locally. The box itself runs no Tailscale. Wake-on-LAN from an always-on LAN device
@@ -169,7 +169,17 @@ Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHu
 
 `run.sh` signs a short-lived JWT with the key, exchanges it for a 1-hour installation token, and passes only that token into the container as `GH_TOKEN`. A session that outlives the token loses push/PR access until `run.sh` is started again. Nothing is written to disk inside the sandbox.
 
-Commits, branches, and PRs made by Claude are attributed to the bot, so I can review and approve them as a different user, which the old PAT on my own account never allowed. `COCOON_NO_GITHUB=1` starts a session with no credential at all.
+Commits, branches, and PRs made by Claude are attributed to the bot, so I can review and approve them as a different user, which the old PAT on my own account never allowed.
+
+### Two agents, one sandbox
+
+Gemini joined in October 2026. Same image, same rules, and nothing shared that would blur who did what:
+
+- a second GitHub App, `cocoon-gemini`, with its own private key on the box and its own bot user, so a review or approval by one agent is never mistakable for the other's; the `reviewer-policy` status says whose approval counts for whom, and Gemini's counts for nobody's
+- `cocoon gemini` mints that App's token the same way, reads the Gemini API key from one line of `~/.tokens` (read, never sourced) into the container's environment only, and starts the container as `cocoon-gemini[bot]` with its own workspace and config volumes; both agents can run at once
+- each agent's container gets only its own model host in the firewall: the Anthropic hosts for Claude, `generativelanguage.googleapis.com` for Gemini; the npm registry and GitHub for both; no telemetry host for either
+- the Gemini CLI is pinned in the Dockerfile and was audited before it went in; its root-owned system settings turn usage statistics and auto-update off and fix API-key auth. Its folder-trust gate stays on: the first start asks once to trust the workspace, and the answer lives in the config volume
+- Claude has the last say on rigour until Gemini is caught up on the review skill and the records; both agents' sessions are exported to the records, one folder each
 
 Neither layer limits what Claude can do to the code: it has the full repo, the full toolchain, and GitHub. What it doesn't have is anything else.
 
