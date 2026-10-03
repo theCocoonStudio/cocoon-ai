@@ -2,7 +2,11 @@
 # Runs as `node` on every container start.
 set -euo pipefail
 
-sudo /usr/local/bin/init-firewall.sh
+# The agent is the container's command (claude, gemini); the firewall allows only that
+# agent's model host. A plain shell gets Claude's hosts. Nothing is read from the environment.
+AGENT=claude
+[ "${1:-}" = gemini ] && AGENT=gemini
+sudo /usr/local/bin/init-firewall.sh "$AGENT"
 
 # GH_TOKEN, if set, is a GitHub App installation token minted on the host by run.sh
 # (1-hour lifetime) or a fine-grained PAT. It lives only in this process's env; nothing is
@@ -18,6 +22,16 @@ if [ -n "${GH_TOKEN:-}" ]; then
   esac
 else
   echo "gh: no GH_TOKEN set; git push / gh pr will not work this session"
+fi
+
+# The Gemini agent authenticates to its API with GEMINI_API_KEY, passed in by run.sh the
+# same way as GH_TOKEN: environment only, never on disk here.
+if [ "$AGENT" = gemini ]; then
+  if [ -n "${GEMINI_API_KEY:-}" ]; then
+    echo "gemini: GEMINI_API_KEY set for this session (env only)"
+  else
+    echo "gemini: no GEMINI_API_KEY set; the CLI cannot reach the model"
+  fi
 fi
 
 # The workspace is a named volume, not a bind mount of anything on the host: the repo is
