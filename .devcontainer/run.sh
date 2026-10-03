@@ -1,7 +1,8 @@
 #!/bin/bash
 # Build (if needed) and drop into the sandbox. Rootless podman. Usage:
 #   cocoon                               # shell, through the installed launcher (host/cocoon-launch.sh)
-#   cocoon claude                        # straight into Claude
+#   cocoon claude                        # straight into Claude, as the cocoon-claude App
+#   cocoon gemini                        # straight into Gemini, as the cocoon-gemini App
 #
 # The launcher downloads main and runs this script from that download; nothing on the
 # host comes from the agent's working tree, which lives in a container volume
@@ -20,13 +21,32 @@ set -euo pipefail
 DEVCONTAINER="$(dirname "$0")"
 
 # --- Everything this script knows, in one place ---------------------------------------------
+# Two agents, two GitHub Apps, one image. The first argument names the agent; each gets its
+# own bot identity, its own workspace and config volumes, its own container name, and only
+# its own model host in the firewall. Both may run at once.
 IMAGE=cocoon-ai-sandbox
-APP_ID=4819921                                                      # the cocoon-claude GitHub App
-APP_KEY="$HOME/cocoon-claude.2026-09-03.private-key.pem"            # its private key, host only, mode 600
-APP_ACCOUNT=theCocoonStudio                                         # the account the App is installed on
-BOT_NAME="cocoon-claude[bot]"
-BOT_EMAIL="324573615+cocoon-claude[bot]@users.noreply.github.com"   # <bot user id>+<slug>[bot]@users.noreply.github.com
+APP_ACCOUNT=theCocoonStudio                                         # the account both Apps are installed on
 API=https://api.github.com
+AGENT=claude
+[ "${1:-}" = gemini ] && AGENT=gemini
+if [ "$AGENT" = gemini ]; then
+  APP_ID=                                                           # the cocoon-gemini GitHub App: set by PR once the App exists; empty means no credential
+  APP_KEY="$HOME/cocoon-gemini.private-key.pem"                     # its private key, host only, mode 600
+  BOT_NAME="cocoon-gemini[bot]"
+  BOT_EMAIL="0+cocoon-gemini[bot]@users.noreply.github.com"         # the bot user id replaces 0 by PR, with APP_ID
+  CONTAINER=cocoon-ai-sandbox-gemini
+  WORKSPACE_VOLUME=cocoon-ai-workspace-gemini
+  CONFIG_VOLUME=cocoon-ai-gemini-config:/home/node/.gemini
+  TOKENS_FILE="$HOME/.tokens"                                       # one line, GEMINI_API_KEY=..., mode 600; read, never sourced
+else
+  APP_ID=4819921                                                    # the cocoon-claude GitHub App
+  APP_KEY="$HOME/cocoon-claude.2026-09-03.private-key.pem"          # its private key, host only, mode 600
+  BOT_NAME="cocoon-claude[bot]"
+  BOT_EMAIL="324573615+cocoon-claude[bot]@users.noreply.github.com" # <bot user id>+<slug>[bot]@users.noreply.github.com
+  CONTAINER=cocoon-ai-sandbox
+  WORKSPACE_VOLUME=cocoon-ai-workspace
+  CONFIG_VOLUME=cocoon-ai-claude-config:/home/node/.claude
+fi
 TOOLS=(
   podman    # builds the image and runs the container
   openssl   # signs the App JWT
@@ -46,7 +66,9 @@ gh_api() { curl -fsS -H "Authorization: Bearer $1" -H "Accept: application/vnd.g
                  -H "X-GitHub-Api-Version: 2022-11-28" "${@:2}"; }
 
 GH_TOKEN=""
-if [ ! -r "$APP_KEY" ]; then
+if [ -z "$APP_ID" ]; then
+  echo "github: no App id for $BOT_NAME yet (set it by PR); starting without a credential" >&2
+elif [ ! -r "$APP_KEY" ]; then
   echo "github: App key not readable at $APP_KEY; starting without a credential" >&2
 else
   perms=$(stat -c %a "$APP_KEY")
@@ -71,16 +93,32 @@ else
 fi
 export GH_TOKEN   # read by podman via `-e GH_TOKEN` below; the value is never on a command line
 
+# --- The Gemini API key, same discipline: from the tokens file into the container's -----------
+# --- environment only, and only for the Gemini agent. -----------------------------------------
+AGENT_ENV=()
+if [ "$AGENT" = gemini ]; then
+  GEMINI_API_KEY=""
+  if [ -r "$TOKENS_FILE" ]; then
+    perms=$(stat -c %a "$TOKENS_FILE")
+    [ "$perms" = "600" ] || [ "$perms" = "400" ] || echo "gemini: WARNING $TOKENS_FILE has mode $perms; chmod 600 it" >&2
+    GEMINI_API_KEY=$(grep -m1 '^GEMINI_API_KEY=' "$TOKENS_FILE" | cut -d= -f2-)
+  fi
+  [ -n "$GEMINI_API_KEY" ] || echo "gemini: no GEMINI_API_KEY line in $TOKENS_FILE; starting without one" >&2
+  export GEMINI_API_KEY
+  AGENT_ENV=(-e GEMINI_API_KEY)
+fi
+
 exec podman run -it --rm \
-  --name cocoon-ai-sandbox \
+  --name "$CONTAINER" \
   --userns=keep-id:uid=1000,gid=1000 \
   --cap-add NET_ADMIN --cap-add NET_RAW \
-  -v cocoon-ai-workspace:/workspace \
-  -v cocoon-ai-claude-config:/home/node/.claude \
+  -v "$WORKSPACE_VOLUME:/workspace" \
+  -v "$CONFIG_VOLUME" \
   -e CLAUDE_CONFIG_DIR=/home/node/.claude \
   -e DISABLE_AUTOUPDATER=1 \
   -e CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
   -e GIT_AUTHOR_NAME="$BOT_NAME" -e GIT_COMMITTER_NAME="$BOT_NAME" \
   -e GIT_AUTHOR_EMAIL="$BOT_EMAIL" -e GIT_COMMITTER_EMAIL="$BOT_EMAIL" \
   -e GH_TOKEN \
+  "${AGENT_ENV[@]}" \
   "$IMAGE" "$@"
