@@ -38,7 +38,7 @@ Three layers, each with its own scope, so a rule lives in one place.
 
 - **The build, `npm run check`.** Everything a script can decide yes or no from the repository alone: lint, format, knip, the tests, the bundle. That includes the repo's structure, as tests in `src/structure.test.js`: every script has a README row, every README link resolves, every component folder has its four files and its doc and its export, every prop a component declares is named in its doc, every config value is read by something. A failure names the file and line it came from and the file the fix goes in. Nothing here needs judgment; if a check does, it is not in the build.
 - **The review, `.claude/skills/pr-review`.** Everything that needs judgment: whether the change matches its claim, whether a test tests the right thing, whether a doc is true rather than present, whether a name means the same in every place, and the attack beyond the checklist. The review's first floor item is that the build passes, so it never repeats the build's work.
-- **CI.** Runs the build on every PR and on `main`, so "the check passes" is a status on the PR rather than a claim in its body. Made a required status in the ruleset, it binds. The workflow file is added once the GitHub App can write workflows.
+- **CI.** Runs the build on every PR and on `main`, so "the check passes" is a status on the PR rather than a claim in its body. Made a required status in the ruleset, it binds. Two more statuses guard what the build cannot see: `reviewer-policy`, who may approve whose PR (`.github/workflows/reviewer-policy.yml`), and `dependency-check`, what a lockfile change brings in: GitHub's dependency review, registry signatures and provenance, and the repo's own reader `scripts/lockfile-check.mjs`, which refuses install scripts, releases under seven days old, publisher changes and tarballs off the registry, with reviewed exceptions in `.github/dependency-allow.json`.
 
 There is no pre-commit hook. The check is one command and the review requires it; a hook would be a second copy of the same rules on two machines. If a red commit ever lands, that is the day to add one, and it would run only the fast subset: format, lint, knip.
 
@@ -110,6 +110,8 @@ docs/
   utils/<util>.md             API doc for a util worth reading about on its own; a folder, so a util and a component of the same name never collide on a case-insensitive disk
   export-logo.md              the export:logo script: grammar, every parameter, output
   export-logo-group.md        the export:logo-group script: the logo mesh rendered by three and screenshot, and the camera to show it with
+scripts/
+  lockfile-check.mjs          the dependency reader CI runs on a lockfile change; see What checks what
 assets/                       the studio's marks, produced by the scripts beside them; see assets/README.md
   lib/                        the four-plane engine shared by the icons and the logo
   icons/                      the UI icon set: shapes.js in, 26 SVGs and a contact sheet out
