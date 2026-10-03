@@ -1,0 +1,61 @@
+# The dependency reader: a lockfile change is judged before it merges, as a required
+# status, so no package reaches the sandbox on an agent's say-so.
+#
+#   1. GitHub's dependency review: known vulnerabilities and disallowed licences in
+#      what the PR adds (needs the repository's dependency graph, on by default for
+#      public repos).
+#   2. Registry signatures and provenance attestations verified for every installed
+#      package (`npm audit signatures`).
+#   3. The repo's own reader, scripts/lockfile-check.mjs: every package added or
+#      changed, refused on install scripts, a version under seven days old, a
+#      publisher change or a tarball off the registry; the report is posted as a
+#      PR comment. Exceptions are reviewed lines in .github/dependency-allow.json.
+#
+# Runs only when the lockfile, the manifest or the exceptions file change. Make it a
+# required status in the main ruleset and a dependency change cannot merge without it.
+name: dependency-check
+on:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/dependency-allow.json
+      - scripts/lockfile-check.mjs
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: GitHub dependency review (vulnerabilities, licences)
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: low
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: registry signatures and provenance
+        run: npm audit signatures
+      - name: the base lockfile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/contents/package-lock.json?ref=${{ github.base_ref }}" \
+            -H "Accept: application/vnd.github.raw" > /tmp/base-lock.json
+      - name: the repo's lockfile reader
+        id: reader
+        run: |
+          set +e
+          node scripts/lockfile-check.mjs /tmp/base-lock.json package-lock.json > /tmp/report.md
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/report.md
+      - name: post the report on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file /tmp/report.md
+      - name: fail on a refusal
+        run: test "${{ steps.reader.outputs.status }}" = "0"
