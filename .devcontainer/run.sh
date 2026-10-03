@@ -13,21 +13,29 @@
 # The token is valid for 1 hour; a session that outlives it loses push/PR access until
 # run.sh is started again. Everything the agent does on GitHub is attributed to the bot user.
 #
-# Override any of these in the environment if the defaults move:
-#   COCOON_APP_ID, COCOON_APP_KEY, COCOON_APP_ACCOUNT, COCOON_INSTALLATION_ID
-#   COCOON_NO_GITHUB=1  -> skip minting, start with no GitHub credential
+# Nothing here is configurable from the environment: every value is hardcoded below and a
+# change is a PR (Izzy, 2026-10-02). The build context is this script's own directory,
+# which is the launcher's download of main.
 set -euo pipefail
-# COCOON_DEVCONTAINER is set by host/cocoon-launch.sh to the downloaded, reviewed
-# .devcontainer/; run by hand, the build context is this script's own directory.
-DEVCONTAINER="${COCOON_DEVCONTAINER:-$(dirname "$0")}"
+DEVCONTAINER="$(dirname "$0")"
 
+# --- Everything this script knows, in one place ---------------------------------------------
 IMAGE=cocoon-ai-sandbox
-APP_ID="${COCOON_APP_ID:-4819921}"
-APP_KEY="${COCOON_APP_KEY:-$HOME/cocoon-claude.2026-09-03.private-key.pem}"
-APP_ACCOUNT="${COCOON_APP_ACCOUNT:-theCocoonStudio}"
+APP_ID=4819921                                                      # the cocoon-claude GitHub App
+APP_KEY="$HOME/cocoon-claude.2026-09-03.private-key.pem"            # its private key, host only, mode 600
+APP_ACCOUNT=theCocoonStudio                                         # the account the App is installed on
 BOT_NAME="cocoon-claude[bot]"
 BOT_EMAIL="324573615+cocoon-claude[bot]@users.noreply.github.com"   # <bot user id>+<slug>[bot]@users.noreply.github.com
 API=https://api.github.com
+TOOLS=(
+  podman    # builds the image and runs the container
+  openssl   # signs the App JWT
+  curl      # the GitHub API, for the installation token
+  jq        # reads the API's JSON
+)
+for tool in "${TOOLS[@]}"; do
+  command -v "$tool" >/dev/null || { echo "run.sh: '$tool' is required on the host" >&2; exit 1; }
+done
 
 # Always show the build log. Cached runs print one short line per step; a real rebuild shows everything.
 podman build -t "$IMAGE" "$DEVCONTAINER"
@@ -38,14 +46,9 @@ gh_api() { curl -fsS -H "Authorization: Bearer $1" -H "Accept: application/vnd.g
                  -H "X-GitHub-Api-Version: 2022-11-28" "${@:2}"; }
 
 GH_TOKEN=""
-if [ "${COCOON_NO_GITHUB:-0}" = "1" ]; then
-  echo "github: COCOON_NO_GITHUB=1, starting without a credential"
-elif [ ! -r "$APP_KEY" ]; then
+if [ ! -r "$APP_KEY" ]; then
   echo "github: App key not readable at $APP_KEY; starting without a credential" >&2
 else
-  for tool in openssl curl jq; do
-    command -v "$tool" >/dev/null || { echo "github: '$tool' is required on the host to mint the App token" >&2; exit 1; }
-  done
   perms=$(stat -c %a "$APP_KEY")
   [ "$perms" = "600" ] || [ "$perms" = "400" ] || echo "github: WARNING $APP_KEY has mode $perms; chmod 600 it" >&2
 
@@ -57,12 +60,9 @@ else
   jwt="$header.$payload.$sig"
 
   # The installation of this App on the studio account, then a token for it.
-  inst="${COCOON_INSTALLATION_ID:-}"
-  if [ -z "$inst" ]; then
-    inst=$(gh_api "$jwt" "$API/app/installations" \
-           | jq -r --arg a "$APP_ACCOUNT" '.[] | select(.account.login == $a) | .id' | head -1)
-    [ -n "$inst" ] || { echo "github: App $APP_ID has no installation on $APP_ACCOUNT" >&2; exit 1; }
-  fi
+  inst=$(gh_api "$jwt" "$API/app/installations" \
+         | jq -r --arg a "$APP_ACCOUNT" '.[] | select(.account.login == $a) | .id' | head -1)
+  [ -n "$inst" ] || { echo "github: App $APP_ID has no installation on $APP_ACCOUNT" >&2; exit 1; }
   resp=$(gh_api "$jwt" -X POST "$API/app/installations/$inst/access_tokens")
   GH_TOKEN=$(printf '%s' "$resp" | jq -r .token)
   echo "github: installation token minted for $APP_ACCOUNT as $BOT_NAME, expires $(printf '%s' "$resp" | jq -r .expires_at)"
