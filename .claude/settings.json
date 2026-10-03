@@ -12,6 +12,16 @@
             "statusMessage": "GH_TOKEN expiry timer"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/version-check.sh\"",
+            "timeout": 60,
+            "statusMessage": "pinned CLI versions vs npm"
+          }
+        ]
       }
     ]
   }
