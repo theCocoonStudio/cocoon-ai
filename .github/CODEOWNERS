@@ -1,0 +1,7 @@
+# Code owners: the paths whose changes always need Izzy's review, whatever the
+# reviewer-policy status says. The sandbox is what the host runs; the workflows are
+# what judges PRs; this file is what decides both. Turn on "require code owner
+# review" in the main ruleset and these lines bind.
+/.devcontainer/ @theCocoonStudio
+/.github/ @theCocoonStudio
+/.claude/ @theCocoonStudio

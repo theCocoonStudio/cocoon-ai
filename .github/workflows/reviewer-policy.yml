@@ -1,0 +1,62 @@
+# Who may approve whose PR, as a required status rather than a habit.
+#
+# The main ruleset requires one approving review, and GitHub counts any user with
+# write access, bots included. With two agents that would let them approve each
+# other and merge code no human read. This job sets the commit status
+# `reviewer-policy` on the PR's head: success only when an APPROVED review from an
+# allowed reviewer exists for the author. Make it required in the ruleset and the
+# policy binds. Gemini's approval satisfies nobody's PR, by design (Izzy, 2026-10-02).
+#
+#   author                 allowed approvers
+#   theCocoonStudio        cocoon-claude[bot]
+#   cocoon-claude[bot]     theCocoonStudio
+#   cocoon-gemini[bot]     theCocoonStudio, cocoon-claude[bot]
+#   anyone else            theCocoonStudio
+#
+# This file is reviewable only by the code owner (.github/CODEOWNERS), so a PR cannot
+# rewrite the policy that judges it. Reviews are read through the API, so the job
+# needs no checkout and runs no code from the PR.
+name: reviewer-policy
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+permissions:
+  pull-requests: read
+  statuses: write
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: judge the latest reviews against the table
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          pr=$(gh api "repos/$REPO/pulls/$NUMBER")
+          author=$(jq -r .user.login <<<"$pr")
+          head=$(jq -r .head.sha <<<"$pr")
+          case "$author" in
+            theCocoonStudio)     allowed='["cocoon-claude[bot]"]' ;;
+            'cocoon-claude[bot]') allowed='["theCocoonStudio"]' ;;
+            'cocoon-gemini[bot]') allowed='["theCocoonStudio","cocoon-claude[bot]"]' ;;
+            *)                   allowed='["theCocoonStudio"]' ;;
+          esac
+          # the latest review per reviewer, for the current head only
+          approvers=$(gh api --paginate "repos/$REPO/pulls/$NUMBER/reviews" \
+            | jq -r --arg head "$head" --argjson allowed "$allowed" '
+                [ .[] | select(.commit_id == $head) ]
+                | group_by(.user.login) | map(max_by(.submitted_at))
+                | map(select(.state == "APPROVED" and (.user.login as $u | $allowed | index($u))))
+                | map(.user.login) | join(", ")')
+          if [ -n "$approvers" ]; then
+            state=success; desc="approved by $approvers (allowed for $author)"
+          else
+            state=failure; desc="needs an approval from $(jq -r 'join(" or ")' <<<"$allowed") for a PR by $author"
+          fi
+          echo "$desc"
+          gh api -X POST "repos/$REPO/statuses/$head" \
+            -f state="$state" -f context=reviewer-policy -f description="$desc" >/dev/null
