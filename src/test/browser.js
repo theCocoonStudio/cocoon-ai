@@ -30,9 +30,13 @@ export function findBrowser(given) {
   return null
 }
 
+/** How long a launch may take: sized for a loaded two-core runner, not a workstation. */
+const LAUNCH_TIMEOUT_MS = 120_000
+
 /** Flags that give a headless Chromium WebGL 2 without a GPU, in a container. */
 const LAUNCH_ARGS = [
   '--no-sandbox',
+  '--disable-dev-shm-usage', // a small /dev/shm hangs Chromium; use /tmp instead
   '--use-gl=angle',
   '--use-angle=swiftshader',
   '--enable-unsafe-swiftshader',
@@ -105,6 +109,9 @@ export async function openPage(entry, { width, height, browser } = {}) {
     executablePath: executable,
     headless: true,
     args: LAUNCH_ARGS,
+    // puppeteer's default is 30 s. GitHub's runner took 55 s for one launch on
+    // 2026-10-05 with four test files launching at once, and the rest timed out.
+    timeout: LAUNCH_TIMEOUT_MS,
   })
   const page = await chrome.newPage()
   await page.setViewport({

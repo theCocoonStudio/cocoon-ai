@@ -30,7 +30,9 @@
     "assets:icons": "node assets/icons/build.js",
     "assets:logo": "node assets/logo/build.js",
     "export:logo": "node assets/logo/export.js",
-    "export:logo-group": "node assets/logo/export-group.js"
+    "export:logo-group": "node assets/logo/export-group.js",
+    "test:ci": "vitest run --maxWorkers=2",
+    "check:ci": "npm run lint && npm run format:check && npm run knip && npm run test:ci && npm run build"
   },
   "peerDependencies": {
     "react": "19.2.4",

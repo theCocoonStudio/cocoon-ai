@@ -23,7 +23,7 @@ Two principles, and everything below applies them:
 
 1. **Read the claim.** The PR title, body and commit messages: what the change is for, and what it declares out of scope or not yet done. A declared gap is recorded as declared, not found; everything not declared is held to the full standard. Note the base branch: a PR stacked on another is reviewed as its own diff.
 2. **Take the branch.** Check it out locally. `git log --oneline main..HEAD` is the commit list; one commit per conceptual task, and each message says what and why. `git diff main...HEAD --stat` is the surface.
-3. **Run it.** `npm run check` on the branch, in full. Then whatever the change adds that the check does not exercise: a script, run; an export, opened; a generated file, regenerated and diffed; a component, mounted in the test renderer if its tests do not already; a claimed number, measured. This is the step that turns a reading into a review.
+3. **Run it.** `npm run check:ci` on the branch, in full: the same check with the tests on two workers, which is what the runner has, so a load-dependent timeout shows here before it shows on GitHub. Then whatever the change adds that the check does not exercise: a script, run; an export, opened; a generated file, regenerated and diffed; a component, mounted in the test renderer if its tests do not already; a claimed number, measured. This is the step that turns a reading into a review.
 4. **Walk the floor.** Every item below, every time, each with a one-line result in the report.
 5. **Attack.** Above the floor, with the time left: every entry under "Attacks learned" first, then inputs the author did not try, the sequence they did not think of, the size that breaks it, the consumer that imports it differently, the machine that lacks what this one has. Anything found goes in the report's "Beyond the floor" section with its evidence, and anything the floor and the ordinary tests would not have caught is added to "Attacks learned".
 6. **Report.** In the shape below, then the decision.
@@ -33,7 +33,7 @@ Two principles, and everything below applies them:
 | Item | What is checked | Fails when |
 |---|---|---|
 | Claim | The change does what the title, body and messages say, and nothing they do not | Undeclared work in the diff; a declared thing missing |
-| Check | `npm run check` passes on the branch: lint, format, knip, tests, build | Anything red; a test skipped without a stated reason |
+| Check | `npm run check:ci` passes on the branch: lint, format, knip, tests on two workers, build | Anything red; a test skipped without a stated reason |
 | Tests | Every behaviour the change adds or alters has a test that fails without the change; negative cases included; test names trace to the spec ids where a spec exists | A behaviour with no test; a test that passes with the change reverted; a declared "no tests" gap is recorded, not failed |
 | Spec | A component or util built through the spec skill has its spec, resolved spec, tests and doc, and the resolved spec's contracts and defaults match the code | Drift between spec and code; a resolved entry the code does not honour |
 | Config | Design defaults come from `cocoon.config.js`; no reader restates a number | A literal where the config has the value |
