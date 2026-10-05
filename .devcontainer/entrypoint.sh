@@ -57,10 +57,11 @@ if [ -f package-lock.json ]; then
   fi
 fi
 
-# cocoon-ai-records (exports, the logs) and cocoon-ml are cloned beside the workspace on
-# the first start that has a token. /home/node is not a volume: a fresh container
+# cocoon-ai-records (exports, the logs), cocoon-ml and cocoon-relations are cloned beside
+# the workspace on the first start that has a token; a repo that does not exist yet, or
+# that the App is not installed on, fails its clone and is retried next start. /home/node is not a volume: a fresh container
 # re-clones, and local branches not pushed are lost (the records convention says so).
-for repo in cocoon-ai-records cocoon-ml; do
+for repo in cocoon-ai-records cocoon-ml cocoon-relations; do
   dir=/home/node/$repo
   if [ -n "${GH_TOKEN:-}" ] && [ ! -d "$dir/.git" ]; then
     echo "cloning $repo (first start in this container)..."

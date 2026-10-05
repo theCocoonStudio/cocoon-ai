@@ -170,7 +170,7 @@ A separate Debian machine that exists only to run the agent. The container above
 
 ### Auth: a GitHub App, not a PAT
 
-Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHub App installed on this org for `cocoon-ai`, `cocoon-ai-records` and `cocoon-ml` only. The App's private key stays on the box; it is never mounted into the container.
+Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHub App installed on this org for `cocoon-ai`, `cocoon-ai-records`, `cocoon-ml` and `cocoon-relations` only. The App's private key stays on the box; it is never mounted into the container.
 
 `run.sh` signs a short-lived JWT with the key, exchanges it for a 1-hour installation token, and passes only that token into the container as `GH_TOKEN`. A session that outlives the token loses push/PR access until `run.sh` is started again. Nothing is written to disk inside the sandbox.
 
@@ -202,6 +202,6 @@ In order, each a precondition for the one after it:
 
 Security here isn't only about trusting the sandbox or the OS. It's about knowing they're not foolproof and can be broken. Containers escape, VMs have bugs, and an agent reading untrusted content (packages, web pages) can be steered. The layers above exist so that when one fails, the next one limits what's reachable: a scoped token instead of an account, a mounted repo instead of a home directory, a PR instead of a push. Review is the last layer, and it's the one that isn't automated.
 
-The security incident log and per-session transcript exports live in the private [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records) repo. Inside the sandbox it is cloned to `/home/node/cocoon-ai-records` on a container's first start, beside `cocoon-ml`; neither is a volume, so anything not pushed is gone with the container. The workspace itself is a volume, cloned once and kept.
+The security incident log and per-session transcript exports live in the private [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records) repo. Inside the sandbox it is cloned to `/home/node/cocoon-ai-records` on a container's first start, beside `cocoon-ml` and `cocoon-relations`; none is a volume, so anything not pushed is gone with the container. The workspace itself is a volume, cloned once and kept.
 
 These points shouldn't need be said. They should be salient. But they're often not, even at the Enterprise level, let alone a home office.
