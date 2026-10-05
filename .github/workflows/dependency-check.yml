@@ -11,50 +11,66 @@
 #      publisher change or a tarball off the registry; the report is posted as a
 #      PR comment. Exceptions are reviewed lines in .github/dependency-allow.json.
 #
-# Runs only when the lockfile, the manifest or the exceptions file change. Make it a
-# required status in the main ruleset and a dependency change cannot merge without it.
+# Runs on every PR so it can be a required status in the main ruleset: a workflow
+# skipped by a path filter leaves a required status "expected" forever and blocks the
+# merge. The first step decides whether a dependency file changed; when none did the
+# job ends green in seconds and posts nothing.
 name: dependency-check
 on:
   pull_request:
-    paths:
-      - package.json
-      - package-lock.json
-      - .github/dependency-allow.json
-      - scripts/lockfile-check.mjs
 permissions:
   contents: read
   pull-requests: write
 jobs:
-  dependencies:
+  dependency-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: GitHub dependency review (vulnerabilities, licences)
+      - name: did a dependency file change
+        id: changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --jq '.[].filename')
+          if grep -qxE 'package\.json|package-lock\.json|\.github/dependency-allow\.json|scripts/lockfile-check\.mjs' <<<"$files"; then
+            echo "deps=true" >> "$GITHUB_OUTPUT"; echo "dependency files changed; checking"
+          else
+            echo "deps=false" >> "$GITHUB_OUTPUT"; echo "no dependency file changed; nothing to check"
+          fi
+      - if: steps.changed.outputs.deps == 'true'
+        uses: actions/checkout@v4
+      - if: steps.changed.outputs.deps == 'true'
+        name: GitHub dependency review (vulnerabilities, licences)
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: low
-      - uses: actions/setup-node@v4
+      - if: steps.changed.outputs.deps == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci --ignore-scripts
-      - name: registry signatures and provenance
+      - if: steps.changed.outputs.deps == 'true'
+        run: npm ci --ignore-scripts
+      - if: steps.changed.outputs.deps == 'true'
+        name: registry signatures and provenance
         run: npm audit signatures
-      - name: the base lockfile
+      - if: steps.changed.outputs.deps == 'true'
+        name: the base lockfile
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api "repos/${{ github.repository }}/contents/package-lock.json?ref=${{ github.base_ref }}" \
             -H "Accept: application/vnd.github.raw" > /tmp/base-lock.json \
             || echo '{}' > /tmp/base-lock.json   # a base with no lockfile yet: every package counts as added (Izzy, Gemini's catch)
-      - name: the repo's lockfile reader
+      - if: steps.changed.outputs.deps == 'true'
+        name: the repo's lockfile reader
         id: reader
         run: |
           set +e
           node scripts/lockfile-check.mjs /tmp/base-lock.json package-lock.json > /tmp/report.md
           echo "status=$?" >> "$GITHUB_OUTPUT"
           cat /tmp/report.md
-      - name: post the report on the PR
+      - if: steps.changed.outputs.deps == 'true'
+        name: post the report on the PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file /tmp/report.md
