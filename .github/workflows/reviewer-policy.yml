@@ -45,10 +45,11 @@ jobs:
             'cocoon-gemini[bot]') allowed='["theCocoonStudio","cocoon-claude[bot]"]' ;;
             *)                   allowed='["theCocoonStudio"]' ;;
           esac
-          # the latest review per reviewer, for the current head only
+          # the latest review per reviewer, for the current head only; a plain comment is
+          # not a review and must not displace an approval (Izzy, 2026-10-05)
           approvers=$(gh api --paginate "repos/$REPO/pulls/$NUMBER/reviews" \
             | jq -r --arg head "$head" --argjson allowed "$allowed" '
-                [ .[] | select(.commit_id == $head) ]
+                [ .[] | select(.commit_id == $head and .state != "COMMENTED") ]
                 | group_by(.user.login) | map(max_by(.submitted_at))
                 | map(select(.state == "APPROVED" and (.user.login as $u | $allowed | index($u))))
                 | map(.user.login) | join(", ")')
