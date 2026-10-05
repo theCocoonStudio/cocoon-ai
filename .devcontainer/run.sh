@@ -30,10 +30,10 @@ API=https://api.github.com
 AGENT=claude
 [ "${1:-}" = gemini ] && AGENT=gemini
 if [ "$AGENT" = gemini ]; then
-  APP_ID=                                                           # the cocoon-gemini GitHub App: set by PR once the App exists; empty means no credential
+  APP_ID=5200600                                                    # the cocoon-gemini GitHub App
   APP_KEY="$HOME/cocoon-gemini.private-key.pem"                     # its private key, host only, mode 600
   BOT_NAME="cocoon-gemini[bot]"
-  BOT_EMAIL="0+cocoon-gemini[bot]@users.noreply.github.com"         # the bot user id replaces 0 by PR, with APP_ID
+  BOT_EMAIL="338248646+cocoon-gemini[bot]@users.noreply.github.com" # <bot user id>+<slug>[bot]@users.noreply.github.com
   CONTAINER=cocoon-ai-sandbox-gemini
   WORKSPACE_VOLUME=cocoon-ai-workspace-gemini
   CONFIG_VOLUME=cocoon-ai-gemini-config:/home/node/.gemini
