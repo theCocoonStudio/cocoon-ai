@@ -4,11 +4,8 @@ FROM node:22
 
 ARG TZ=America/New_York
 ENV TZ="$TZ"
-# Pinned; bump on purpose, with the changelog read. 2.1.287 was the image's version on 2026-10-02; 2.1.288 on 2026-10-03, changelog read.
-ARG CLAUDE_CODE_VERSION=2.1.288
-# Gemini CLI, pinned the same way. 0.62.0 audited 2026-10-02: npm audit clean, Apache-2.0,
-# one bundle, no runtime dependencies. The version hook reports when npm moves past it.
-ARG GEMINI_CLI_VERSION=0.62.0
+# Pinned; bump on purpose, with the changelog read. 2.1.287 was the image's version on 2026-10-02; 2.1.288 on 2026-10-03; 2.1.289 on 2026-10-05, changelog read.
+ARG CLAUDE_CODE_VERSION=2.1.289
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates curl git gh jq less nano procps sudo \
