@@ -464,8 +464,10 @@ export async function screenshot(htmlPath, browser) {
   const b = await puppeteer.launch({
     executablePath: browser,
     headless: true,
+    timeout: 120_000, // the runner took 55 s for one launch under load (2026-10-05); the default 30 s timed out
     args: [
       '--no-sandbox',
+      '--disable-dev-shm-usage',
       '--use-gl=angle',
       '--use-angle=swiftshader',
       '--enable-unsafe-swiftshader',
