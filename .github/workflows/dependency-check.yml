@@ -45,7 +45,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api "repos/${{ github.repository }}/contents/package-lock.json?ref=${{ github.base_ref }}" \
-            -H "Accept: application/vnd.github.raw" > /tmp/base-lock.json
+            -H "Accept: application/vnd.github.raw" > /tmp/base-lock.json \
+            || echo '{}' > /tmp/base-lock.json   # a base with no lockfile yet: every package counts as added (Izzy, Gemini's catch)
       - name: the repo's lockfile reader
         id: reader
         run: |
