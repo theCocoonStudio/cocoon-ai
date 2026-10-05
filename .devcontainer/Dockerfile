@@ -4,8 +4,8 @@ FROM node:22
 
 ARG TZ=America/New_York
 ENV TZ="$TZ"
-# Pinned; bump on purpose, with the changelog read. 2.1.287 was the image's version on 2026-10-02; 2.1.288 on 2026-10-03, changelog read.
-ARG CLAUDE_CODE_VERSION=2.1.288
+# Pinned; bump on purpose, with the changelog read. 2.1.287 was the image's version on 2026-10-02; 2.1.288 on 2026-10-03; 2.1.289 on 2026-10-05, changelog read.
+ARG CLAUDE_CODE_VERSION=2.1.289
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates curl git gh jq less nano procps sudo \
