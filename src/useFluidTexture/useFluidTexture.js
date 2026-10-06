@@ -1,52 +1,86 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Camera, HalfFloatType, PlaneGeometry, RGFormat, Vector2 } from 'three'
-import { useFBO } from '@react-three/drei'
-import { advectionPassConfig } from './AdvectionPass.canvas'
-import { forcePassConfig } from './ForcePass.canvas'
-import { meshForcePassConfig } from './MeshForcePass.canvas'
-import { viscousPassConfig } from './ViscousPass.canvas'
-import { divergencePassConfig } from './DivergencePass.canvas'
-import { poissonPassConfig } from './PoissonPass.canvas'
-import { pressurePassConfig } from './PressurePass.canvas'
-import { outputPassConfig } from './OutputPass.canvas'
-import { ShaderPass } from './ShaderPass'
-import { FrameSplitter } from './frame'
-import { bindWall, followWall } from './boundary.js'
+import {
+  Camera,
+  HalfFloatType,
+  PlaneGeometry,
+  RGFormat,
+  Vector2,
+} from 'three/webgpu'
+import { texture, uniform } from 'three/tsl'
+import { config } from '../../cocoon.config.js'
+import {
+  advectionMaterial,
+  divergenceMaterial,
+  forceMaterial,
+  meshForceMaterial,
+  outputMaterial,
+  poissonMaterial,
+  pressureMaterial,
+  viscousMaterial,
+} from './tsl/passes.js'
+import { ShaderPass } from './ShaderPass.js'
+import { FrameSplitter } from './frame.js'
+import { useRenderTarget } from './targets.js'
+import {
+  bindWall,
+  boundaryChildren,
+  disposeBoundary,
+  followWall,
+} from './boundary.js'
 
 // force calculation default
 const defaultForceCallback = (delta, clock, pointer, pointerDiff) => ({
   force: pointerDiff,
   center: pointer,
 })
-export const useFluidTexture = ({
-  /* simulation physics options */
-  poissonIterations = 32,
-  viscousIterations = 32,
-  forceValue = 1,
-  resolution = 0.5,
-  runEvery = 1,
-  forceSize = 100,
-  viscous = 30,
-  isBounce = true,
-  dt = 0.014,
-  isViscous = true,
-  BFECC = true,
-  forceCallbackRef,
-  forceMesh,
-  customCamera,
-  /* fbo options */
-  fboWidth,
-  fboHeight,
-  fboOpts = { type: HalfFloatType, format: RGFormat },
-  outputFboOpts = { type: HalfFloatType },
-  /* render options */
-  manual = false, // auto mode default
-  priority = -1, // auto mode only
-  pause = false, // auto mode only,
-  pauseRef = {},
-  manualRef = {},
-}) => {
+
+/** The fields' targets: two channels, half float, as the WebGL version had. Module constants so the targets are not rebuilt per render. */
+const FIELD_OPTS = Object.freeze({ type: HalfFloatType, format: RGFormat })
+const OUTPUT_OPTS = Object.freeze({ type: HalfFloatType })
+
+/** The caller's options over the config's defaults, an undefined option not overriding. */
+function withDefaults(options) {
+  const out = { ...config.fluid }
+  for (const k in options) if (options[k] !== undefined) out[k] = options[k]
+  return out
+}
+
+/**
+ * A 2D fluid simulation on the GPU, as a texture. Needs the WebGPU renderer
+ * (`three/webgpu`), on either of its backends: the passes are TSL node
+ * materials. See docs/useFluidTexture.md.
+ */
+export const useFluidTexture = (options = {}) => {
+  const {
+    /* simulation physics options, defaults in cocoon.config.js */
+    poissonIterations,
+    viscousIterations,
+    forceValue,
+    resolution,
+    runEvery,
+    forceSize,
+    viscous,
+    isBounce,
+    dt,
+    isViscous,
+    BFECC,
+    forceCallbackRef,
+    forceMesh,
+    customCamera,
+    /* target options */
+    fboWidth,
+    fboHeight,
+    fboOpts = FIELD_OPTS,
+    outputFboOpts = OUTPUT_OPTS,
+    /* render options */
+    manual = false, // auto mode default
+    priority = -1, // auto mode only
+    pause = false, // auto mode only,
+    pauseRef = {},
+    manualRef = {},
+  } = withDefaults(options)
+
   // reactive state data (along with passed args)
   const sizeCallback = useCallback(
     (state) => ({
@@ -64,6 +98,12 @@ export const useFluidTexture = ({
     gl,
     camera,
   }))
+  // the passes are TSL node materials: the legacy WebGLRenderer cannot build them
+  if (gl && !gl.isWebGPURenderer) {
+    throw new Error(
+      'useFluidTexture: the Canvas must use the WebGPU renderer (three/webgpu), on either of its backends; see docs/useFluidTexture.md',
+    )
+  }
 
   // shared objects
   const [camera] = useState(() => new Camera())
@@ -75,55 +115,30 @@ export const useFluidTexture = ({
   const [oldForceMeshPosition] = useState(() => new Vector2(0, 0))
   const [viewportSize] = useState(() => new Vector2(0, 0))
 
-  // fbos
-  const vel0 = useFBO(width, height, {
-    depthBuffer: false,
-    ...fboOpts,
-  })
-  const vel1 = useFBO(width, height, {
-    depthBuffer: false,
-    ...fboOpts,
-  })
-  const visc0 = useFBO(width, height, {
-    depthBuffer: false,
-    ...fboOpts,
-  })
-  const visc1 = useFBO(width, height, {
-    depthBuffer: false,
-    ...fboOpts,
-  })
-  const div = useFBO(width, height, {
-    depthBuffer: false,
-    ...fboOpts,
-  })
-  const pressure0 = useFBO(width, height, {
-    depthBuffer: false,
-    ...fboOpts,
-  })
-  const pressure1 = useFBO(width, height, {
-    depthBuffer: false,
-    ...fboOpts,
-  })
-  const output = useFBO(width, height, {
-    depthBuffer: false,
-    ...outputFboOpts,
-  })
+  // the fields: render targets, rebuilt on a size change
+  const vel0 = useRenderTarget(width, height, fboOpts)
+  const vel1 = useRenderTarget(width, height, fboOpts)
+  const visc0 = useRenderTarget(width, height, fboOpts)
+  const visc1 = useRenderTarget(width, height, fboOpts)
+  const div = useRenderTarget(width, height, fboOpts)
+  const pressure0 = useRenderTarget(width, height, fboOpts)
+  const pressure1 = useRenderTarget(width, height, fboOpts)
+  const output = useRenderTarget(width, height, outputFboOpts)
 
-  // uniforms
+  // uniform nodes, shared by the passes; vectors are mutated in place, scalars through .value
   const [Uniforms] = useState(() => {
     const _uniforms = {
-      boundarySpace: new Vector2(),
-      cellScale: new Vector2(),
-      fboSize: new Vector2(),
-      force: new Vector2(),
-      meshForce: new Vector2(),
-      center: new Vector2(),
-      scale: new Vector2(forceSize, forceSize),
-      dt: { value: dt },
-      viscous: { value: viscous },
-      BFECC: { value: BFECC },
+      boundarySpace: uniform(new Vector2()),
+      cellScale: uniform(new Vector2()),
+      fboSize: uniform(new Vector2()),
+      force: uniform(new Vector2()),
+      meshForce: uniform(new Vector2()),
+      center: uniform(new Vector2()),
+      scale: uniform(new Vector2(forceSize, forceSize)),
+      dt: uniform(dt),
+      viscous: uniform(viscous),
+      BFECC: uniform(BFECC ? 1 : 0, 'bool'),
     }
-
     const setDt = (_dt) => {
       _uniforms.dt.value = _dt
     }
@@ -131,28 +146,22 @@ export const useFluidTexture = ({
       _uniforms.viscous.value = _viscous
     }
     const setBFECC = (_BFECC) => {
-      _uniforms.BFECC.value = _BFECC
+      _uniforms.BFECC.value = _BFECC ? 1 : 0
     }
     const get = () => _uniforms
-    return {
-      get,
-      setDt,
-      setViscous,
-      setBFECC,
-    }
+    return { get, setDt, setViscous, setBFECC }
   })
 
   // reactive uniform updates
   useEffect(() => {
     // vectors
     const { boundarySpace, cellScale, fboSize } = Uniforms.get()
-    fboSize.set(width, height)
-    cellScale.set(1.0 / fboSize.x, 1.0 / fboSize.y)
-
+    fboSize.value.set(width, height)
+    cellScale.value.set(1.0 / width, 1.0 / height)
     if (isBounce) {
-      boundarySpace.set(0, 0)
+      boundarySpace.value.set(0, 0)
     } else {
-      boundarySpace.copy(cellScale)
+      boundarySpace.value.copy(cellScale.value)
     }
     // primitives
     Uniforms.setDt(dt)
@@ -160,69 +169,50 @@ export const useFluidTexture = ({
     Uniforms.setBFECC(BFECC)
   }, [BFECC, Uniforms, dt, height, isBounce, viscous, width])
 
-  // shader passes
+  // shader passes: each gets its own texture nodes (swapped per step) and the shared uniform nodes
   const [advectionPass] = useState(() => {
-    const uniforms = Uniforms.get()
+    const u = Uniforms.get()
+    const inputs = { velocity: texture(vel0.texture) }
     return new ShaderPass({
-      ...advectionPassConfig,
+      material: advectionMaterial({
+        velocity: inputs.velocity,
+        dt: u.dt,
+        isBFECC: u.BFECC,
+        fboSize: u.fboSize,
+        px: u.cellScale,
+      }),
+      inputs,
       camera,
       geometry,
-    })
-      .updateUniforms({
-        boundarySpace: {
-          value: uniforms.cellScale,
-        },
-        px: {
-          value: uniforms.cellScale,
-        },
-        fboSize: {
-          value: uniforms.fboSize,
-        },
-        velocity: {
-          value: vel0.texture,
-        },
-        dt: uniforms.dt,
-        isBFECC: uniforms.BFECC,
-      })
-      .setFBO(vel1)
+      children: boundaryChildren,
+      onDispose: disposeBoundary,
+    }).setFBO(vel1)
   })
   const [forcePass] = useState(() => {
-    const uniforms = Uniforms.get()
+    const u = Uniforms.get()
     return new ShaderPass({
-      ...forcePassConfig,
+      material: forceMaterial({
+        force: u.force,
+        center: u.center,
+        scale: u.scale,
+        px: u.cellScale,
+      }),
+      inputs: { force: u.force, center: u.center, scale: u.scale },
       camera,
       geometry,
-    })
-      .updateUniforms({
-        px: {
-          value: uniforms.cellScale,
-        },
-        force: {
-          value: uniforms.force,
-        },
-        center: {
-          value: uniforms.center,
-        },
-        scale: {
-          value: uniforms.scale,
-        },
-      })
-      .setFBO(vel1)
+      clear: false, // adds into the velocity advection just wrote
+    }).setFBO(vel1)
   })
-
-  const [meshForcePass] = useState(() =>
-    new ShaderPass({
-      ...meshForcePassConfig,
+  const [meshForcePass] = useState(() => {
+    const u = Uniforms.get()
+    return new ShaderPass({
+      material: meshForceMaterial({ force: u.meshForce }),
+      inputs: { force: u.meshForce },
       camera: null,
       geometry: forceMesh ? forceMesh.geometry : null,
-    })
-      .updateUniforms({
-        force: {
-          value: Uniforms.get().meshForce,
-        },
-      })
-      .setFBO(vel1),
-  )
+      clear: false,
+    }).setFBO(vel1)
+  })
 
   useEffect(() => {
     if (forceMesh) {
@@ -242,135 +232,162 @@ export const useFluidTexture = ({
   ])
 
   const [viscousPass] = useState(() => {
-    const uniforms = Uniforms.get()
+    const u = Uniforms.get()
+    const inputs = {
+      velocity: texture(vel1.texture),
+      velocity_new: texture(visc0.texture),
+    }
     return new ShaderPass({
-      ...viscousPassConfig,
+      material: viscousMaterial({
+        velocity: inputs.velocity,
+        velocity_new: inputs.velocity_new,
+        v: u.viscous,
+        px: u.cellScale,
+        dt: u.dt,
+        boundarySpace: u.boundarySpace,
+      }),
+      inputs,
       camera,
       geometry,
-    })
-      .updateUniforms({
-        boundarySpace: {
-          value: uniforms.boundarySpace,
-        },
-        velocity: {
-          value: vel1.texture,
-        },
-        velocity_new: {
-          value: visc0.texture,
-        },
-        v: uniforms.viscous,
-        px: {
-          value: uniforms.cellScale,
-        },
-        dt: uniforms.dt,
-      })
-      .setFBO(visc1)
+      children: boundaryChildren,
+      onDispose: disposeBoundary,
+    }).setFBO(visc1)
   })
   const [divergencePass] = useState(() => {
-    const uniforms = Uniforms.get()
+    const u = Uniforms.get()
+    const inputs = { velocity: texture(visc0.texture) }
     return new ShaderPass({
-      ...divergencePassConfig,
+      material: divergenceMaterial({
+        velocity: inputs.velocity,
+        dt: u.dt,
+        px: u.cellScale,
+        boundarySpace: u.boundarySpace,
+      }),
+      inputs,
       camera,
       geometry,
-    })
-      .updateUniforms({
-        boundarySpace: {
-          value: uniforms.boundarySpace,
-        },
-        velocity: {
-          value: visc0.texture,
-        },
-        dt: uniforms.dt,
-        px: {
-          value: uniforms.cellScale,
-        },
-      })
-      .setFBO(div)
+    }).setFBO(div)
   })
   const [poissonPass] = useState(() => {
-    const uniforms = Uniforms.get()
+    const u = Uniforms.get()
+    const inputs = {
+      pressure: texture(pressure0.texture),
+      divergence: texture(div.texture),
+    }
     return new ShaderPass({
-      ...poissonPassConfig,
+      material: poissonMaterial({
+        pressure: inputs.pressure,
+        divergence: inputs.divergence,
+        px: u.cellScale,
+        boundarySpace: u.boundarySpace,
+      }),
+      inputs,
       camera,
       geometry,
-    })
-      .updateUniforms({
-        boundarySpace: {
-          value: uniforms.boundarySpace,
-        },
-        pressure: {
-          value: pressure0.texture,
-        },
-        divergence: {
-          value: div.texture,
-        },
-        px: {
-          value: uniforms.cellScale,
-        },
-      })
-      .setFBO(pressure1)
+      children: boundaryChildren,
+      onDispose: disposeBoundary,
+    }).setFBO(pressure1)
   })
   const [pressurePass] = useState(() => {
-    const uniforms = Uniforms.get()
+    const u = Uniforms.get()
+    const inputs = {
+      pressure: texture(pressure0.texture),
+      velocity: texture(visc0.texture),
+    }
     return new ShaderPass({
-      ...pressurePassConfig,
+      material: pressureMaterial({
+        pressure: inputs.pressure,
+        velocity: inputs.velocity,
+        px: u.cellScale,
+        dt: u.dt,
+        boundarySpace: u.boundarySpace,
+      }),
+      inputs,
       camera,
       geometry,
-    })
+      children: boundaryChildren,
+      onDispose: disposeBoundary,
+    }).setFBO(vel0)
+  })
+  const [outputPass] = useState(() => {
+    const u = Uniforms.get()
+    const inputs = { velocity: texture(vel0.texture) }
+    return new ShaderPass({
+      material: outputMaterial({ velocity: inputs.velocity, px: u.cellScale }),
+      inputs,
+      camera,
+      geometry,
+    }).setFBO(output)
+  })
+
+  // the current targets (the repoint effect writes them after a size change)
+  // and what the last step left in pressure (the render callback writes it,
+  // outside React's render): the fields the hook exposes read both
+  const targets = useRef({ vel0, div, pressure0, pressure1 })
+  const last = useRef({ pressure: null })
+
+  // a size change rebuilt the targets: repoint every pass at the new textures
+  useEffect(() => {
+    advectionPass
+      .updateUniforms({ velocity: { value: vel0.texture } })
+      .setFBO(vel1)
+    forcePass.setFBO(vel1)
+    meshForcePass.setFBO(vel1)
+    viscousPass
       .updateUniforms({
-        boundarySpace: {
-          value: uniforms.boundarySpace,
-        },
-        pressure: {
-          value: pressure0.texture,
-        },
-        velocity: {
-          value: visc0.texture,
-        },
-        px: {
-          value: uniforms.cellScale,
-        },
-        dt: uniforms.dt,
+        velocity: { value: vel1.texture },
+        velocity_new: { value: visc0.texture },
+      })
+      .setFBO(visc1)
+    divergencePass
+      .updateUniforms({ velocity: { value: visc0.texture } })
+      .setFBO(div)
+    poissonPass
+      .updateUniforms({
+        pressure: { value: pressure0.texture },
+        divergence: { value: div.texture },
+      })
+      .setFBO(pressure1)
+    pressurePass
+      .updateUniforms({
+        pressure: { value: pressure0.texture },
+        velocity: { value: visc0.texture },
       })
       .setFBO(vel0)
-  })
-  const [outputPass] = useState(() =>
-    new ShaderPass({
-      ...outputPassConfig,
-      camera,
-      geometry,
-    })
-      .updateUniforms({
-        velocity: {
-          value: vel0.texture,
-        },
-        px: {
-          value: Uniforms.get().cellScale,
-        },
-      })
-      .setFBO(output),
-  )
-
-  // the walls: velocity copies its neighbour negated, pressure copies it as is
-  const [wallsBound] = useState(() => {
-    const px = { value: Uniforms.get().cellScale }
+    outputPass
+      .updateUniforms({ velocity: { value: vel0.texture } })
+      .setFBO(output)
+    // the walls: velocity copies its neighbour negated, pressure copies it as is
+    const px = Uniforms.get().cellScale
     bindWall(advectionPass, 'velocity', px, -1)
     bindWall(viscousPass, 'velocity_new', px, -1)
     bindWall(poissonPass, 'pressure', px, 1)
     bindWall(pressurePass, 'velocity', px, -1)
-    return true
-  })
-  void wallsBound
-
-  // what the last step left in each field, for the fields the hook exposes;
-  // a ref, since the render callback writes it outside React's render
-  const last = useRef({ pressure: pressure0 })
+    targets.current = { vel0, div, pressure0, pressure1 }
+  }, [
+    Uniforms,
+    advectionPass,
+    div,
+    divergencePass,
+    forcePass,
+    meshForcePass,
+    output,
+    outputPass,
+    poissonPass,
+    pressure0,
+    pressure1,
+    pressurePass,
+    vel0,
+    vel1,
+    visc0,
+    visc1,
+    viscousPass,
+  ])
 
   // render callback
   const render = useCallback(
     (state, delta) => {
       const uniforms = Uniforms.get()
-      // advection pass
       for (const pass of [
         advectionPass,
         viscousPass,
@@ -380,6 +397,7 @@ export const useFluidTexture = ({
         pass.modifyChildren((wall) => {
           wall.visible = isBounce
         })
+      // advection pass
       advectionPass.render(gl)
 
       // external force pass
@@ -407,9 +425,9 @@ export const useFluidTexture = ({
           pointer && pointerDiff.clone(),
         )
 
-        uniforms.force.set(force.x * forceValue, force.y * forceValue)
-        uniforms.center.set(center.x, center.y)
-        uniforms.scale.set(radius, radius)
+        uniforms.force.value.set(force.x * forceValue, force.y * forceValue)
+        uniforms.center.value.set(center.x, center.y)
+        uniforms.scale.value.set(radius, radius)
         forcePass.render(gl)
       } else {
         meshForcePass.mesh.position.copy(forceMesh.position)
@@ -421,7 +439,7 @@ export const useFluidTexture = ({
           viewportSize,
         )
 
-        uniforms.meshForce
+        uniforms.meshForce.value
           .set(
             (forceMesh.position.x - oldForceMeshPosition.x) / viewportSize.x,
             (forceMesh.position.y - oldForceMeshPosition.y) / viewportSize.y,
@@ -444,9 +462,7 @@ export const useFluidTexture = ({
             fbo_out = visc0
           }
           viscousPass.updateUniforms({
-            velocity_new: {
-              value: fbo_in.texture,
-            },
+            velocity_new: { value: fbo_in.texture },
           })
           followWall(viscousPass, 'velocity_new').setFBO(fbo_out).render(gl)
         }
@@ -455,9 +471,7 @@ export const useFluidTexture = ({
 
       // divergence pass
       divergencePass
-        .updateUniforms({
-          velocity: { value: vel.texture },
-        })
+        .updateUniforms({ velocity: { value: vel.texture } })
         .render(gl)
 
       // poisson pass
@@ -478,12 +492,8 @@ export const useFluidTexture = ({
 
       // pressure pass
       pressurePass.updateUniforms({
-        velocity: {
-          value: vel.texture,
-        },
-        pressure: {
-          value: pressure.texture,
-        },
+        velocity: { value: vel.texture },
+        pressure: { value: pressure.texture },
       })
       followWall(pressurePass, 'velocity').render(gl)
 
@@ -545,7 +555,7 @@ export const useFluidTexture = ({
   // dispose on component unmount
   useEffect(
     () => () => {
-      // dispose passed-in values (useFBO autodisposes)
+      // dispose passed-in values (the targets dispose themselves)
       geometry.dispose()
       // dispose internal values
       advectionPass.dispose(true, false, false, true)
@@ -575,13 +585,16 @@ export const useFluidTexture = ({
   // Getters, since pressure alternates between two targets step by step.
   const [fields] = useState(() => ({
     get velocity() {
-      return vel0.texture
+      return targets.current.vel0.texture
     },
     get pressure() {
-      return last.current.pressure.texture
+      const t = targets.current
+      const p = last.current.pressure
+      // after a size change the last step's target is gone; until the next step, the first of the new pair
+      return (p === t.pressure0 || p === t.pressure1 ? p : t.pressure0).texture
     },
     get divergence() {
-      return div.texture
+      return targets.current.div.texture
     },
   }))
 
