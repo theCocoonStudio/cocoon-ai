@@ -173,11 +173,18 @@ export function pressureMaterial({
   return passMaterial({ vertexNode, fragmentNode })
 }
 
-/** color.frag on output.vert: white where still, dark where moving; the interior only. */
+/**
+ * color.frag on output.vert: white where still, dark where moving; the interior only.
+ * This pass samples at the unflipped coordinate on purpose: a consumer shows the
+ * picture through a material's `map`, which samples at the default uv, and in this
+ * renderer that reads a render target mirrored in y on both backends (measured
+ * against a screenshot, 2026-10-06). Writing the picture mirrored once here makes it
+ * upright there; the fields keep the simulation's own layout.
+ */
 export function outputMaterial({ velocity, px }) {
   const { vertexNode, uvInternal } = outputVertex(px)
   const fragmentNode = Fn(() => {
-    const vel = sampleRT(velocity, uvInternal).xy
+    const vel = velocity.sample(uvInternal).xy
     const len = length(vel).div(sqrt(2.0))
     const color = mix(vec3(1.0), vec3(0.0), len)
     return vec4(color, 1.0)
