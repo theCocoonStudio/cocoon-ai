@@ -92,7 +92,7 @@ function pageHtml(js, { width = 128, height = 128 } = {}) {
 
 /**
  * Bundle `entry`, open it in Chromium, wait for `window.__ready`, and return
- * { evaluate, reload, close }. `evaluate(fn, ...args)` runs in the page.
+ * { evaluate, reload, close, errors, warnings }. `evaluate(fn, ...args)` runs in the page.
  * `reload(init, ...args)` reopens the page with `init(...args)` run before
  * any script, for a fresh mount under different options. Every init given
  * so far runs again on each reload, in order, so later ones override.
@@ -120,9 +120,12 @@ export async function openPage(entry, { width, height, browser } = {}) {
     deviceScaleFactor: 1,
   })
   const errors = []
+  const warnings = []
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text())
+    // the browser's own warnings arrive here too: WebGL reports a dropped draw this way
+    if (m.type() === 'warning') warnings.push(m.text())
   })
   const open = async (init, ...args) => {
     if (init) await page.evaluateOnNewDocument(init, ...args)
@@ -133,6 +136,7 @@ export async function openPage(entry, { width, height, browser } = {}) {
   return {
     page,
     errors,
+    warnings,
     evaluate: (fn, ...args) => page.evaluate(fn, ...args),
     reload: open,
     close: async () => {
