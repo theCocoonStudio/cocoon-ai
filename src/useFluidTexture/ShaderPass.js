@@ -1,99 +1,63 @@
-import {
-  Camera,
-  Mesh,
-  PlaneGeometry,
-  RawShaderMaterial,
-  Scene,
-  ShaderMaterial,
-  WebGLRenderTarget,
-} from 'three'
+import { Camera, Mesh, PlaneGeometry, Scene } from 'three/webgpu'
 
+/**
+ * One pass of the simulation: a material on a quad (or a given geometry),
+ * rendered through a camera into a render target. The material is a TSL node
+ * material built by `tsl/passes.js`; its inputs, the uniform and texture nodes
+ * it reads, are kept here so the hook can repoint a texture per step
+ * (`updateUniforms({ velocity: { value: texture } })`) without touching the
+ * material.
+ *
+ * `clear` is whether the renderer may clear the target before this pass. The
+ * two force passes add into the velocity advection just wrote, so they render
+ * with autoClear off and restore it; with it on, the renderer clears the
+ * target first and the advected velocity is lost (the 2D hook did exactly
+ * that until the port of 2026-10-06, measured in the browser test).
+ */
 export class ShaderPass {
   #fbo
   #children
   #onDispose
-  #uniforms = {}
-  #onBeforeRender
-  #onAfterRender
+  #inputs = {}
   #geometry
   #mesh
   #camera
+  #clear
   constructor({
-    materialConfig: {
-      vertexShader,
-      fragmentShader,
-      uniforms = {},
-      raw = false,
-      ...materialProps
-    },
     material,
+    inputs = {},
     geometry,
     camera,
-    onBeforeRender,
-    onAfterRender,
-    fboConfig: { width, height, options, isNull = false },
-    fbo,
+    fbo = null,
     children,
     onDispose,
+    clear = true,
   }) {
-    if (material) {
-      this.material = typeof material === 'function' ? material() : material
-    } else if (material !== null) {
-      this.material = raw
-        ? new RawShaderMaterial({
-            uniforms: {},
-            vertexShader,
-            fragmentShader,
-            ...materialProps,
-          })
-        : new ShaderMaterial({
-            uniforms: {},
-            vertexShader,
-            fragmentShader,
-            ...materialProps,
-          })
-      this.updateUniforms(uniforms, true)
-    }
+    this.material = material
+    this.#inputs = inputs
+    this.#clear = clear
     if (geometry) {
       this.#geometry = typeof geometry === 'function' ? geometry() : geometry
     } else if (geometry !== null) {
       this.#geometry = new PlaneGeometry(2.0, 2.0)
     }
-
     this.#mesh = new Mesh(this.#geometry, this.material)
-
     this.updateCamera(camera)
-
     this.scene = new Scene()
-    this.scene.add(this.mesh)
-
+    this.scene.add(this.#mesh)
     if (children) {
       this.#children =
         typeof children === 'function' ? children(this) : children
       this.scene.add(this.#children)
     }
-
-    if (typeof onBeforeRender === 'function') {
-      this.#onBeforeRender = onBeforeRender
-    }
-    if (typeof onAfterRender === 'function') {
-      this.#onAfterRender = onAfterRender
-    }
-    if (fbo) {
-      this.#fbo = fbo
-    } else if (!isNull) {
-      this.#fbo = new WebGLRenderTarget(width, height, options)
-    } else {
-      this.#fbo = null
-    }
-
+    this.#fbo = fbo
     this.#onDispose = onDispose
   }
 
   dispose(material = true, geometry = true, fbo = true, onDispose = true) {
     material && this.material.dispose()
-    geometry && this.#geometry.dispose()
-    fbo && this.#fbo.dispose()
+    geometry && this.#geometry?.dispose()
+    fbo && this.#fbo?.dispose()
     if (onDispose && typeof this.#onDispose === 'function') {
       this.#onDispose(this.#children)
     }
@@ -108,31 +72,15 @@ export class ShaderPass {
     return this.#fbo
   }
 
-  setOnBeforeRender(func) {
-    this.#onBeforeRender = func
-    return this
-  }
-
-  get onBeforeRender() {
-    return this.#onBeforeRender
-  }
-
-  setOnAfterRender(func) {
-    this.#onAfterRender = func
-    return this
-  }
-
-  get onAfterRenderRender() {
-    return this.#onAfterRender
-  }
-
+  /** The pass's input nodes by name: uniform nodes and texture nodes. */
   get uniforms() {
-    return this.#uniforms
+    return this.#inputs
   }
 
   get children() {
     return this.#children
   }
+
   modifyChildren(callback) {
     if (this.#children) {
       callback(this.#children)
@@ -161,13 +109,15 @@ export class ShaderPass {
     return this
   }
 
-  updateUniforms(uniforms = {}, fresh = false) {
-    if (fresh) {
-      this.#uniforms = {}
-    }
-    for (const property in uniforms) {
-      this.#uniforms[property] = uniforms[property]
-      this.material.uniforms = this.#uniforms
+  /**
+   * Repoint inputs: `{ name: { value } }` sets the node's value. A texture node
+   * takes a new texture (the ping-pong); a uniform node takes a new number or
+   * vector. Unknown names are ignored, so a pass may be given the whole table.
+   */
+  updateUniforms(values = {}) {
+    for (const name in values) {
+      const node = this.#inputs[name]
+      if (node) node.value = values[name].value
     }
     return this
   }
@@ -181,11 +131,12 @@ export class ShaderPass {
   }
 
   render(renderer) {
+    const autoClear = renderer.autoClear
+    if (!this.#clear) renderer.autoClear = false
     renderer.setRenderTarget(this.#fbo)
-    this.#onBeforeRender && this.#onBeforeRender(this)
     renderer.render(this.scene, this.#camera)
-    this.#onAfterRender && this.#onAfterRender(this)
     renderer.setRenderTarget(null)
+    if (!this.#clear) renderer.autoClear = autoClear
     return this
   }
 }
