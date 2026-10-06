@@ -33,13 +33,23 @@ export function findBrowser(given) {
 /** How long a launch may take: sized for a loaded two-core runner, not a workstation. */
 const LAUNCH_TIMEOUT_MS = 120_000
 
-/** Flags that give a headless Chromium WebGL 2 without a GPU, in a container. */
+/**
+ * Flags that give a headless Chromium WebGL 2 and WebGPU without a GPU, in a
+ * container: both on SwiftShader, WebGL through ANGLE and WebGPU through
+ * Vulkan. Measured 2026-10-06 on Chromium 154: without the Vulkan lines
+ * `navigator.gpu` exists but has no adapter, and three's WebGPU renderer
+ * falls back to its WebGL backend; with them an adapter (google, swiftshader)
+ * answers and compute shaders run.
+ */
 const LAUNCH_ARGS = [
   '--no-sandbox',
   '--disable-dev-shm-usage', // a small /dev/shm hangs Chromium; use /tmp instead
   '--use-gl=angle',
   '--use-angle=swiftshader',
   '--enable-unsafe-swiftshader',
+  '--enable-unsafe-webgpu',
+  '--enable-features=Vulkan',
+  '--use-vulkan=swiftshader',
   '--ignore-gpu-blocklist',
   '--hide-scrollbars',
 ]
@@ -92,7 +102,7 @@ function pageHtml(js, { width = 128, height = 128 } = {}) {
 
 /**
  * Bundle `entry`, open it in Chromium, wait for `window.__ready`, and return
- * { evaluate, reload, close, errors, warnings }. `evaluate(fn, ...args)` runs in the page.
+ * { evaluate, reload, close, errors, warnings, webgpu }. `evaluate(fn, ...args)` runs in the page.
  * `reload(init, ...args)` reopens the page with `init(...args)` run before
  * any script, for a fresh mount under different options. Every init given
  * so far runs again on each reload, in order, so later ones override.
@@ -133,10 +143,17 @@ export async function openPage(entry, { width, height, browser } = {}) {
     await page.waitForFunction('window.__ready === true', { timeout: 60_000 })
   }
   await open()
+  // whether the page can get a WebGPU adapter: what three's renderer picks without forceWebGL
+  const webgpu = await page.evaluate(async () =>
+    'gpu' in navigator
+      ? (await navigator.gpu.requestAdapter()) !== null
+      : false,
+  )
   return {
     page,
     errors,
     warnings,
+    webgpu,
     evaluate: (fn, ...args) => page.evaluate(fn, ...args),
     reload: open,
     close: async () => {
