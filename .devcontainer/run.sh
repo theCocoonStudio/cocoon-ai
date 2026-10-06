@@ -3,6 +3,8 @@
 #   cocoon                               # shell, through the installed launcher (host/cocoon-launch.sh)
 #   cocoon claude                        # straight into Claude, as the cocoon-claude App
 #   cocoon gemini                        # straight into Gemini, as the cocoon-gemini App
+#   cocoon claude -- --research          # the same, with the "research" hosts list on for this session
+#   cocoon claude --continue -- --research   # flags before `--` go to the agent, after it to the sandbox
 #
 # The launcher downloads main and runs this script from that download; nothing on the
 # host comes from the agent's working tree, which lives in a container volume
@@ -29,6 +31,24 @@ APP_ACCOUNT=theCocoonStudio                                         # the accoun
 API=https://api.github.com
 AGENT=claude
 [ "${1:-}" = gemini ] && AGENT=gemini
+# Named configs: hosts lists in .devcontainer/configs/ that are off by default and turned on
+# for one session from this command line, after `--`. The names are hardcoded here; an
+# unknown one is an error, not a silent default.
+KNOWN_CONFIGS=(research)
+COMMAND=()
+CONFIG_ARGS=()
+while [ $# -gt 0 ] && [ "$1" != -- ]; do COMMAND+=("$1"); shift; done
+if [ "${1:-}" = -- ]; then
+  shift
+  for flag in "$@"; do
+    name="${flag#--}"
+    known=0
+    for c in "${KNOWN_CONFIGS[@]}"; do [ "$c" = "$name" ] && known=1; done
+    [ "$known" = 1 ] || { echo "run.sh: unknown config '$flag' (known: ${KNOWN_CONFIGS[*]})" >&2; exit 1; }
+    CONFIG_ARGS+=(--config "$name")
+  done
+fi
+set -- "${COMMAND[@]}"
 if [ "$AGENT" = gemini ]; then
   APP_ID=5200600                                                    # the cocoon-gemini GitHub App
   APP_KEY="$HOME/cocoon-gemini.private-key.pem"                     # its private key, host only, mode 600
@@ -121,4 +141,4 @@ exec podman run -it --rm \
   -e GIT_AUTHOR_EMAIL="$BOT_EMAIL" -e GIT_COMMITTER_EMAIL="$BOT_EMAIL" \
   -e GH_TOKEN \
   "${AGENT_ENV[@]}" \
-  "$IMAGE" "$@"
+  "$IMAGE" "${CONFIG_ARGS[@]}" "$@"

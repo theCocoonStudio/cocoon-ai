@@ -151,7 +151,7 @@ Two layers, used together:
 Claude Code runs inside the sandbox defined in [`.devcontainer/`](.devcontainer/), via Colima (open source, no app, only this repo mounted into the VM):
 
 - non-root user, only `/workspace` (this repo) visible
-- outbound network default-deny; allowlist is GitHub, the npm registry, the Anthropic API/login hosts, and for Claude's container four read-only reading hosts for the literature work (arXiv and its API, Semantic Scholar's API, nLab, the Stanford Encyclopedia); two of those sit on shared CDN addresses, a cost the firewall script states beside them
+- outbound network default-deny; the allowlist is GitHub plus the hosts lists in [`.devcontainer/configs/`](.devcontainer/configs/), one host per line with its purpose: `base.hosts` for every container, the agent's own model and login hosts, and named configs that are off by default and turned on for one session from the host command line, `cocoon claude -- --research` for the four read-only reading hosts of the literature work (arXiv and its API, Semantic Scholar's API, nLab, the Stanford Encyclopedia); two of those sit on shared CDN addresses, a cost the list states beside them
 - no host secrets mounted; GitHub access is a fine-grained PAT scoped to this one repo, passed in the environment for the session only
 - `node_modules` and Claude's own state live in Docker volumes, not in the repo
 
