@@ -1,0 +1,6 @@
+# Claude's model and login hosts. Telemetry hosts are deliberately absent (Sentry,
+# Statsig; CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 in run.sh stops it trying).
+api.anthropic.com     # the Claude model API
+claude.ai             # OAuth login flow
+platform.claude.com   # OAuth login flow / console
+console.anthropic.com # OAuth login flow / console

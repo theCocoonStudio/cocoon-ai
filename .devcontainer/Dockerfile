@@ -30,6 +30,7 @@ ENV EDITOR=nano VISUAL=nano
 
 # Firewall script may be run via sudo by `node`, and nothing else.
 COPY init-firewall.sh /usr/local/bin/init-firewall.sh
+COPY configs/ /usr/local/share/cocoon/configs/
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 # Gemini CLI system settings, read before the user's own and root-owned, so the agent cannot
 # change them. Each line is a gate kept or a leak closed; none is a convenience:

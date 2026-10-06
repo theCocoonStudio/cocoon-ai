@@ -36,7 +36,9 @@
 #     addresses) is reachable too. Repository scoping is done by the token, not here.
 #
 # TO CHANGE THE ALLOWLIST
-#   Edit the `domain` list in section 4, rebuild the image (run.sh does this), restart.
+#   Edit a list in configs/ (one host per line, purpose beside it), rebuild the image (the
+#   launcher does this), restart. A named config (configs/research.hosts) is off by default
+#   and turned on for one session from the host command line: `cocoon claude -- --research`.
 #   Do not add hosts from inside a session; the agent must not widen its own wall.
 # =============================================================================
 
@@ -157,45 +159,43 @@ while read -r cidr; do
     ipset add -exist allowed-domains "$cidr"
 done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 
-# 4b. Named hosts, resolved once now. This is the complete list of non-GitHub
-#     destinations the agent may talk to, chosen by the agent name the entrypoint
-#     passes as $1 (the container's command; claude by default). Each container
-#     gets only its own model host.
-#       registry.npmjs.org                npm install (both)
-#       api.anthropic.com                 the Claude model API
-#       claude.ai                         OAuth login flow
-#       platform.claude.com               OAuth login flow / console
-#       console.anthropic.com             OAuth login flow / console
-#       generativelanguage.googleapis.com the Gemini API, with an API key (gemini only)
-#     Reading hosts for the literature work in cocoon-relations (claude only; read-only
-#     use, GET over HTTPS, nothing of ours is written there), added 2026-10-05 at Izzy's
-#     word after the first review:
-#       arxiv.org, export.arxiv.org       papers in full, and the arXiv API (one request
-#                                         per three seconds, arXiv's published limit)
-#       api.semanticscholar.org           paper search and citation graph, no key at low volume
-#       ncatlab.org                       category-theory definitions
-#       plato.stanford.edu                the Stanford Encyclopedia of Philosophy
-#     COST, stated because the allowlist is by IP (see KNOWN LIMITS): arxiv.org resolves
-#     to Fastly's shared edge addresses and api.semanticscholar.org to CloudFront's, so
-#     admitting them admits every other site those edge addresses serve for the life of
-#     the container. nLab and SEP resolve to their universities' own addresses. The wall
-#     cannot narrow by name without a TLS-inspecting proxy, which was rejected (records,
-#     2026-10-02); the token still scopes what can be written anywhere, and the sites
-#     admitted are read-only to us.
-#     Telemetry hosts are deliberately absent for both: Sentry and Statsig for Claude
-#     (CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 in run.sh stops it trying) and
-#     play.googleapis.com for Gemini (usage statistics are off in gemini-settings.json).
-#     Each answer is validated as a dotted quad. Private answers would be caught by
-#     section 3 anyway, but a host that fails to resolve aborts the start, because
-#     starting with a partial allowlist would look like a firewall bug later.
+# 4b. Named hosts, resolved once now. The lists live in /usr/local/share/cocoon/configs/
+#     (the repo's .devcontainer/configs/), one file per list, one host per line with its
+#     purpose beside it, so the whole allowlist can be inspected in one place:
+#       base.hosts        every container
+#       <agent>.hosts     the agent's own model and login hosts; each container gets only its own
+#       <config>.hosts    a named config the host user turns on for one session, e.g. research;
+#                         off by default, chosen on the host command line, never from inside
+#     Arguments: $1 the agent (claude or gemini), $2.. the configs. A missing file is an error,
+#     so a typo cannot start a container with a wider or narrower wall than intended.
+#     Each host is validated as a hostname and each answer as a dotted quad. Private answers
+#     would be caught by section 3 anyway, but a host that fails to resolve aborts the start,
+#     because starting with a partial allowlist would look like a firewall bug later.
 AGENT="${1:-claude}"
-DOMAINS=("registry.npmjs.org")
 case "$AGENT" in
-    claude) DOMAINS+=("api.anthropic.com" "claude.ai" "platform.claude.com" "console.anthropic.com"
-                      "arxiv.org" "export.arxiv.org" "api.semanticscholar.org" "ncatlab.org" "plato.stanford.edu") ;;
-    gemini) DOMAINS+=("generativelanguage.googleapis.com") ;;
+    claude|gemini) ;;
     *) echo "ERROR: unknown agent '$AGENT' (claude or gemini)"; exit 1 ;;
 esac
+shift $(( $# > 0 ? 1 : 0 ))
+CONFIG_DIR=/usr/local/share/cocoon/configs
+DOMAINS=()
+read_hosts() {
+    local file="$CONFIG_DIR/$1.hosts" line host
+    if [ ! -f "$file" ]; then echo "ERROR: no hosts list '$1' ($file)"; exit 1; fi
+    echo "Hosts from $1.hosts:"
+    while IFS= read -r line || [ -n "$line" ]; do
+        host="${line%%#*}"; host="${host//[[:space:]]/}"
+        [ -z "$host" ] && continue
+        if [[ ! "$host" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+            echo "ERROR: '$host' in $1.hosts is not a hostname"; exit 1
+        fi
+        echo "  $host"
+        DOMAINS+=("$host")
+    done < "$file"
+}
+read_hosts base
+read_hosts "$AGENT"
+for config in "$@"; do read_hosts "$config"; done
 for domain in "${DOMAINS[@]}"; do
     echo "Resolving $domain..."
     ips=$(dig +noall +answer A "$domain" | awk '$4 == "A" {print $5}')

@@ -1,0 +1,4 @@
+# Hosts every container may reach, whatever the agent or config. One per line, the
+# purpose beside it. Read by init-firewall.sh at start; GitHub's ranges are added from
+# api.github.com/meta there. A change here is a PR; nothing is read from the environment.
+registry.npmjs.org    # npm install

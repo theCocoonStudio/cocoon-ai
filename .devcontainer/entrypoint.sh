@@ -2,11 +2,21 @@
 # Runs as `node` on every container start.
 set -euo pipefail
 
+# run.sh puts the chosen configs first, as `--config <name>` pairs the host user asked for
+# (`cocoon claude -- --research`); they are stripped here and handed to the firewall, which
+# reads the matching hosts lists. Nothing is read from the environment.
+CONFIGS=()
+while [ "${1:-}" = --config ]; do
+  CONFIGS+=("$2")
+  shift 2
+done
+
 # The agent is the container's command (claude, gemini); the firewall allows only that
-# agent's model host. A plain shell gets Claude's hosts. Nothing is read from the environment.
+# agent's model host. A plain shell gets Claude's hosts.
 AGENT=claude
 [ "${1:-}" = gemini ] && AGENT=gemini
-sudo /usr/local/bin/init-firewall.sh "$AGENT"
+echo "configs: base, $AGENT${CONFIGS[*]:+, ${CONFIGS[*]}}"
+sudo /usr/local/bin/init-firewall.sh "$AGENT" "${CONFIGS[@]}"
 
 # GH_TOKEN, if set, is a GitHub App installation token minted on the host by run.sh
 # (1-hour lifetime) or a fine-grained PAT. It lives only in this process's env; nothing is

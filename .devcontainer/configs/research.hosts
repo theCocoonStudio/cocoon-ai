@@ -1,0 +1,16 @@
+# The "research" config: read-only reading hosts for the literature work in
+# cocoon-relations. Off by default; the host user turns it on for one session with
+# `cocoon claude -- --research`. GET over HTTPS; nothing of ours is written there.
+#
+# COST, stated because the allowlist is by IP (init-firewall.sh, KNOWN LIMITS): arxiv.org
+# resolves to Fastly's shared edge addresses and api.semanticscholar.org to CloudFront's,
+# so admitting them admits every other site those edge addresses serve for the life of
+# the container. nLab and SEP resolve to their universities' own addresses. The wall cannot
+# narrow by name without a TLS-inspecting proxy, which was rejected (records, 2026-10-02);
+# the token still scopes what can be written anywhere. Hosts added here later carry the
+# same question: who else is on that address.
+arxiv.org               # papers in full
+export.arxiv.org        # the arXiv API; one request per three seconds, arXiv's published limit
+api.semanticscholar.org # paper search and the citation graph; no key at low volume
+ncatlab.org             # category-theory definitions
+plato.stanford.edu      # the Stanford Encyclopedia of Philosophy
