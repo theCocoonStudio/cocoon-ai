@@ -2,13 +2,15 @@
 
 Outputs a fluid simulation to a `THREE.Texture` and returns it. Can be used as a `THREE.Material` `.map`, `.alphaMap`, or anywhere a texture would normally be used.
 
-Adapted from [fluid-three](https://github.com/mnmxmx/fluid-three).
+Adapted from [fluid-three](https://github.com/mnmxmx/fluid-three). Since 2026-10-06 the passes are TSL node materials on three's WebGPU renderer, which runs on WebGPU where the browser has it and on its WebGL 2 backend elsewhere.
 
 ```jsx
+import { Canvas } from '@react-three/fiber'
+import { WebGPURenderer } from 'three/webgpu'
 import { useFluidTexture } from 'cocoon-ai'
 
 const FiberComponent = () => {
-  const texture = useFluidTexture({ ...options })
+  const { texture } = useFluidTexture({ ...options })
   return (
     <mesh>
       <planeGeometry />
@@ -16,9 +18,29 @@ const FiberComponent = () => {
     </mesh>
   )
 }
+
+// The Canvas must use the WebGPU renderer; the hook throws at mount otherwise.
+const App = () => (
+  <Canvas
+    gl={async (props) => {
+      const renderer = new WebGPURenderer({
+        ...props,
+        forceWebGL: !('gpu' in navigator),
+      })
+      await renderer.init()
+      return renderer
+    }}
+  >
+    <FiberComponent />
+  </Canvas>
+)
 ```
 
+`forceWebGL` is optional: without it the renderer picks WebGPU when the page has it and WebGL 2 otherwise. Legacy materials (`meshBasicMaterial` and the rest) render on the WebGPU renderer unchanged.
+
 ## Options
+
+Every simulation default is one value in `cocoon.config.js` under `fluid`; the table shows the values as of this writing, the file is the source.
 
 | option              | type                          | default                                     |                                                                                                             |
 | ------------------- | ----------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -38,7 +60,7 @@ const FiberComponent = () => {
 | `customCamera`      | `THREE.PerspectiveCamera`     |                                             | custom camera for the shader passes                                                                         |
 | `fboWidth`          | integer                       |                                             | defaults to viewport width                                                                                  |
 | `fboHeight`         | integer                       |                                             | defaults to viewport height                                                                                 |
-| `fboOpts`           | Object                        | `{ type: HalfFloatType, format: RGFormat }` |                                                                                                             |
+| `fboOpts`           | RenderTarget options          | `{ type: HalfFloatType, format: RGFormat }` | referentially stable, or the targets rebuild each render                                                    |
 | `outputFboOpts`     | Object                        | `{ type: HalfFloatType }`                   |                                                                                                             |
 | `manual`            | boolean                       | false                                       | manually render a frame with returned `render` callback                                                     |
 | `priority`          | integer                       | -1                                          | `r3f` render priority                                                                                       |
@@ -80,6 +102,12 @@ const {
 
 There are 5 frames computed on mount regardless of props in order to compile every program and allocate every target up front, so the stutter lands during the loading screen rather than on the first pointer move.
 
+The force accumulates. The WebGL version of this hook rendered its force pass with the renderer's autoClear on, so the renderer cleared the target advection had just written and the fluid kept no memory between frames; what looked like memory came from the pressure solve's warm start. Measured on 2026-10-06: an opaque 0.5 then an additive 0.25 into one target read back 0.25 with autoClear on, 0.75 with it off. The two force passes now render with autoClear off, the flow persists after a force stops and decays, and the browser test measures it. Forces that looked right before are now about ten times too strong.
+
+The passes sample their inputs at computed coordinates. The renderer stores a render target's rows top first and a texture node flips y for such a texture only when sampled at its default uv, so `tsl/common.js` flips the coordinate at every explicit sample and the maths stays y-up as the GLSL wrote it. A force at positive y darkens the top of the picture; the browser test measures that too.
+
 `isBounce` draws the wall: four line segments on the rim, each cell taking a scale times its neighbour one cell inward, drawn after the quad of every pass that writes velocity or pressure. The scale is −1 on velocity, after advection, diffusion and projection, so the velocity at the wall face is zero; and 1 on pressure, after every Jacobi iteration, so the pressure gradient across the wall is zero. The picture is the interior: the output pass samples the cells inside the rim, so the wall is never shown. WebGL cannot sample the texture a pass writes, so the wall reads its neighbour from the pass's input, one step stale; for pressure that is a Jacobi iteration exactly, and for velocity the wall is redrawn after every step. The wall test in `useFluidTexture.browser.test.js` measures it.
 
-The scheme is Stam's stable fluids as Harris describes it for the GPU: Harris, M. J., "Fast Fluid Dynamics Simulation on the GPU", _GPU Gems_ chapter 38, NVIDIA, 2004, free to read at <https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu>. Section 38.3 states the boundary conditions above, and Listing 38-5 is the one fragment program for both, which `boundary.js` is.
+`fields` are the fields' current textures; after a size change they are new texture objects, read the getters when used.
+
+The scheme is Stam's stable fluids as Harris describes it for the GPU: Harris, M. J., "Fast Fluid Dynamics Simulation on the GPU", _GPU Gems_ chapter 38, NVIDIA, 2004, free to read at <https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu>. Section 38.3 states the boundary conditions above, and Listing 38-5 is the one fragment program for both, which `boundary.js` is, as a node material on line segments. The passes themselves are in `tsl/passes.js`, one TSL function per GLSL file the WebGL version had.
