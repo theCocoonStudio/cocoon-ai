@@ -167,6 +167,21 @@ done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 #       platform.claude.com               OAuth login flow / console
 #       console.anthropic.com             OAuth login flow / console
 #       generativelanguage.googleapis.com the Gemini API, with an API key (gemini only)
+#     Reading hosts for the literature work in cocoon-relations (claude only; read-only
+#     use, GET over HTTPS, nothing of ours is written there), added 2026-10-05 at Izzy's
+#     word after the first review:
+#       arxiv.org, export.arxiv.org       papers in full, and the arXiv API (one request
+#                                         per three seconds, arXiv's published limit)
+#       api.semanticscholar.org           paper search and citation graph, no key at low volume
+#       ncatlab.org                       category-theory definitions
+#       plato.stanford.edu                the Stanford Encyclopedia of Philosophy
+#     COST, stated because the allowlist is by IP (see KNOWN LIMITS): arxiv.org resolves
+#     to Fastly's shared edge addresses and api.semanticscholar.org to CloudFront's, so
+#     admitting them admits every other site those edge addresses serve for the life of
+#     the container. nLab and SEP resolve to their universities' own addresses. The wall
+#     cannot narrow by name without a TLS-inspecting proxy, which was rejected (records,
+#     2026-10-02); the token still scopes what can be written anywhere, and the sites
+#     admitted are read-only to us.
 #     Telemetry hosts are deliberately absent for both: Sentry and Statsig for Claude
 #     (CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 in run.sh stops it trying) and
 #     play.googleapis.com for Gemini (usage statistics are off in gemini-settings.json).
@@ -176,7 +191,8 @@ done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 AGENT="${1:-claude}"
 DOMAINS=("registry.npmjs.org")
 case "$AGENT" in
-    claude) DOMAINS+=("api.anthropic.com" "claude.ai" "platform.claude.com" "console.anthropic.com") ;;
+    claude) DOMAINS+=("api.anthropic.com" "claude.ai" "platform.claude.com" "console.anthropic.com"
+                      "arxiv.org" "export.arxiv.org" "api.semanticscholar.org" "ncatlab.org" "plato.stanford.edu") ;;
     gemini) DOMAINS+=("generativelanguage.googleapis.com") ;;
     *) echo "ERROR: unknown agent '$AGENT' (claude or gemini)"; exit 1 ;;
 esac
