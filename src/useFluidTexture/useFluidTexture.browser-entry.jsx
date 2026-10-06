@@ -8,11 +8,11 @@ import { useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, extend, useThree } from '@react-three/fiber'
 import {
-  Camera,
   FloatType,
   Mesh,
   MeshBasicNodeMaterial,
   NodeMaterial,
+  OrthographicCamera,
   PlaneGeometry,
   RenderTarget,
   Scene,
@@ -70,16 +70,30 @@ function Fluid() {
     rawMaterial.depthWrite = false
     const rawScene = new Scene()
     rawScene.add(new Mesh(new PlaneGeometry(2, 2), rawMaterial))
-    const rawCamera = new Camera()
+    const rawCamera = new OrthographicCamera(-1, 1, 1, -1, -1, 1)
+    // The WebGPU backend pads every row but the last to 256 bytes and hands the padded buffer back
+    // (three's copyTextureToBuffer); the WebGL backend's buffer is tight. The stride in texels, from the length.
+    const strideOf = (buf, width, height, channels) =>
+      height > 1
+        ? (buf.length - width * channels) / (height - 1) / channels
+        : width
     const read = async () => {
       gl.setRenderTarget(shot)
       gl.render(scene, camera)
       gl.setRenderTarget(null)
       const buf = await gl.readRenderTargetPixelsAsync(shot, 0, 0, w, h)
-      // rows come top first from the readback (measured 2026-10-06), so no flip
+      // the readback's row order differs per backend (measured against a screenshot, 2026-10-06):
+      // the WebGPU backend returns the top row first, the WebGL backend the bottom row first
+      const stride = strideOf(buf, w, h, 4)
+      const topFirst = window.__backend === 'webgpu'
       const grey = []
-      for (let i = 0; i < w * h * 4; i += 4)
-        grey.push(Math.round((buf[i] + buf[i + 1] + buf[i + 2]) / 3))
+      for (let row = 0; row < h; row++) {
+        const y = topFirst ? row : h - 1 - row
+        for (let x = 0; x < w; x++) {
+          const i = (y * stride + x) * 4
+          grey.push(Math.round((buf[i] + buf[i + 1] + buf[i + 2]) / 3))
+        }
+      }
       return { width: w, height: h, grey }
     }
     window.__fluid = {
@@ -106,12 +120,13 @@ function Fluid() {
       },
       /** A field's raw floats at (x, y): copied through a plain fragment into a float target and read back. */
       async readFieldRaw(name, x, y) {
-        rawCopy.value = fields[name]
+        rawCopy.value = name === 'output' ? output : fields[name]
         gl.setRenderTarget(raw)
         gl.render(rawScene, rawCamera)
         gl.setRenderTarget(null)
         const buf = await gl.readRenderTargetPixelsAsync(raw, 0, 0, w, h)
-        const i = (y * w + x) * 4
+        const row = window.__backend === 'webgpu' ? y : h - 1 - y
+        const i = (row * strideOf(buf, w, h, 4) + x) * 4
         return [buf[i], buf[i + 1], buf[i + 2], buf[i + 3]]
       },
       /** The output target's raw bytes at (x, y), top row first. */
@@ -120,7 +135,8 @@ function Fluid() {
         gl.render(scene, camera)
         gl.setRenderTarget(null)
         const buf = await gl.readRenderTargetPixelsAsync(shot, 0, 0, w, h)
-        const i = (y * w + x) * 4
+        const row = window.__backend === 'webgpu' ? y : h - 1 - y
+        const i = (row * strideOf(buf, w, h, 4) + x) * 4
         return [buf[i], buf[i + 1], buf[i + 2], buf[i + 3]]
       },
       size: { width: size.width, height: size.height },
@@ -131,7 +147,7 @@ function Fluid() {
       raw.dispose()
       rawMaterial.dispose()
     }
-  }, [gl, scene, camera, render, size, fields])
+  }, [gl, scene, camera, render, size, fields, output])
   return (
     <mesh>
       <planeGeometry args={[2, 2]} />
@@ -158,9 +174,11 @@ createRoot(document.getElementById('root')).render(
       const renderer = new WebGPURenderer({
         ...props,
         antialias: false,
-        forceWebGL: !('gpu' in navigator),
+        // `window.__forceWebGL` (set before load) picks the backend; otherwise WebGPU where an adapter answers
+        forceWebGL: window.__forceWebGL ?? false,
       })
       await renderer.init()
+      window.__backend = renderer.backend.isWebGPUBackend ? 'webgpu' : 'webgl'
       return renderer
     }}
   >

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
-  Camera,
   HalfFloatType,
+  OrthographicCamera,
   PlaneGeometry,
   RGFormat,
   Vector2,
@@ -106,7 +106,9 @@ export const useFluidTexture = (options = {}) => {
   }
 
   // shared objects
-  const [camera] = useState(() => new Camera())
+  // an identity-extent orthographic camera: the passes set clip positions themselves, but the WebGPU
+  // backend adapts every camera's projection to its clip space and a bare Camera has no method for it
+  const [camera] = useState(() => new OrthographicCamera(-1, 1, 1, -1, -1, 1))
   const [geometry] = useState(() => new PlaneGeometry(2.0, 2.0))
 
   // intermediate values

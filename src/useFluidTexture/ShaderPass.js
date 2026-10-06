@@ -1,4 +1,4 @@
-import { Camera, Mesh, PlaneGeometry, Scene } from 'three/webgpu'
+import { Mesh, OrthographicCamera, PlaneGeometry, Scene } from 'three/webgpu'
 
 /**
  * One pass of the simulation: a material on a quad (or a given geometry),
@@ -126,7 +126,7 @@ export class ShaderPass {
     if (newCamera) {
       this.#camera = typeof newCamera === 'function' ? newCamera() : newCamera
     } else if (newCamera !== null) {
-      this.#camera = new Camera()
+      this.#camera = new OrthographicCamera(-1, 1, 1, -1, -1, 1)
     }
   }
 
