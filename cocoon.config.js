@@ -66,6 +66,20 @@ export const config = /* @__PURE__ */ Object.freeze({
     bevelRatio: 0.3, // bevel radius as a fraction of one triangle's depth
     bevelSegments: 3,
   },
+  /** useFluidTexture, the 2D fluid: Stam's stable fluids on the GPU, read as a whole. */
+  fluid: {
+    poissonIterations: 32, // Jacobi iterations of the pressure solve
+    viscousIterations: 32, // Jacobi iterations of the diffusion solve, when isViscous
+    viscous: 30, // the viscosity coefficient
+    isViscous: true,
+    forceValue: 1, // the force callback's force is scaled by this
+    forceSize: 100, // the force quad's radius, cells
+    resolution: 0.5, // the fields' size as a fraction of the viewport, when fboWidth/fboHeight are unset
+    runEvery: 1, // step every n frames
+    dt: 0.014, // the time step, per simulation step
+    isBounce: true, // draw the wall
+    BFECC: true, // advection with BFECC's error correction
+  },
   /** export:logo-group's camera and sheet. */
   logoGroupExport: {
     fov: 20, // vertical field of view, degrees
