@@ -115,14 +115,16 @@ done < <(echo "$resolvers")
 #
 # REJECT (not DROP) so that a connection attempt fails instantly with an error rather
 # than hanging until timeout; the agent gets clear feedback that the wall is there.
-for cidr in \
-    10.0.0.0/8         `# RFC1918 private` \
-    172.16.0.0/12      `# RFC1918 private (also Docker's default bridge range)` \
-    192.168.0.0/16     `# RFC1918 private (the box's LAN lives here)` \
-    169.254.0.0/16     `# link-local (pasta's resolver is here; allowed above)` \
-    100.64.0.0/10      `# CGNAT, used by Tailscale for every peer` \
-    224.0.0.0/4        `# multicast (mDNS/SSDP device discovery)` \
-    255.255.255.255/32 `# broadcast`; do
+PRIVATE_RANGES=(
+    10.0.0.0/8         # RFC1918 private
+    172.16.0.0/12      # RFC1918 private (also Docker's default bridge range)
+    192.168.0.0/16     # RFC1918 private (the box's LAN lives here)
+    169.254.0.0/16     # link-local (pasta's resolver is here; allowed above)
+    100.64.0.0/10      # CGNAT, used by Tailscale for every peer
+    224.0.0.0/4        # multicast (mDNS/SSDP device discovery)
+    255.255.255.255/32 # broadcast
+)
+for cidr in "${PRIVATE_RANGES[@]}"; do
     iptables -A OUTPUT -d "$cidr" -j REJECT --reject-with icmp-admin-prohibited
 done
 
