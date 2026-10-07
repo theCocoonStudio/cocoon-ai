@@ -12,7 +12,10 @@ import { Mesh, OrthographicCamera, PlaneGeometry, Scene } from 'three/webgpu'
  * two force passes add into the velocity advection just wrote, so they render
  * with autoClear off and restore it; with it on, the renderer clears the
  * target first and the advected velocity is lost (the 2D hook did exactly
- * that until the port of 2026-10-06, measured in the browser test).
+ * that until the port of 2026-10-06, measured in the browser test). The toggle
+ * is synchronous and local: read, set, render into our own target, restore;
+ * nothing else runs between. `render(renderer, false)` leaves the renderer's
+ * options alone for a consumer who manages them itself.
  */
 export class ShaderPass {
   #fbo
@@ -130,13 +133,14 @@ export class ShaderPass {
     }
   }
 
-  render(renderer) {
+  render(renderer, setRendererOptions = true) {
+    const toggle = !this.#clear && setRendererOptions
     const autoClear = renderer.autoClear
-    if (!this.#clear) renderer.autoClear = false
+    if (toggle) renderer.autoClear = false
     renderer.setRenderTarget(this.#fbo)
     renderer.render(this.scene, this.#camera)
     renderer.setRenderTarget(null)
-    if (!this.#clear) renderer.autoClear = autoClear
+    if (toggle) renderer.autoClear = autoClear
     return this
   }
 }
