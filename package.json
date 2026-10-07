@@ -12,7 +12,10 @@
     ".": {
       "import": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./demos": {
+      "import": "./dist/demos.js"
+    }
   },
   "sideEffects": false,
   "scripts": {
@@ -38,11 +41,14 @@
     "@react-three/fiber": "^9.6.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "three": "^0.184.0"
+    "three": "^0.184.0",
+    "@pmndrs/assets": "^1.7.0",
+    "tunnel-rat": "^0.1.2"
   },
   "devDependencies": {
     "@eslint/css": "^1.4.0",
     "@eslint/js": "^9.39.5",
+    "@pmndrs/assets": "^1.7.0",
     "@react-three/fiber": "^9.6.1",
     "@react-three/test-renderer": "^9.1.1",
     "@resvg/resvg-js": "^2.6.2",
@@ -64,7 +70,16 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "three": "^0.184.0",
+    "tunnel-rat": "^0.1.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@pmndrs/assets": {
+      "optional": true
+    },
+    "tunnel-rat": {
+      "optional": true
+    }
   }
 }
