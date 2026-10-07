@@ -11,7 +11,7 @@ Invoked as `/walkthrough <repo> <number>` by the PR's author, after the self-rev
 
 ## The pace
 
-A chunk is one screen: about thirty lines of prose, or one snippet with its one-paragraph explanation. Every chunk ends with the name of the next chunk and nothing else; the reviewer says when to continue, asks, or stops. A section bigger than a chunk is split; it never spills. The reviewer's reading time is the cost, so nothing is said twice and nothing is padded.
+A chunk is one screen: about thirty lines of prose, or one snippet with its one-paragraph explanation. Every chunk ends with the name of the next chunk and nothing else; the reviewer says when to continue, asks, or stops. A section bigger than a chunk is split; it never spills. A section the reviewer says they have already covered is skipped, not summarised: the reviewer names the next chunk they want. The reviewer's reading time is the cost, so nothing is said twice and nothing is padded.
 
 ## The sections, in order
 
