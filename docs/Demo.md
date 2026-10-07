@@ -70,14 +70,14 @@ Other props are spread onto the root div.
 div.cocoon-demo[data-theme]            flex row, fills its container, overflow hidden
   div.cocoon-demo__stage               flex 1, the demo's children, then
     button.cocoon-demo__toggle         aria-expanded, aria-controls the sidebar; top-right of the stage
-  aside.cocoon-demo__settings          hidden when closed; scrolls vertically; one fieldset per group
+  aside.cocoon-demo__settings          hidden when closed; at most half the container, scrolling both ways; one fieldset per group
     fieldset.cocoon-demo__group        legend = the group; the ungrouped entries first, with no legend
       div.cocoon-demo__field[data-kind]  label + input (range with an output, checkbox, select, color)
       fieldset.cocoon-demo__vector     legend = the label; one number input per component
     button.cocoon-demo__reset          last
 ```
 
-The inline styles are the layout only: the flex row, the stage's growth, the sidebar's scroll, the toggle's corner. Paint is the site's, through the class names and `data-theme`; a class or style prop lands after the internals, so the site's rules win. The stage shrinks when the sidebar is shown and expands when it is hidden; a scene that sizes itself from its container's rect follows.
+The inline styles are the layout only: the flex row, the stage's growth, the sidebar's bound of half the container and its scroll, the toggle's corner. Paint is the site's, through the class names and `data-theme`; a class or style prop lands after the internals, so the site's rules win. The stage shrinks when the sidebar is shown and expands when it is hidden; a scene that sizes itself from its container's rect follows.
 
 Keyboard: the toggle is a button; the sidebar follows it in tab order; Escape inside the sidebar closes it and returns focus to the toggle. When `openSettings` is given, the toggle and Escape only call `onOpenSettingsChange`.
 

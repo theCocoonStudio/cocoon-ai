@@ -15,6 +15,7 @@ Written with the build, 2026-10-07, from the spec beside it, which came from the
 - `label`: `'Settings'`, the toggle's and the sidebar's accessible name (props.9, my call).
 - A vector's component names: `x`, `y`, `z`, then the index as a string (markup.11, my call).
 - The toggle sits inside the stage at its top-right corner, so it stays over the demo whether the sidebar is shown or not (markup.3, my call).
+- The sidebar is bounded to half the container and scrolls both ways, so its content's width never collapses the stage; found when the fluid demo's browser test opened it in a 288 px container and the stage went to zero width. The site widens or narrows it through `settingContainerStyle` (markup.4).
 - The hidden sidebar carries the `hidden` attribute: out of layout and out of the accessibility tree, and the stage expands by the flex layout alone; no transition (states.default).
 - `theme` lands as `data-theme` only when given (props.8).
 
