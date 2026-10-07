@@ -9,7 +9,7 @@ Every component in this package is a demo for the site, which wraps it in its ow
 
 ## What a demo is
 
-- **Markup placed in a div** on a site demo page. It fills its container, never taller than the viewport minus the site's nav; no overflow, border, margin or padding of its own. The settings are a sidebar beside it, open or closed through the `openSettings` prop or its toggle button, scrolling vertically when taller than the demo.
+- **Markup placed in a div** on a site demo page. It fills its container, never taller than the viewport minus the site's nav; no overflow, border, margin or padding of its own. The settings are a sidebar beside it, open or closed through the `openSettings` prop or its toggle button, scrolling vertically when taller than the demo. The demo area shrinks when the sidebar opens and expands when it closes, and the scene follows its container's rect, so the objects re-cover the new area.
 - **No Canvas.** The site has one Canvas, viewport-sized and fixed behind the whole site, and passes a tunnel (`tunnel-rat`) as the `tunnel` prop. The markup is literally `<div><tunnel.In><group /></tunnel.In><div className="settings" /></div>`: the container, the fiber root through the tunnel, the settings beside it; the site renders `<tunnel.Out />` into a full-viewport View in its Canvas.
 - **No scissor, no View.** The scene places and sizes its objects to cover the container's rect at the camera's depth, from the rect and the camera, by its own maths. Anything sized from a viewport (the fluid's targets) is sized from the div, not the Canvas.
 - **The root is exposed** through `ref`: the scene's root group, traversable with fiber or three, so the site can interact with the demo (hover, menu items).
