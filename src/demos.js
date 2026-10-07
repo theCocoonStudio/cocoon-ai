@@ -6,3 +6,7 @@
 export { Demo } from './Demo/index.jsx'
 export { useSettings } from './Demo/useSettings.js'
 export { EFFECTS } from './Demo/effects.js'
+export {
+  FluidTextureDemo,
+  fluidDemoSchema,
+} from './useFluidTexture/useFluidTexture.demo.jsx'
