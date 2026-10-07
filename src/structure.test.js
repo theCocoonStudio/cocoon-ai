@@ -56,6 +56,34 @@ function declaredProps(file) {
   return props
 }
 
+describe('no conflict markers', () => {
+  // A merge conflict resolved by hand can leave its markers behind, and inside
+  // a fenced block in a Markdown file neither prettier nor the linter objects:
+  // README.md shipped with four marker lines in its Layout block on 2026-10-07
+  // (PR #64). Every text file in the repo is read; a marker line fails here.
+  const files = []
+  const walk = (dir) => {
+    for (const entry of readdirSync(join(ROOT, dir))) {
+      if (['node_modules', 'dist', '.git'].includes(entry)) continue
+      const p = dir ? `${dir}/${entry}` : entry
+      if (statSync(join(ROOT, p)).isDirectory()) walk(p)
+      else if (/\.(js|jsx|mjs|md|json|yml|yaml|sh|css|html|txt)$/.test(entry))
+        files.push(p)
+    }
+  }
+  walk('')
+  it('no tracked text file holds a conflict marker line', () => {
+    const marker = /^(<{7}|={7}|>{7})( |$)/
+    for (const p of files) {
+      const at = lines(p).findIndex((l) => marker.test(l))
+      expect(
+        at,
+        `${p}:${at + 1} is a conflict marker line; resolve the conflict and remove the markers`,
+      ).toBe(-1)
+    }
+  })
+})
+
 describe('component folders', () => {
   // utils/ holds React-free functions and test/ holds test helpers; the rest are components.
   const components = readdirSync(join(ROOT, 'src')).filter(
