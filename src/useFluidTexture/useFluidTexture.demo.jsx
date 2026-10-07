@@ -10,6 +10,10 @@ import { EXRLoader } from 'three/addons/loaders/EXRLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { config } from '../../cocoon.config.js'
 import { Demo } from '../Demo/index.jsx'
+import {
+  ResizeEventProvider,
+  useResizeEvent,
+} from '../ResizeEventProvider/index.jsx'
 import { useSettings } from '../Demo/useSettings.js'
 import { placeInView } from '../utils/placeInView.js'
 import { useFluidTexture } from './useFluidTexture.js'
@@ -215,23 +219,25 @@ function pointerInRect(pointer, rect, canvas, out) {
 }
 
 /**
- * The scene, rendered by the site's Canvas through the tunnel. `rectRef` is the
- * demo's rectangle in viewport coordinates, written on the DOM side; `rectSize`
- * its size as props, so the fluid's targets follow it.
+ * The scene, rendered by the site's Canvas through the tunnel, under its own
+ * ResizeEventProvider. The canvas's size and the stage's come from that
+ * provider, not from fiber's `size`, which can lag a frame inside a View or a
+ * portal (Izzy's review of #67). `rectRef` is the demo's rectangle's position
+ * in viewport coordinates, written on the DOM side on scroll and resize;
+ * `probe` is the stage-sized element the provider measures.
  */
-function FluidScene({ values, rectRef, rectSize, distance, ref }) {
-  const { gl, camera, size } = useThree(({ gl, camera, size }) => ({
-    gl,
-    camera,
-    size,
-  }))
+function FluidScene({ values, rectRef, probe, distance, priority, ref }) {
+  const { gl, camera } = useThree(({ gl, camera }) => ({ gl, camera }))
+  const canvas = useResizeEvent('canvas', gl.domElement)
+  const stage = useResizeEvent('stage', probe)
   const plane = useRef(null)
   const background = useRef(null)
-  // what the force callback reads: the current rect and canvas size, mirrored from props in an effect
-  const view = useRef({ rect: null, canvas: { width: 1, height: 1 } })
+  // what the force callback reads: the canvas size, mirrored from the provider in an effect
+  const view = useRef({ canvas: { width: 1, height: 1 } })
   useEffect(() => {
-    view.current.canvas = { width: size.width, height: size.height }
-  }, [size.width, size.height])
+    if (canvas.width && canvas.height)
+      view.current.canvas = { width: canvas.width, height: canvas.height }
+  }, [canvas.width, canvas.height])
   const [forceCallbackRef] = useState(() => {
     const center = { x: 0, y: 0 }
     const force = { x: 0, y: 0 }
@@ -253,8 +259,8 @@ function FluidScene({ values, rectRef, rectSize, distance, ref }) {
   })
   const { texture } = useFluidTexture({
     forceCallbackRef,
-    fboWidth: Math.max(2, Math.round(rectSize.width * values.resolution)),
-    fboHeight: Math.max(2, Math.round(rectSize.height * values.resolution)),
+    fboWidth: Math.max(2, Math.round((stage.width ?? 0) * values.resolution)),
+    fboHeight: Math.max(2, Math.round((stage.height ?? 0) * values.resolution)),
     forceValue: values.forceValue,
     forceSize: values.forceSize,
     poissonIterations: values.poissonIterations,
@@ -359,33 +365,23 @@ function FluidScene({ values, rectRef, rectSize, distance, ref }) {
     }
   }, [values.environment, isStandard, gl])
 
-  // placement: the plane covers the demo's rectangle at `distance` in front of the camera, every frame
+  // placement: the plane covers the demo's rectangle at `distance` in front of the camera, every frame,
+  // at the given priority; the rectangle's size is the provider's, its position the DOM side's
   useFrame(() => {
     const rect = rectRef.current
     const mesh = plane.current
-    if (!rect || !mesh) return
-    placeInView(
-      {
-        rect,
-        canvas: { width: size.width, height: size.height },
-        camera,
-        distance,
-      },
-      mesh,
-    )
+    const size = view.current.canvas
+    if (!rect || !mesh || !stage.width || !stage.height) return
+    const r = { x: rect.x, y: rect.y, width: stage.width, height: stage.height }
+    placeInView({ rect: r, canvas: size, camera, distance }, mesh)
     const back = background.current
     if (back) {
       placeInView(
-        {
-          rect,
-          canvas: { width: size.width, height: size.height },
-          camera,
-          distance: distance * 1.01,
-        },
+        { rect: r, canvas: size, camera, distance: distance * 1.01 },
         back,
       )
     }
-  })
+  }, priority)
 
   return (
     <group ref={ref}>
@@ -413,6 +409,7 @@ function FluidScene({ values, rectRef, rectSize, distance, ref }) {
  * @typedef {object} FluidTextureDemoProps
  * @property {{ In: import('react').ComponentType<{children?: import('react').ReactNode}> }} tunnel the site's tunnel; its Out sits in the site's Canvas
  * @property {number} [distance=1] how far in front of the camera the plane sits, world units
+ * @property {number} [priority=-1] useFrame's priority for the placement, as the hook takes one for its step
  * @property {import('react').Ref<import('three').Group>} [ref] the scene's root group, for the site to traverse or raycast
  */
 
@@ -421,7 +418,13 @@ function FluidScene({ values, rectRef, rectSize, distance, ref }) {
  * scene through `tunnel`; the rest of the props are the wrapper's.
  * @param {FluidTextureDemoProps & import('../Demo/index.jsx').DemoProps} props
  */
-export function FluidTextureDemo({ tunnel, distance = 1, ref, ...props }) {
+export function FluidTextureDemo({
+  tunnel,
+  distance = 1,
+  priority = -1,
+  ref,
+  ...props
+}) {
   if (!tunnel || !tunnel.In) {
     throw new Error(
       "FluidTextureDemo: `tunnel` is required, a tunnel-rat tunnel whose Out is rendered in the site's Canvas",
@@ -429,28 +432,22 @@ export function FluidTextureDemo({ tunnel, distance = 1, ref, ...props }) {
   }
   const settings = useSettings(fluidDemoSchema)
   const probe = useRef(null)
+  const [probeEl, setProbeEl] = useState(null)
   const rectRef = useRef(null)
-  const [rectSize, setRectSize] = useState({ width: 0, height: 0 })
-  // the demo's rectangle in viewport coordinates: measured on size change by a ResizeObserver, re-read on scroll and resize
+  // the demo's rectangle's position in viewport coordinates, re-read on scroll and resize; its size is the
+  // scene's ResizeEventProvider's, which observes the probe element handed to it
   useLayoutEffect(() => {
     const el = probe.current
     if (!el) return undefined
+    setProbeEl(el)
     const measure = () => {
       const r = el.getBoundingClientRect()
       rectRef.current = { x: r.x, y: r.y, width: r.width, height: r.height }
-      setRectSize((prev) =>
-        prev.width === r.width && prev.height === r.height
-          ? prev
-          : { width: r.width, height: r.height },
-      )
     }
     measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
     window.addEventListener('scroll', measure, { passive: true })
     window.addEventListener('resize', measure, { passive: true })
     return () => {
-      observer.disconnect()
       window.removeEventListener('scroll', measure)
       window.removeEventListener('resize', measure)
     }
@@ -464,14 +461,17 @@ export function FluidTextureDemo({ tunnel, distance = 1, ref, ...props }) {
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       />
       <In>
-        <FluidScene
-          key={settings.key}
-          ref={ref}
-          values={settings.values}
-          rectRef={rectRef}
-          rectSize={rectSize}
-          distance={distance}
-        />
+        <ResizeEventProvider>
+          <FluidScene
+            key={settings.key}
+            ref={ref}
+            values={settings.values}
+            rectRef={rectRef}
+            probe={probeEl}
+            distance={distance}
+            priority={priority}
+          />
+        </ResizeEventProvider>
       </In>
     </Demo>
   )
