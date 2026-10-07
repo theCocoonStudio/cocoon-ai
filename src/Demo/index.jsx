@@ -41,9 +41,12 @@ const stageStyle = {
 }
 const toggleStyle = { position: 'absolute', top: 0, right: 0 }
 const sidebarStyle = {
-  flex: '0 0 auto',
+  // bounded, so a sidebar wider than its content's share never collapses the stage: the site widens it through settingContainerStyle
+  flex: '0 1 auto',
+  maxWidth: '50%',
+  minWidth: 0,
   height: '100%',
-  overflowY: 'auto',
+  overflow: 'auto',
   boxSizing: 'border-box',
 }
 
