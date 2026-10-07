@@ -84,7 +84,7 @@ async function bundle(entry) {
       },
       // one module: a lazy import in the page (an environment from the assets package) is inlined rather than
       // emitted as a chunk the page could not fetch from its file
-      rollupOptions: { external: [], output: { inlineDynamicImports: true } },
+      rollupOptions: { external: [], output: { codeSplitting: false } },
     },
   })
   const out = Array.isArray(result) ? result[0] : result
