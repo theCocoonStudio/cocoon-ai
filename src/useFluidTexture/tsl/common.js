@@ -2,7 +2,7 @@
 // position node and the varyings the fragment reads. `positionGeometry` is
 // the quad's attribute, the GLSL `position`; a varying computed from it runs
 // in the vertex stage and is interpolated, as a GLSL varying is.
-import { positionGeometry, uv, varying, vec2, vec4, mix } from 'three/tsl'
+import { positionGeometry, varying, vec2, vec4, mix } from 'three/tsl'
 
 /**
  * Sample a render-target texture at a y-up coordinate. The renderer stores a
@@ -35,14 +35,4 @@ export function outputVertex(px) {
   const uv01 = vec2(0.5).add(positionGeometry.xy.mul(0.5))
   const uvInternal = varying(mix(px, vec2(1.0).sub(px), uv01))
   return { vertexNode: vec4(positionGeometry, 1.0), uvInternal }
-}
-
-/**
- * mouse.vert: the force quad, `scale` cells wide, placed at `center` in clip
- * space and clamped to the top-right edge as the GLSL did.
- */
-export function forceVertex(center, scale, px) {
-  const pos = positionGeometry.xy.mul(scale).mul(px).add(center)
-  const vUv = varying(uv())
-  return { vertexNode: vec4(pos.min(vec2(1.0)), 0.0, 1.0), vUv }
 }

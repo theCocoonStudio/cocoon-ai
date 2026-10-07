@@ -12,7 +12,6 @@ import { config } from '../../cocoon.config.js'
 import {
   advectionMaterial,
   divergenceMaterial,
-  forceMaterial,
   meshForceMaterial,
   outputMaterial,
   poissonMaterial,
@@ -21,7 +20,7 @@ import {
 } from './tsl/passes.js'
 import { ShaderPass } from './ShaderPass.js'
 import { FrameSplitter } from './frame.js'
-import { useRenderTarget } from './targets.js'
+import { useRenderTarget, ZeroTexture } from './targets.js'
 import {
   bindWall,
   boundaryChildren,
@@ -74,7 +73,6 @@ export const useFluidTexture = (options = {}) => {
     fboOpts = FIELD_OPTS,
     outputFboOpts = OUTPUT_OPTS,
     /* render options */
-    setRendererOptionsInternally = true, // the force passes toggle the renderer's autoClear around their own render
     manual = false, // auto mode default
     priority = -1, // auto mode only
     pause = false, // auto mode only,
@@ -127,6 +125,13 @@ export const useFluidTexture = (options = {}) => {
   const pressure0 = useRenderTarget(width, height, fboOpts)
   const pressure1 = useRenderTarget(width, height, fboOpts)
   const output = useRenderTarget(width, height, outputFboOpts)
+  // the mesh force's own target, allocated only while a mesh is given
+  const meshForceTarget = useRenderTarget(
+    width,
+    height,
+    fboOpts,
+    Boolean(forceMesh),
+  )
 
   // uniform nodes, shared by the passes; vectors are mutated in place, scalars through .value
   const [Uniforms] = useState(() => {
@@ -136,6 +141,7 @@ export const useFluidTexture = (options = {}) => {
       fboSize: uniform(new Vector2()),
       force: uniform(new Vector2()),
       meshForce: uniform(new Vector2()),
+      hasMeshForce: uniform(forceMesh ? 1 : 0, 'bool'),
       center: uniform(new Vector2()),
       scale: uniform(new Vector2(forceSize, forceSize)),
       dt: uniform(dt),
@@ -175,7 +181,10 @@ export const useFluidTexture = (options = {}) => {
   // shader passes: each gets its own texture nodes (swapped per step) and the shared uniform nodes
   const [advectionPass] = useState(() => {
     const u = Uniforms.get()
-    const inputs = { velocity: texture(vel0.texture) }
+    const inputs = {
+      velocity: texture(vel0.texture),
+      meshForce: texture(ZeroTexture),
+    }
     return new ShaderPass({
       material: advectionMaterial({
         velocity: inputs.velocity,
@@ -183,27 +192,17 @@ export const useFluidTexture = (options = {}) => {
         isBFECC: u.BFECC,
         fboSize: u.fboSize,
         px: u.cellScale,
+        force: u.force,
+        center: u.center,
+        scale: u.scale,
+        meshForce: inputs.meshForce,
+        hasMeshForce: u.hasMeshForce,
       }),
       inputs,
       camera,
       geometry,
       children: boundaryChildren,
       onDispose: disposeBoundary,
-    }).setFBO(vel1)
-  })
-  const [forcePass] = useState(() => {
-    const u = Uniforms.get()
-    return new ShaderPass({
-      material: forceMaterial({
-        force: u.force,
-        center: u.center,
-        scale: u.scale,
-        px: u.cellScale,
-      }),
-      inputs: { force: u.force, center: u.center, scale: u.scale },
-      camera,
-      geometry,
-      clear: false, // adds into the velocity advection just wrote
     }).setFBO(vel1)
   })
   const [meshForcePass] = useState(() => {
@@ -213,11 +212,12 @@ export const useFluidTexture = (options = {}) => {
       inputs: { force: u.meshForce },
       camera: null,
       geometry: forceMesh ? forceMesh.geometry : null,
-      clear: false,
-    }).setFBO(vel1)
+      clearTarget: true, // the mesh covers only its footprint
+    }).setFBO(meshForceTarget)
   })
 
   useEffect(() => {
+    Uniforms.get().hasMeshForce.value = forceMesh ? 1 : 0
     if (forceMesh) {
       meshForcePass.updateGeometry(forceMesh.geometry)
       meshForcePass.updateCamera(customCamera || defaultCamera)
@@ -226,6 +226,7 @@ export const useFluidTexture = (options = {}) => {
       oldForceMeshPosition.set(0, 0)
     }
   }, [
+    Uniforms,
     customCamera,
     defaultCamera,
     forceMesh,
@@ -332,10 +333,12 @@ export const useFluidTexture = (options = {}) => {
   // a size change rebuilt the targets: repoint every pass at the new textures
   useEffect(() => {
     advectionPass
-      .updateUniforms({ velocity: { value: vel0.texture } })
+      .updateUniforms({
+        velocity: { value: vel0.texture },
+        meshForce: { value: meshForceTarget?.texture ?? ZeroTexture },
+      })
       .setFBO(vel1)
-    forcePass.setFBO(vel1)
-    meshForcePass.setFBO(vel1)
+    meshForcePass.setFBO(meshForceTarget)
     viscousPass
       .updateUniforms({
         velocity: { value: vel1.texture },
@@ -372,8 +375,8 @@ export const useFluidTexture = (options = {}) => {
     advectionPass,
     div,
     divergencePass,
-    forcePass,
     meshForcePass,
+    meshForceTarget,
     output,
     outputPass,
     poissonPass,
@@ -400,10 +403,8 @@ export const useFluidTexture = (options = {}) => {
         pass.modifyChildren((wall) => {
           wall.visible = isBounce
         })
-      // advection pass
-      advectionPass.render(gl)
-
-      // external force pass
+      // the force: the pointer's, folded into the advection pass through its uniforms,
+      // or a mesh's, drawn into its own target first and sampled by advection
       if (!forceMesh) {
         const fc =
           typeof forceCallbackRef?.current === 'function'
@@ -431,8 +432,8 @@ export const useFluidTexture = (options = {}) => {
         uniforms.force.value.set(force.x * forceValue, force.y * forceValue)
         uniforms.center.value.set(center.x, center.y)
         uniforms.scale.value.set(radius, radius)
-        forcePass.render(gl, setRendererOptionsInternally)
       } else {
+        uniforms.force.value.set(0, 0)
         meshForcePass.mesh.position.copy(forceMesh.position)
         meshForcePass.mesh.scale.copy(forceMesh.scale).multiplyScalar(0.99)
         meshForcePass.mesh.rotation.copy(forceMesh.rotation)
@@ -450,8 +451,11 @@ export const useFluidTexture = (options = {}) => {
           .multiplyScalar(2)
 
         oldForceMeshPosition.set(forceMesh.position.x, forceMesh.position.y)
-        meshForcePass.render(gl, setRendererOptionsInternally)
+        meshForcePass.render(gl)
       }
+      // advection pass, the force included
+      advectionPass.render(gl)
+
       // viscosity pass
       let vel = vel1
       if (isViscous) {
@@ -511,7 +515,6 @@ export const useFluidTexture = (options = {}) => {
       divergencePass,
       forceCallbackRef,
       forceMesh,
-      forcePass,
       forceSize,
       forceValue,
       gl,
@@ -527,7 +530,6 @@ export const useFluidTexture = (options = {}) => {
       pressure0,
       pressure1,
       pressurePass,
-      setRendererOptionsInternally,
       vel1,
       viewportSize,
       visc0,
@@ -563,7 +565,6 @@ export const useFluidTexture = (options = {}) => {
       geometry.dispose()
       // dispose internal values
       advectionPass.dispose(true, false, false, true)
-      forcePass.dispose(true, false, false, true)
       meshForcePass.dispose(true, false, false, true)
       viscousPass.dispose(true, false, false, true)
       divergencePass.dispose(true, false, false, true)
@@ -574,7 +575,6 @@ export const useFluidTexture = (options = {}) => {
     [
       advectionPass,
       divergencePass,
-      forcePass,
       geometry,
       meshForcePass,
       outputPass,

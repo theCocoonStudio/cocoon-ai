@@ -4,7 +4,7 @@ import { texture, uniform } from 'three/tsl'
 import { ShaderPass } from './ShaderPass.js'
 import {
   advectionMaterial,
-  forceMaterial,
+  divergenceMaterial,
   poissonMaterial,
   pressureMaterial,
   viscousMaterial,
@@ -36,7 +36,46 @@ function nodes() {
     dt: uniform(0.014),
     v: uniform(30),
     isBFECC: uniform(1, 'bool'),
+    hasMeshForce: uniform(0, 'bool'),
   }
+}
+
+/** The advection pass, which carries the force: its inputs are the velocity, the mesh force and the pointer force's nodes. */
+function advectionPass(u = nodes()) {
+  const inputs = {
+    velocity: texture(new Texture()),
+    meshForce: texture(new Texture()),
+    force: u.force,
+  }
+  return new ShaderPass({
+    material: advectionMaterial({
+      velocity: inputs.velocity,
+      meshForce: inputs.meshForce,
+      dt: u.dt,
+      isBFECC: u.isBFECC,
+      fboSize: u.fboSize,
+      px: u.px,
+      force: u.force,
+      center: u.center,
+      scale: u.scale,
+      hasMeshForce: u.hasMeshForce,
+    }),
+    inputs,
+  })
+}
+
+/** A pass with nothing to repoint, for the object tests. */
+function plainPass(opts = {}) {
+  const u = nodes()
+  return new ShaderPass({
+    material: divergenceMaterial({
+      velocity: texture(new Texture()),
+      dt: u.dt,
+      px: u.px,
+      boundarySpace: u.boundarySpace,
+    }),
+    ...opts,
+  })
 }
 
 function viscousPass(u = nodes()) {
@@ -60,14 +99,12 @@ function viscousPass(u = nodes()) {
 
 describe('ShaderPass inputs', () => {
   it('owns its inputs: two passes from one builder read two force nodes, and neither sees the other', () => {
-    const a = new ShaderPass({
-      material: forceMaterial(nodes()),
-      inputs: { force: uniform(new Vector2(1, 1)) },
-    })
-    const b = new ShaderPass({
-      material: forceMaterial(nodes()),
-      inputs: { force: uniform(new Vector2(2, 2)) },
-    })
+    const ua = nodes()
+    ua.force.value.set(1, 1)
+    const ub = nodes()
+    ub.force.value.set(2, 2)
+    const a = advectionPass(ua)
+    const b = advectionPass(ub)
     expect(a.uniforms).not.toBe(b.uniforms)
     expect(a.uniforms.force.value.x).toBe(1)
     expect(b.uniforms.force.value.x).toBe(2)
@@ -170,13 +207,13 @@ describe('ShaderPass objects', () => {
 
   it('takes a render target through setFBO and reports it', () => {
     const fbo = new RenderTarget(4, 4)
-    const p = new ShaderPass({ material: forceMaterial(nodes()) }).setFBO(fbo)
+    const p = plainPass().setFBO(fbo)
     expect(p.fbo).toBe(fbo)
     fbo.dispose()
   })
 
   it('swaps geometry through updateGeometry and disposes the old one only when told', () => {
-    const p = new ShaderPass({ material: forceMaterial(nodes()) })
+    const p = plainPass()
     const first = p.geometry
     const spy = vi.spyOn(first, 'dispose')
     p.updateGeometry(null) // null: keep what is there
@@ -205,10 +242,9 @@ describe('ShaderPass objects', () => {
 
   it('renders into its target and restores the default target after', () => {
     const fbo = new RenderTarget(4, 4)
-    const p = new ShaderPass({ material: forceMaterial(nodes()) }).setFBO(fbo)
+    const p = plainPass().setFBO(fbo)
     const calls = []
     const renderer = {
-      autoClear: true,
       setRenderTarget: (t) => calls.push(['target', t]),
       render: (s, c) => calls.push(['render', s, c]),
     }
@@ -220,21 +256,25 @@ describe('ShaderPass objects', () => {
     fbo.dispose()
   })
 
-  it('a pass with clear off renders with autoClear off and restores it; a pass with clear on leaves it', () => {
-    const seen = []
+  it('a pass with clearTarget clears its target through the manual clear, after the target is set and before the draw; a pass without never clears; neither reads or writes autoClear', () => {
+    const calls = []
     const renderer = {
-      autoClear: true,
-      setRenderTarget() {},
-      render() {
-        seen.push(this.autoClear)
-      },
+      setRenderTarget: (t) => calls.push(t === null ? 'unset' : 'target'),
+      clear: () => calls.push('clear'),
+      render: () => calls.push('render'),
     }
-    new ShaderPass({ material: forceMaterial(nodes()), clear: false }).render(
-      renderer,
-    )
-    expect(seen).toEqual([false])
-    expect(renderer.autoClear).toBe(true)
-    new ShaderPass({ material: forceMaterial(nodes()) }).render(renderer)
-    expect(seen).toEqual([false, true])
+    Object.defineProperty(renderer, 'autoClear', {
+      get: () => calls.push('read autoClear'),
+      set: () => {
+        calls.push('wrote autoClear')
+      },
+    })
+    plainPass({ clearTarget: true })
+      .setFBO(new RenderTarget(2, 2))
+      .render(renderer)
+    expect(calls).toEqual(['target', 'clear', 'render', 'unset'])
+    calls.length = 0
+    plainPass().setFBO(new RenderTarget(2, 2)).render(renderer)
+    expect(calls).toEqual(['target', 'render', 'unset'])
   })
 })

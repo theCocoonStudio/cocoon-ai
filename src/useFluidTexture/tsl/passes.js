@@ -3,7 +3,13 @@
 // per pass, each built from the nodes the hook shares. A pass's inputs are
 // the uniform and texture nodes it reads; the hook swaps a texture node's
 // `.value` for the ping-pong and mutates a uniform's value in place.
-import { AdditiveBlending, NodeMaterial } from 'three/webgpu'
+//
+// Every pass writes every texel of its target, so none depends on whether the
+// renderer clears a target first, and none reads or writes a renderer option.
+// The pointer force is part of the advection pass for that reason; the mesh
+// force, which draws a mesh's footprint and nothing else, writes a target of
+// its own that the runner clears first.
+import { NodeMaterial } from 'three/webgpu'
 import {
   Fn,
   If,
@@ -19,10 +25,10 @@ import {
   vec3,
   vec4,
 } from 'three/tsl'
-import { faceVertex, forceVertex, outputVertex, sampleRT } from './common.js'
+import { faceVertex, outputVertex, sampleRT } from './common.js'
 
 /** A material that writes `fragmentNode` from `vertexNode`, no depth, no lights. */
-function passMaterial({ vertexNode, fragmentNode, blending }) {
+function passMaterial({ vertexNode, fragmentNode }) {
   const m = new NodeMaterial()
   if (vertexNode) m.vertexNode = vertexNode
   m.fragmentNode = fragmentNode
@@ -30,12 +36,30 @@ function passMaterial({ vertexNode, fragmentNode, blending }) {
   m.depthWrite = false
   m.lights = false
   m.fog = false
-  if (blending) m.blending = blending
   return m
 }
 
-/** advection.frag: semi-Lagrangian back-trace, with BFECC's error correction when `isBFECC` is on. */
-export function advectionMaterial({ velocity, dt, isBFECC, fboSize, px }) {
+/**
+ * advection.frag: semi-Lagrangian back-trace, with BFECC's error correction
+ * when `isBFECC` is on, plus the force. The pointer force is externalForce.frag's
+ * radial bump of `force` at `center`, `scale` cells wide, added to the advected
+ * velocity in this fragment rather than by a blended pass: the fragment's clip
+ * position is its uv mapped to -1..1, and mouse.vert's quad uv measured the
+ * distance from `center` in units of `scale` times a cell. The mesh force is
+ * sampled from the target the mesh was drawn into, when `hasMeshForce`.
+ */
+export function advectionMaterial({
+  velocity,
+  dt,
+  isBFECC,
+  fboSize,
+  px,
+  force,
+  center,
+  scale,
+  meshForce,
+  hasMeshForce,
+}) {
   const { vertexNode, uvInternal } = faceVertex(px)
   const fragmentNode = Fn(() => {
     const ratio = max(fboSize.x, fboSize.y).div(fboSize)
@@ -56,29 +80,28 @@ export function advectionMaterial({ velocity, dt, isBFECC, fboSize, px }) {
       const spotOld2 = spotNew3.sub(vel2.mul(dt).mul(ratio)) // back trace 2
       out.assign(sampleRT(velocity, spotOld2).xy)
     })
+    // the pointer force: a bump of radius scale cells, 1 at the centre, 0 at the rim, squared
+    const clip = uvInternal.sub(0.5).mul(2.0)
+    const circle = clip.sub(center).div(scale.mul(px))
+    const d = float(1.0)
+      .sub(min(length(circle), 1.0))
+      .toVar()
+    d.assign(d.mul(d))
+    out.addAssign(force.mul(d))
+    // the mesh force, from its own target
+    If(hasMeshForce, () => {
+      out.addAssign(sampleRT(meshForce, uvInternal).xy)
+    })
     return vec4(out, 0.0, 0.0)
   })()
   return passMaterial({ vertexNode, fragmentNode })
 }
 
-/** externalForce.frag on mouse.vert: a radial bump of `force`, added into the velocity. */
-export function forceMaterial({ force, center, scale, px }) {
-  const { vertexNode, vUv } = forceVertex(center, scale, px)
-  const fragmentNode = Fn(() => {
-    const circle = vUv.sub(0.5).mul(2.0)
-    const d = float(1.0)
-      .sub(min(length(circle), 1.0))
-      .toVar()
-    d.assign(d.mul(d))
-    return vec4(force.mul(d), 0.0, 1.0)
-  })()
-  return passMaterial({ vertexNode, fragmentNode, blending: AdditiveBlending })
-}
-
 /**
  * controlForce.frag: a mesh's own geometry, drawn through the scene camera,
  * pushes outward from its centre by `force`. The default vertex path (model,
- * view, projection) is kept, as the GLSL did.
+ * view, projection) is kept, as the GLSL did. The mesh covers only its footprint,
+ * so the runner clears the target before this pass and advection adds the result.
  */
 export function meshForceMaterial({ force }) {
   const vUv = varying(uv())
@@ -86,7 +109,7 @@ export function meshForceMaterial({ force }) {
     const circle = vUv.sub(0.5).mul(2.0)
     return vec4(force.mul(-1.0).mul(circle), 0.0, 1.0)
   })()
-  return passMaterial({ fragmentNode, blending: AdditiveBlending })
+  return passMaterial({ fragmentNode })
 }
 
 /** viscous.frag: one Jacobi iteration of implicit diffusion, two cells apart as the GLSL was. */
