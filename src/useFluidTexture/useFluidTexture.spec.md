@@ -38,6 +38,7 @@ props.15: fboWidth, fboHeight — integers, optional; fixed field size, overridi
 props.16: fboOpts — RenderTarget options, optional, default a module constant { type: HalfFloatType, format: RGFormat }; referentially stable or the targets rebuild each render
 props.17: outputFboOpts — RenderTarget options, optional, default a module constant { type: HalfFloatType }
 props.18: manual — boolean, optional, default false; no stepping in the frame loop after the warm-up; the caller steps through the returned render
+props.22: setRendererOptionsInternally — boolean, optional, default true; the two force passes toggle the renderer's autoClear around their own render; false leaves the renderer's options to the app
 props.19: priority — number, optional, default -1; useFrame's priority for the step
 props.20: pause — boolean, optional, default false; auto mode only
 props.21: pauseRef, manualRef — RefObject<boolean>, optional; the imperative forms of pause and manual
@@ -110,7 +111,7 @@ frame.mode: internal
 frame.args: priority (props.19), default -1
 frame.1: five warm-up steps on mount regardless of manual or pause, so every program compiles and every target allocates up front
 frame.2: then, unless manual or paused, one step every runEvery frames: advection, force (pointer or mesh), diffusion when isViscous, divergence, pressure solve, projection, output
-frame.3: the two force passes render with autoClear off and restore it: they add into the velocity advection just wrote
+frame.3: the two force passes render with autoClear off and restore it, synchronously, nothing else running between: they add into the velocity advection just wrote; off when props.22 is false
 frame.4: the wall is drawn after the quad of every pass that writes velocity or pressure, when isBounce
 frame.writes-react: never
 frame.invalidate: not needed

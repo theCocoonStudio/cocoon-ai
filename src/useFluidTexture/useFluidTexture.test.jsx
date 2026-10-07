@@ -211,6 +211,20 @@ describe('useFluidTexture', () => {
     await renderer.unmount()
   })
 
+  it('with setRendererOptionsInternally false, never touches autoClear', async () => {
+    const { renderer, gl } = await mount({
+      forceCallbackRef: { current: fc },
+      isViscous: false,
+      setRendererOptionsInternally: false,
+    })
+    const seen = []
+    gl.render.mockImplementation(() => seen.push(gl.autoClear))
+    await renderer.advanceFrames(1, 16)
+    expect(seen.length).toBeGreaterThan(0)
+    expect(seen.every((v) => v === true)).toBe(true)
+    await renderer.unmount()
+  })
+
   it('takes its defaults from cocoon.config.js and lets an option override one', async () => {
     const { renderer, targets } = await mount({
       forceCallbackRef: { current: fc },

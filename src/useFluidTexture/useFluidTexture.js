@@ -74,6 +74,7 @@ export const useFluidTexture = (options = {}) => {
     fboOpts = FIELD_OPTS,
     outputFboOpts = OUTPUT_OPTS,
     /* render options */
+    setRendererOptionsInternally = true, // the force passes toggle the renderer's autoClear around their own render
     manual = false, // auto mode default
     priority = -1, // auto mode only
     pause = false, // auto mode only,
@@ -430,7 +431,7 @@ export const useFluidTexture = (options = {}) => {
         uniforms.force.value.set(force.x * forceValue, force.y * forceValue)
         uniforms.center.value.set(center.x, center.y)
         uniforms.scale.value.set(radius, radius)
-        forcePass.render(gl)
+        forcePass.render(gl, setRendererOptionsInternally)
       } else {
         meshForcePass.mesh.position.copy(forceMesh.position)
         meshForcePass.mesh.scale.copy(forceMesh.scale).multiplyScalar(0.99)
@@ -449,7 +450,7 @@ export const useFluidTexture = (options = {}) => {
           .multiplyScalar(2)
 
         oldForceMeshPosition.set(forceMesh.position.x, forceMesh.position.y)
-        meshForcePass.render(gl)
+        meshForcePass.render(gl, setRendererOptionsInternally)
       }
       // viscosity pass
       let vel = vel1
@@ -526,6 +527,7 @@ export const useFluidTexture = (options = {}) => {
       pressure0,
       pressure1,
       pressurePass,
+      setRendererOptionsInternally,
       vel1,
       viewportSize,
       visc0,
