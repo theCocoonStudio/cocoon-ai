@@ -22,14 +22,14 @@ Every component in this package is a demo for the site, which wraps it in its ow
 
 ## The schema
 
-A plain object keyed by setting. `kind`: number, boolean, select, colour, vector. `default`, read from `cocoon.config.js` where one exists. `min`, `max`, `step` for numbers; `options` for a select. `live`: true when the value changes in place, false when the scene remounts. `when`: a setting and value that must hold for this one to show. `group`: material, lights, effects, and the component's own, for the popup to fold. Settings reach the scene as one object; a scene is a function of its settings and nothing else. An input the schema cannot describe is hand-written in the demo, and that is the exception, named in the report.
+A plain object keyed by setting. `kind`: number, boolean, select, colour, vector. `default`, read from `cocoon.config.js` where one exists. `min`, `max`, `step` for numbers; `options` for a select. `live`: true when the value changes in place, false when the scene remounts. `when`: a setting and value that must hold for this one to show. `group`: material, lights, effects, and the component's own, for the popup to fold. The popup ends with a reset button that returns every setting to its default. Settings reach the scene as one object; a scene is a function of its settings and nothing else. An input the schema cannot describe is hand-written in the demo, and that is the exception, named in the report.
 
 ## Canvas scenes
 
 - **Material:** a select, basic or standard; under standard, colour, roughness, metalness, emissive.
 - **Map:** a select for where the component's texture goes, bump, color or alpha; alpha adds a background plane directly behind, with its own material settings.
 - **Lights, under standard:** an environment select, the ten drei presets loaded from `@pmndrs/assets` (local to the install, never a CDN, loaded only when picked, through three's EXR loader and the PMREM path), the procedural room, and none; a directional light with on, intensity, colour and position. The demo adds the ambient and directional lights a standard material needs.
-- **Effects:** every scene has an effects block Izzy specifies per demo. On the WebGPU renderer the implementation is three's own post-processing, the TSL display nodes; on the legacy renderer it is the pmndrs wrapper, which has no WebGPU support (verified 2026-10-07). An effect three lacks is ported singly, three's GLSL-to-TSL transpiler as the first draft, never the library.
+- **Effects:** a prop, not a spec question. The demos entry exports `EFFECTS`, an enum of integers, and a demo takes `effects`, an array of them in render order; each effect's settings join the schema under the effects group when it is on. On the WebGPU renderer the implementation is three's own post-processing, the TSL display nodes; on the legacy renderer it is the pmndrs wrapper, which has no WebGPU support (verified 2026-10-07). An effect three lacks is ported singly, three's GLSL-to-TSL transpiler as the first draft, never the library.
 
 ## Tests
 
