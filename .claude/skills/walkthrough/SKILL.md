@@ -25,5 +25,6 @@ A chunk is one screen: about thirty lines of prose, or one snippet with its one-
 
 - The map follows the code's shape, not the author's story: a reviewer reading only the map and the diff would land on the same places as one reading the diff alone, sooner.
 - A number in the map is a measured one, with its date and machine, or it is not in the map.
-- The reviewer's questions are answered in place. A change the walkthrough calls for is made and pushed to the PR as it comes up, with the map saying so, so no second review round is needed and any issue with the change shows at once (Izzy, 2026-10-07).
+- The reviewer's questions are answered in place, and the answer is the whole message: a question gets its answer and nothing after it, never a chunk appended. The next chunk goes out only when the reviewer says to. The reviewer reads as they go, and a chunk under an answer is output they did not ask for, which they then have to scroll past or ask to see again (Izzy, 2026-10-07).
+- A change the walkthrough calls for is made and pushed to the PR as it comes up, with the map saying so, so no second review round is needed and any issue with the change shows at once (Izzy, 2026-10-07).
 - When the walkthrough ends, the author says so and stops; the review and the decision are the reviewer's.
