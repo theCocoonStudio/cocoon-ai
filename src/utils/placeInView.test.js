@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Quaternion, Vector3 } from 'three'
+import { Group, PerspectiveCamera, Quaternion, Vector3 } from 'three'
 import { placeInView } from './placeInView.js'
 
 const out = () => ({
@@ -8,26 +8,19 @@ const out = () => ({
   scale: new Vector3(),
 })
 const canvas = { width: 800, height: 600 }
-const camera = () => ({
-  fov: 50,
-  aspect: 800 / 600,
-  position: new Vector3(0, 0, 5),
-  quaternion: new Quaternion(),
-})
+const camera = () => {
+  const c = new PerspectiveCamera(50, 800 / 600, 0.1, 100)
+  c.position.set(0, 0, 5)
+  return c
+}
 const visibleHeight = (d) => 2 * d * Math.tan((50 * Math.PI) / 360)
+const place = (rect, cam, distance) =>
+  placeInView({ rect, canvas, camera: cam, distance }, out())
 
 describe('placeInView', () => {
   it('the whole canvas: a plane at the distance, centred on the view axis, as wide and tall as the view', () => {
-    const o = placeInView(
-      {
-        rect: { x: 0, y: 0, ...canvas },
-        canvas,
-        camera: camera(),
-        distance: 5,
-      },
-      out(),
-    )
-    expect(o.position.toArray()).toEqual([0, 0, 0])
+    const o = place({ x: 0, y: 0, ...canvas }, camera(), 5)
+    expect(o.position.toArray().map((v) => +v.toFixed(6))).toEqual([0, 0, 0])
     const h = visibleHeight(5)
     expect(o.scale.y).toBeCloseTo(h)
     expect(o.scale.x).toBeCloseTo(h * (800 / 600))
@@ -35,15 +28,7 @@ describe('placeInView', () => {
   })
 
   it('a quarter at the top-left: half the width and height, its centre up and left of the axis', () => {
-    const o = placeInView(
-      {
-        rect: { x: 0, y: 0, width: 400, height: 300 },
-        canvas,
-        camera: camera(),
-        distance: 5,
-      },
-      out(),
-    )
+    const o = place({ x: 0, y: 0, width: 400, height: 300 }, camera(), 5)
     const h = visibleHeight(5)
     const w = h * (800 / 600)
     expect(o.scale.x).toBeCloseTo(w / 2)
@@ -54,24 +39,9 @@ describe('placeInView', () => {
   })
 
   it('scales with the distance: twice as far, twice as large, the same on screen', () => {
-    const near = placeInView(
-      {
-        rect: { x: 100, y: 50, width: 200, height: 100 },
-        canvas,
-        camera: camera(),
-        distance: 1,
-      },
-      out(),
-    )
-    const far = placeInView(
-      {
-        rect: { x: 100, y: 50, width: 200, height: 100 },
-        canvas,
-        camera: camera(),
-        distance: 2,
-      },
-      out(),
-    )
+    const rect = { x: 100, y: 50, width: 200, height: 100 }
+    const near = place(rect, camera(), 1)
+    const far = place(rect, camera(), 2)
     expect(far.scale.x).toBeCloseTo(near.scale.x * 2)
     expect(far.scale.y).toBeCloseTo(near.scale.y * 2)
     const dn = near.position.clone().sub(camera().position)
@@ -84,22 +54,32 @@ describe('placeInView', () => {
   it('follows a turned camera: the plane sits along its view axis, offset along its right and up, and faces it', () => {
     const c = camera()
     c.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2) // looking down -x
-    const o = placeInView(
-      {
-        rect: { x: 400, y: 0, width: 400, height: 300 },
-        canvas,
-        camera: c,
-        distance: 5,
-      },
-      out(),
-    )
+    const o = place({ x: 400, y: 0, width: 400, height: 300 }, c, 5)
     const h = visibleHeight(5)
     const w = h * (800 / 600)
     // from (0, 0, 5): forward is -x, right is -z, up is +y
     expect(o.position.x).toBeCloseTo(-5)
     expect(o.position.z).toBeCloseTo(5 - w / 4)
     expect(o.position.y).toBeCloseTo(h / 4)
-    expect(o.quaternion.equals(c.quaternion)).toBe(true)
+    expect(o.quaternion.angleTo(c.quaternion)).toBeCloseTo(0)
+  })
+
+  it("a parented camera: the parent's transform is in the result, since the world matrix is used", () => {
+    const c = camera()
+    const rig = new Group()
+    rig.position.set(10, 0, 0)
+    rig.add(c)
+    const o = place({ x: 0, y: 0, ...canvas }, c, 5)
+    expect(o.position.x).toBeCloseTo(10)
+    expect(o.position.z).toBeCloseTo(0)
+  })
+
+  it('a camera moved since the last frame is read where it is now, not where it was', () => {
+    const c = camera()
+    c.updateMatrixWorld()
+    c.position.set(0, 3, 5)
+    const o = place({ x: 0, y: 0, ...canvas }, c, 5)
+    expect(o.position.y).toBeCloseTo(3)
   })
 
   it('writes in place and returns the same object; a second call with another rect overwrites', () => {
