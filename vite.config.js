@@ -18,9 +18,10 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: 'src/index.js',
+      // two bundles: the package and its demos (src/demos.js), so a site that imports no demo carries none
+      entry: { index: 'src/index.js', demos: 'src/demos.js' },
       formats: ['es'],
-      fileName: 'index',
+      fileName: (format, name) => `${name}.js`,
     },
     rollupOptions: {
       external,
