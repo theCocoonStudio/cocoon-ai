@@ -8,14 +8,14 @@ import { Mesh, OrthographicCamera, PlaneGeometry, Scene } from 'three/webgpu'
  * (`updateUniforms({ velocity: { value: texture } })`) without touching the
  * material.
  *
- * `clear` is whether the renderer may clear the target before this pass. The
- * two force passes add into the velocity advection just wrote, so they render
- * with autoClear off and restore it; with it on, the renderer clears the
- * target first and the advected velocity is lost (the 2D hook did exactly
- * that until the port of 2026-10-06, measured in the browser test). The toggle
- * is synchronous and local: read, set, render into our own target, restore;
- * nothing else runs between. `render(renderer, false)` leaves the renderer's
- * options alone for a consumer who manages them itself.
+ * `clearTarget` is whether the pass clears its target itself before drawing,
+ * through the renderer's manual clear, which ignores the autoClear options.
+ * It is for a pass that does not write every texel: the mesh force draws a
+ * mesh's footprint into a target of its own. Every other pass writes every
+ * texel of its target, so what the renderer's autoClear is set to makes no
+ * difference to it. No pass reads or writes a renderer option, so the hook
+ * behaves the same under any consumer that manages the renderer, drei's View
+ * included (Izzy's review of the port, 2026-10-07).
  */
 export class ShaderPass {
   #fbo
@@ -25,7 +25,7 @@ export class ShaderPass {
   #geometry
   #mesh
   #camera
-  #clear
+  #clearTarget
   constructor({
     material,
     inputs = {},
@@ -34,11 +34,11 @@ export class ShaderPass {
     fbo = null,
     children,
     onDispose,
-    clear = true,
+    clearTarget = false,
   }) {
     this.material = material
     this.#inputs = inputs
-    this.#clear = clear
+    this.#clearTarget = clearTarget
     if (geometry) {
       this.#geometry = typeof geometry === 'function' ? geometry() : geometry
     } else if (geometry !== null) {
@@ -133,14 +133,11 @@ export class ShaderPass {
     }
   }
 
-  render(renderer, setRendererOptions = true) {
-    const toggle = !this.#clear && setRendererOptions
-    const autoClear = renderer.autoClear
-    if (toggle) renderer.autoClear = false
+  render(renderer) {
     renderer.setRenderTarget(this.#fbo)
+    if (this.#clearTarget) renderer.clear()
     renderer.render(this.scene, this.#camera)
     renderer.setRenderTarget(null)
-    if (toggle) renderer.autoClear = autoClear
     return this
   }
 }

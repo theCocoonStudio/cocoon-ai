@@ -25,7 +25,7 @@ props.2: viscousIterations — integer, optional, default config.fluid.viscousIt
 props.3: viscous — number, optional, default config.fluid.viscous; the viscosity coefficient
 props.4: isViscous — boolean, optional, default config.fluid.isViscous; run the diffusion solve
 props.5: forceValue — number, optional, default config.fluid.forceValue; scales the force callback's force
-props.6: forceSize — number, optional, default config.fluid.forceSize; the force quad's radius, cells, when the callback gives none
+props.6: forceSize — number, optional, default config.fluid.forceSize; the pointer force's radius, cells, when the callback gives none
 props.7: resolution — number, optional, default config.fluid.resolution; the fields' size as a fraction of the viewport
 props.8: runEvery — integer > 0, optional, default config.fluid.runEvery; step every n frames
 props.9: dt — number, optional, default config.fluid.dt; the time step per simulation step
@@ -38,7 +38,6 @@ props.15: fboWidth, fboHeight — integers, optional; fixed field size, overridi
 props.16: fboOpts — RenderTarget options, optional, default a module constant { type: HalfFloatType, format: RGFormat }; referentially stable or the targets rebuild each render
 props.17: outputFboOpts — RenderTarget options, optional, default a module constant { type: HalfFloatType }
 props.18: manual — boolean, optional, default false; no stepping in the frame loop after the warm-up; the caller steps through the returned render
-props.22: setRendererOptionsInternally — boolean, optional, default true; the two force passes toggle the renderer's autoClear around their own render; false leaves the renderer's options to the app
 props.19: priority — number, optional, default -1; useFrame's priority for the step
 props.20: pause — boolean, optional, default false; auto mode only
 props.21: pauseRef, manualRef — RefObject<boolean>, optional; the imperative forms of pause and manual
@@ -110,8 +109,8 @@ handle: none
 frame.mode: internal
 frame.args: priority (props.19), default -1
 frame.1: five warm-up steps on mount regardless of manual or pause, so every program compiles and every target allocates up front
-frame.2: then, unless manual or paused, one step every runEvery frames: advection, force (pointer or mesh), diffusion when isViscous, divergence, pressure solve, projection, output
-frame.3: the two force passes render with autoClear off and restore it, synchronously, nothing else running between: they add into the velocity advection just wrote; off when props.22 is false
+frame.2: then, unless manual or paused, one step every runEvery frames: the mesh force into its own target when forceMesh, advection with the force (the pointer's bump in its fragment, the mesh's sampled), diffusion when isViscous, divergence, pressure solve, projection, output
+frame.3: no pass reads or writes a renderer option: every pass writes every texel of its target, and the mesh force's target is cleared by the renderer's manual clear before its draw
 frame.4: the wall is drawn after the quad of every pass that writes velocity or pressure, when isBounce
 frame.writes-react: never
 frame.invalidate: not needed

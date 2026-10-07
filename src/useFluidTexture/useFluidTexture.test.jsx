@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useEffect } from 'react'
 import ReactThreeTestRenderer from '@react-three/test-renderer'
-import { Material, NodeMaterial } from 'three/webgpu'
+import { BoxGeometry, Material, Mesh, NodeMaterial } from 'three/webgpu'
 import { useFluidTexture } from './useFluidTexture.js'
 
 // The hook in @react-three/test-renderer. Its GL is a mock of the legacy
@@ -40,6 +40,8 @@ async function mount(props = {}) {
   const targets = []
   vi.spyOn(gl, 'setRenderTarget').mockImplementation((t) => targets.push(t))
   vi.spyOn(gl, 'render').mockImplementation(() => {})
+  if (!gl.clear) gl.clear = () => {}
+  vi.spyOn(gl, 'clear').mockImplementation(() => {})
   return { renderer, gl, targets }
 }
 
@@ -178,8 +180,8 @@ describe('useFluidTexture', () => {
     const { renderer } = await mount({ forceCallbackRef: { current: fc } })
     const disposed = vi.spyOn(Material.prototype, 'dispose')
     await renderer.unmount()
-    // eight passes plus the four walls' materials; the Probe's own basic material is fiber's and counts too
-    expect(disposed.mock.calls.length).toBeGreaterThanOrEqual(12)
+    // seven passes plus the four walls' materials; the Probe's own basic material is fiber's and counts too
+    expect(disposed.mock.calls.length).toBeGreaterThanOrEqual(11)
   })
 
   it('refuses the legacy renderer at mount, naming the WebGPU renderer', async () => {
@@ -195,33 +197,58 @@ describe('useFluidTexture', () => {
     }
   })
 
-  it('renders the two force passes with autoClear off, so the force adds into the advected velocity, and every other pass with it on', async () => {
+  it("never reads or writes the renderer's autoClear, and without a mesh force never clears: the pointer force is part of the advection pass", async () => {
     const { renderer, gl, targets } = await mount({
       forceCallbackRef: { current: fc },
       isViscous: false,
     })
-    const autoClearAtRender = []
-    gl.render.mockImplementation(() => autoClearAtRender.push(gl.autoClear))
+    const touched = []
+    Object.defineProperty(gl, 'autoClear', {
+      configurable: true,
+      get: () => touched.push('read'),
+      set: () => {
+        touched.push('wrote')
+      },
+    })
     await renderer.advanceFrames(1, 16)
-    // one step: advection (on), force (off), divergence (on), 32 poisson (on), pressure (on), output (on)
-    expect(autoClearAtRender[1]).toBe(false)
-    expect(autoClearAtRender.filter((v) => v === false)).toHaveLength(1)
-    expect(gl.autoClear).toBe(true)
-    void targets
+    expect(targets.length).toBeGreaterThan(0)
+    expect(touched).toEqual([])
+    expect(gl.clear).not.toHaveBeenCalled()
     await renderer.unmount()
   })
 
-  it('with setRendererOptionsInternally false, never touches autoClear', async () => {
-    const { renderer, gl } = await mount({
-      forceCallbackRef: { current: fc },
+  it("with a mesh force, draws the mesh into a target of its own, cleared through the manual clear first, then advection; the renderer's options still untouched", async () => {
+    const forceMesh = new Mesh(new BoxGeometry())
+    const { renderer, gl, targets } = await mount({
+      forceMesh,
       isViscous: false,
-      setRendererOptionsInternally: false,
+      poissonIterations: 4,
     })
-    const seen = []
-    gl.render.mockImplementation(() => seen.push(gl.autoClear))
+    const order = []
+    gl.setRenderTarget.mockImplementation((t) => {
+      targets.push(t)
+      if (t) order.push('target')
+    })
+    gl.clear.mockImplementation(() => order.push('clear'))
+    gl.render.mockImplementation(() => order.push('render'))
+    const touched = []
+    Object.defineProperty(gl, 'autoClear', {
+      configurable: true,
+      get: () => touched.push('read'),
+      set: () => {
+        touched.push('wrote')
+      },
+    })
+    targets.length = 0
     await renderer.advanceFrames(1, 16)
-    expect(seen.length).toBeGreaterThan(0)
-    expect(seen.every((v) => v === true)).toBe(true)
+    // mesh force (its own target, cleared), advection, divergence, 4 poisson, pressure, output: 9 renders, one clear, first
+    expect(order.slice(0, 4)).toEqual(['target', 'clear', 'render', 'target'])
+    expect(order.filter((o) => o === 'clear')).toHaveLength(1)
+    expect(order.filter((o) => o === 'render')).toHaveLength(9)
+    const first = targets.find((t) => t !== null)
+    expect(first.isRenderTarget).toBe(true)
+    expect(first).not.toBe(targets.filter((t) => t !== null)[1])
+    expect(touched).toEqual([])
     await renderer.unmount()
   })
 
@@ -232,8 +259,8 @@ describe('useFluidTexture', () => {
       poissonIterations: 4,
     })
     await renderer.advanceFrames(1, 16)
-    // advection, force, divergence, 4 poisson, pressure, output: 9 renders, each setRenderTarget twice (target, null)
-    expect(targets.filter((t) => t !== null)).toHaveLength(9)
+    // advection (the force in it), divergence, 4 poisson, pressure, output: 8 renders, each setRenderTarget twice (target, null)
+    expect(targets.filter((t) => t !== null)).toHaveLength(8)
     await renderer.unmount()
   })
 

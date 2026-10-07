@@ -73,7 +73,7 @@ export const config = /* @__PURE__ */ Object.freeze({
     viscous: 30, // the viscosity coefficient
     isViscous: true,
     forceValue: 1, // the force callback's force is scaled by this
-    forceSize: 100, // the force quad's radius, cells
+    forceSize: 100, // the pointer force's radius, cells
     resolution: 0.5, // the fields' size as a fraction of the viewport, when fboWidth/fboHeight are unset
     runEvery: 1, // step every n frames
     dt: 0.014, // the time step, per simulation step
