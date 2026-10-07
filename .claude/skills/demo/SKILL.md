@@ -9,15 +9,15 @@ Every component in this package is a demo for the site, which wraps it in its ow
 
 ## What a demo is
 
-- **Markup placed in a div** on a site demo page. It fills its container, never taller than the viewport minus the site's nav; no overflow, border, margin or padding of its own. The settings are a sidebar beside it, toggled open or closed, scrolling vertically when taller than the demo.
-- **No Canvas.** The site has one Canvas, viewport-sized and fixed behind the whole site, and passes a tunnel (`tunnel-rat`) as the `tunnel` prop. The demo returns its markup plus its fiber root inside `<tunnel.In>`, nothing wrapped around it; the site renders `<tunnel.Out />` into a full-viewport View in its Canvas.
+- **Markup placed in a div** on a site demo page. It fills its container, never taller than the viewport minus the site's nav; no overflow, border, margin or padding of its own. The settings are a sidebar beside it, open or closed through the `openSettings` prop or its toggle button, scrolling vertically when taller than the demo.
+- **No Canvas.** The site has one Canvas, viewport-sized and fixed behind the whole site, and passes a tunnel (`tunnel-rat`) as the `tunnel` prop. The markup is literally `<div><tunnel.In><group /></tunnel.In><div className="settings" /></div>`: the container, the fiber root through the tunnel, the settings beside it; the site renders `<tunnel.Out />` into a full-viewport View in its Canvas.
 - **No scissor, no View.** The scene places and sizes its objects to cover the container's rect at the camera's depth, from the rect and the camera, by its own maths. Anything sized from a viewport (the fluid's targets) is sized from the div, not the Canvas.
 - **The root is exposed** through `ref`: the scene's root group, traversable with fiber or three, so the site can interact with the demo (hover, menu items).
 - **Styling props:** `demoContainerClass`, `settingContainerClass` and their `style` counterparts, appended and overriding internals, and `theme`, which lands as a data attribute the site's CSS keys on. The markup ships unstyled with stable class names; responsive defaults are settled with Izzy once.
 
 ## Two parts
 
-- **The wrapper, `Demo` (`src/Demo/`)**, shared, built through the spec skill with its own tests: the container, the fiber root as children, and the settings sidebar, toggled by a button, keyboard-reachable, its inputs rendered from the schema with the input type and the accessibility attributes that follow each kind.
+- **The wrapper, `Demo` (`src/Demo/`)**, shared, built through the spec skill with its own tests: the container, the children as given, and the settings sidebar, keyboard-reachable, its inputs rendered from the schema with the input type and the accessibility attributes that follow each kind. The settings state comes from `useSettings(schema)`, which the demo calls and passes to both `Demo` and its scene, so the children stay plain JSX.
 - **The demo, `src/<Name>/<Name>.demo.jsx`**, one per component: the scene Izzy specifies plus its schema, handed to `Demo`. Exported from the demos entry, `cocoon-ai/demos` (`src/demos.js`), never from the main entry.
 
 ## The schema
