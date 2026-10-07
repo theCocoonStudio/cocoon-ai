@@ -120,10 +120,6 @@ assets/                       the studio's marks, produced by the scripts beside
   icons/                      the UI icon set: shapes.js in, 26 SVGs and a contact sheet out
   logo/                       the mark, favicons, wordmark and lockups
 .claude/skills/               the skills: react-component-from-spec builds a component from its spec; pr-review is how a PR is reviewed here, by either author; walkthrough is how an author walks the reviewer through one, a screen at a time; demo builds a component's demo for the site
-.claude/skills/               the skills: react-component-from-spec builds a component from its spec; pr-review is how a PR is reviewed here, by either author; walkthrough is how an author walks the reviewer through one, a screen at a time
-=======
-.claude/skills/               the skills: react-component-from-spec builds a component from its spec; pr-review is how a PR is reviewed here, by either author; demo builds a component's demo for the site
->>>>>>> dc4b26a (skill: demo, the component's demo for the site: DOM markup filling a div, a schema-driven settings popup in a shared Demo wrapper, the scene through a tunnel into the site's one Canvas, no scissor, the root exposed by ref; material, map, lights and effects blocks for canvas scenes (Izzy's design, REPL, 2026-10-07))
 ```
 
 ## To reproduce
