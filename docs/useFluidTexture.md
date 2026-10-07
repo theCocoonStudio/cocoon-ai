@@ -111,3 +111,31 @@ The passes sample their inputs at computed coordinates. A texture node flips y f
 `fields` are the fields' current textures; after a size change they are new texture objects, read the getters when used.
 
 The scheme is Stam's stable fluids as Harris describes it for the GPU: Harris, M. J., "Fast Fluid Dynamics Simulation on the GPU", _GPU Gems_ chapter 38, NVIDIA, 2004, free to read at <https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu>. Section 38.3 states the boundary conditions above, and Listing 38-5 is the one fragment program for both, which `boundary.js` is, as a node material on line segments. The passes themselves are in `tsl/passes.js`, one TSL function per GLSL file the WebGL version had.
+
+## Demo
+
+`src/useFluidTexture/useFluidTexture.demo.jsx`, exported as `FluidTextureDemo` from `cocoon-ai/demos`, the demo skill's first run. It renders the `Demo` wrapper (`docs/Demo.md`) with the fluid's settings and sends its scene through the site's tunnel into the site's one Canvas; it never renders a Canvas.
+
+```jsx
+import tunnel from 'tunnel-rat'
+import { FluidTextureDemo } from 'cocoon-ai/demos'
+
+const t = tunnel()
+// in the Canvas, inside a full-viewport View: <t.Out />
+// on the demo page, in the div the demo fills:
+<FluidTextureDemo tunnel={t} ref={rootRef} openSettings />
+```
+
+| prop       | default  |                                                                                                      |
+| ---------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `tunnel`   | required | a tunnel-rat tunnel; the site renders its `Out` in the Canvas                                        |
+| `distance` | 1        | how far in front of the camera the plane sits, world units; the plane scales so the picture does not |
+| `ref`      |          | the scene's root group, for the site to traverse or raycast                                          |
+
+The rest of the props are the wrapper's: `openSettings`, `onOpenSettingsChange`, the class and style props, `theme`, `label`.
+
+**The scene.** One plane facing the site's perspective camera, placed and sized every frame so it covers the demo's rectangle of the page exactly, with no scissor and no viewport change (`src/utils/placeInView.js`): the rectangle is measured on the DOM side, on size change and on scroll, and the plane follows. The fluid's targets are sized from that rectangle, not the Canvas. The pointer is mapped from the Canvas into the rectangle, so a stroke across the demo moves the fluid under the pointer. The Canvas is assumed to fill the viewport, as the site's does.
+
+**The settings**, in `fluidDemoSchema`, defaults from `cocoon.config.js` where the hook has one: the hook's `forceValue`, `forceSize`, `resolution` (remounts), `poissonIterations`, `isViscous` with `viscous`, `dt`, `isBounce`, `BFECC`; a `material` select, basic or standard (remounts); a `map` select for where the picture goes, `color`, `bump` or `alpha`, alpha adding a background plane behind with its own `background` colour; `color`, and under standard `roughness`, `metalness`, `emissive`; under standard the lights: `environment`, none, the procedural room, or one of the eighteen in `@pmndrs/assets`, loaded only when picked and set on the material, never on the site's scene; `envMapIntensity`; `directionalLight` with `lightIntensity`, `lightColor` and `lightPosition`.
+
+**Contracts on the site.** The Canvas fills the viewport and is fixed. The scene's directional light is a light in the site's scene: every lit material in the Canvas sees it while the demo is mounted; unlit materials, the nav logo's basic material among them, do not. Bump under the basic material has no lighting to show it, so that pairing shows the colour map instead. Effects are not in this version: the `EFFECTS` enum exists in the demos entry, and the chain comes with the decision on who renders it in a shared Canvas.
