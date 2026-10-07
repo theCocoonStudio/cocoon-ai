@@ -1,5 +1,5 @@
 ---
-name: assisted-pr-review
+name: review
 description: "Walk the reviewer through a pull request, one screen at a time, as its author: a map of the change that points at lines and tests, never a substitute for the reviewer's own verification. Arguments: <repo> <number>, the repo as its slug after cocoon- (ai, ml, relations, ai-records)."
 ---
 
@@ -7,7 +7,7 @@ description: "Walk the reviewer through a pull request, one screen at a time, as
 
 The author guides the reviewer through a PR in manageable chunks, in the order that makes the change easiest to verify. This is the author's map; the reviewer's floor is `pr-review`, run by the reviewer, and nothing here replaces it. Every claim the map makes points at a line, a test or a measurement, never at itself, so the map cannot steer: it can only make the reading faster.
 
-Invoked as `/assisted-pr-review <repo> <number>` by the PR's author, after the self-review and once the reviewer says they are reading. `<repo>` is the slug after `cocoon-`: `ai`, `ml`, `relations`, `ai-records`.
+Invoked as `/review <repo> <number>` by the PR's author, after the self-review and once the reviewer says they are reading. `<repo>` is the slug after `cocoon-`: `ai`, `ml`, `relations`, `ai-records`.
 
 ## The pace
 
