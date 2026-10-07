@@ -25,5 +25,5 @@ A chunk is one screen: about thirty lines of prose, or one snippet with its one-
 
 - The map follows the code's shape, not the author's story: a reviewer reading only the map and the diff would land on the same places as one reading the diff alone, sooner.
 - A number in the map is a measured one, with its date and machine, or it is not in the map.
-- The reviewer's questions are answered in place and, if an answer changes anything, the change is a commit on the PR and the map says so.
+- The reviewer's questions are answered in place. A change the walkthrough calls for is made and pushed to the PR as it comes up, with the map saying so, so no second review round is needed and any issue with the change shows at once (Izzy, 2026-10-07).
 - When the walkthrough ends, the author says so and stops; the review and the decision are the reviewer's.
