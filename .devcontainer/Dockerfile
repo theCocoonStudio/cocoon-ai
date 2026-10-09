@@ -13,10 +13,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates curl git gh jq less nano procps sudo \
   iptables ipset iproute2 dnsutils aggregate \
   chromium \
+  python3-numpy \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 # chromium: the headless browser `npm run export:logo-group` screenshots its
 # WebGL render with (SwiftShader, no GPU), driven by puppeteer-core from npm.
 # Nothing else in the sandbox uses it.
+# python3-numpy: Debian's numpy, for cocoon-ml's in-context apparatus at the
+# derived model size (a cell takes hours on the scalar autograd and minutes on
+# arrays). From Debian, not PyPI, so no new host and no third-party check under
+# the installs rule; merging this line is the decision the cocoon-ml README
+# reserves for Izzy (standard library until a GPU is needed).
 
 # Global npm installs go somewhere the non-root user owns.
 RUN mkdir -p /usr/local/share/npm-global && chown -R node:node /usr/local/share
