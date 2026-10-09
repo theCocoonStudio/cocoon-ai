@@ -120,7 +120,7 @@ assets/                       the studio's marks, produced by the scripts beside
   icons/                      the UI icon set: shapes.js in, 26 SVGs and a contact sheet out
   logo/                       the mark, favicons, wordmark and lockups
 .claude/skills/               the skills: react-component-from-spec builds a component from its spec; pr-review is how a PR is reviewed here, by either author; walkthrough is how an author walks the reviewer through one, a screen at a time; demo builds a component's demo for the site
-.claude/agents/               Claude's direct reports (Izzy, 2026-10-08): Methuselah (the verifier) reads and reports with evidence, Gargamel (the builder) writes code and tests to a spec; both without network or executor by their tool lists (no Bash, PowerShell, Monitor, WebFetch, WebSearch, Skill, ToolSearch, Agent, no MCP), fresh every run, the record as their memory; Claude runs what they write and verifies what they report
+.claude/agents/               Claude's direct reports (Izzy, 2026-10-08): Methuselah (the verifier) reads and reports with evidence, Gargamel (the builder) writes code and tests to a spec, Buridan (the choice finder, 2026-10-09) lists every choice in one artifact that nothing forces; all without network or executor by their tool lists (no Bash, PowerShell, Monitor, WebFetch, WebSearch, Skill, ToolSearch, Agent, no MCP), fresh every run, the record as their memory; Claude runs what they write and verifies what they report
 ```
 
 ## To reproduce
