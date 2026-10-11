@@ -40,6 +40,10 @@ ENV EDITOR=nano VISUAL=nano
 COPY init-firewall.sh /usr/local/bin/init-firewall.sh
 COPY configs/ /usr/local/share/cocoon/configs/
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# The token readers: a gh wrapper ahead of /usr/bin/gh on the PATH and git's credential helper,
+# both reading /run/cocoon/token (the host's re-minted App token) at each call; see run.sh.
+COPY gh-wrapper.sh /usr/local/bin/gh
+COPY cocoon-git-credential /usr/local/bin/cocoon-git-credential
 # Gemini CLI system settings, read before the user's own and root-owned, so the agent cannot
 # change them. Each line is a gate kept or a leak closed; none is a convenience:
 #   general.enableAutoUpdate false      the pin above is the update; nothing updates itself
@@ -49,7 +53,7 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 # extensions are ignored and auto-approval may not edit there. The first `cocoon gemini`
 # asks once to trust /workspace; the answer lives in the gemini config volume.
 COPY gemini-settings.json /etc/gemini-cli/settings.json
-RUN chmod 0755 /usr/local/bin/init-firewall.sh /usr/local/bin/entrypoint.sh \
+RUN chmod 0755 /usr/local/bin/init-firewall.sh /usr/local/bin/entrypoint.sh /usr/local/bin/gh /usr/local/bin/cocoon-git-credential \
   && echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall \
   && chmod 0440 /etc/sudoers.d/node-firewall
 

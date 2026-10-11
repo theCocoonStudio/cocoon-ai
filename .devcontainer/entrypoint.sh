@@ -18,20 +18,24 @@ AGENT=claude
 echo "configs: base, $AGENT${CONFIGS[*]:+, ${CONFIGS[*]}}"
 sudo /usr/local/bin/init-firewall.sh "$AGENT" "${CONFIGS[@]}"
 
-# GH_TOKEN, if set, is a GitHub App installation token minted on the host by run.sh
-# (1-hour lifetime) or a fine-grained PAT. It lives only in this process's env; nothing is
-# written to disk. The App's private key is never mounted here.
-if [ -n "${GH_TOKEN:-}" ]; then
-  gh auth setup-git >/dev/null
+# The GitHub App token is a file the host writes and re-mints every fifty minutes (run.sh):
+# /run/cocoon/token, mounted read-only, nothing in this container's environment and nothing on
+# its disk. The gh wrapper (/usr/local/bin/gh) and git's credential helper
+# (/usr/local/bin/cocoon-git-credential), both in the image, read the file at each call, so a
+# session outlives the token's hour. GH_TOKEN in the environment (a VS Code start through
+# devcontainer.json, or a fine-grained PAT) still works, without the refresh. The App's private
+# key is never mounted here.
+TOKEN_FILE=/run/cocoon/token
+git config --global credential.helper '!/usr/local/bin/cocoon-git-credential'  # in place of `gh auth setup-git`, which would hand git a token read once
+if [ -s "$TOKEN_FILE" ]; then
+  echo "gh: GitHub App installation token from $TOKEN_FILE, re-minted by the host every fifty minutes (this one expires $(cat /run/cocoon/expires_at 2>/dev/null || echo '?')); repos: $(gh api installation/repositories -q '[.repositories[].full_name] | join(", ")' 2>/dev/null || echo '?')"
+elif [ -n "${GH_TOKEN:-}" ]; then
   case "$GH_TOKEN" in
-    ghs_*) # installation token: no /user endpoint, list what it can reach instead
-      echo "gh: GitHub App installation token; repos: $(gh api installation/repositories -q '[.repositories[].full_name] | join(", ")' 2>/dev/null || echo '?')"
-      echo "gh: token expires within 1 hour of container start; restart run.sh for a new one" ;;
-    *)
-      echo "gh: authenticated as $(gh api user -q .login 2>/dev/null || echo '?')" ;;
+    ghs_*) echo "gh: GitHub App installation token from the environment, no refresh (expires within an hour); repos: $(gh api installation/repositories -q '[.repositories[].full_name] | join(", ")' 2>/dev/null || echo '?')" ;;
+    *) echo "gh: authenticated as $(gh api user -q .login 2>/dev/null || echo '?')" ;;
   esac
 else
-  echo "gh: no GH_TOKEN set; git push / gh pr will not work this session"
+  echo "gh: no token ($TOKEN_FILE absent, GH_TOKEN unset); git push / gh pr will not work this session"
 fi
 
 # The Gemini agent authenticates to its API with GEMINI_API_KEY, passed in by run.sh the
@@ -68,12 +72,12 @@ if [ -f package-lock.json ]; then
 fi
 
 # cocoon-ai-records (exports, the logs), cocoon-ml and cocoon-relations are cloned beside
-# the workspace on the first start that has a token; a repo that does not exist yet, or
+# the workspace on the first start that has a token (the file or the variable); a repo that does not exist yet, or
 # that the App is not installed on, fails its clone and is retried next start. /home/node is not a volume: a fresh container
 # re-clones, and local branches not pushed are lost (the records convention says so).
 for repo in cocoon-ai-records cocoon-ml cocoon-relations; do
   dir=/home/node/$repo
-  if [ -n "${GH_TOKEN:-}" ] && [ ! -d "$dir/.git" ]; then
+  if { [ -s "$TOKEN_FILE" ] || [ -n "${GH_TOKEN:-}" ]; } && [ ! -d "$dir/.git" ]; then
     echo "cloning $repo (first start in this container)..."
     gh repo clone "theCocoonStudio/$repo" "$dir" -- -q || echo "clone of $repo failed; will retry next start"
   fi
