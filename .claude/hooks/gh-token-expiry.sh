@@ -16,6 +16,7 @@ esac
 age=$(ps -o etimes= -p 1 2>/dev/null | tr -d ' ')
 case "$age" in
   ''|*[!0-9]*) exit 0 ;;
+  *) ;;
 esac
 
 limit=${GH_TOKEN_WARN_SECONDS:-3000}

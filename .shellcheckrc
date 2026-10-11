@@ -8,7 +8,10 @@ enable=avoid-nullary-conditions    # [ "$x" ] where the test meant was -n or -z
 enable=add-default-case            # a case without *) swallows the value nobody expected
 enable=check-unassigned-uppercase  # an UPPERCASE name used but never assigned (a typo, or the environment read by accident)
 enable=deprecate-which             # `which` is not POSIX and is unreliable; command -v is
-enable=useless-use-of-cat          # cat file | cmd, a pipeline where a redirect was meant
+# The version is 0.9.0 everywhere: Debian bookworm's package in the image, the runner's
+# preinstalled copy (ubuntu-24.04), and what the agent lints with; a check a newer release
+# adds is not available until all three move. (useless-use-of-cat is 0.10.0's name for the
+# default check SC2002, which 0.9.0 runs anyway.)
 # Not turned on: check-extra-masked-returns flags every $(a | b) and $(a) inside another command
 # (31 here). The class it names, a pipeline's status hiding an earlier failure, is covered by
 # `set -o pipefail` in every script, which tests/lint.sh requires.

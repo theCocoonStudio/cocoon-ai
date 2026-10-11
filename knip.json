@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["assets/**/explorations/*.mjs", "src/**/*.browser-entry.jsx"],
-  "project": ["src/**/*.{js,jsx}", "assets/**/*.{js,mjs}", "*.{js,mjs}"]
+  "project": ["src/**/*.{js,jsx}", "assets/**/*.{js,mjs}", "*.{js,mjs}"],
+  "ignoreBinaries": ["shellcheck"]
 }
