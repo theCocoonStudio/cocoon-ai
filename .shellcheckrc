@@ -1,0 +1,15 @@
+# ShellCheck's rules for every script here, read by shellcheck wherever it runs (tests/lint.sh, the
+# CI step, the editor). Every class of mistake we have made that a linter can see is a rule the
+# build refuses (Izzy, 2026-10-11: "we never write unlinted code"). The default checks cover the
+# one that started this, SC2115 (a rm -rf on a path that can collapse to /). The optional checks
+# turned on, each one a class:
+enable=check-set-e-suppressed      # `set -e` silently off inside a condition or a && chain
+enable=avoid-nullary-conditions    # [ "$x" ] where the test meant was -n or -z
+enable=add-default-case            # a case without *) swallows the value nobody expected
+enable=check-unassigned-uppercase  # an UPPERCASE name used but never assigned (a typo, or the environment read by accident)
+enable=deprecate-which             # `which` is not POSIX and is unreliable; command -v is
+enable=useless-use-of-cat          # cat file | cmd, a pipeline where a redirect was meant
+# Not turned on: check-extra-masked-returns flags every $(a | b) and $(a) inside another command
+# (31 here). The class it names, a pipeline's status hiding an earlier failure, is covered by
+# `set -o pipefail` in every script, which tests/lint.sh requires.
+severity=style

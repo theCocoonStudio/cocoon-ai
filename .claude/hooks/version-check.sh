@@ -25,5 +25,6 @@ for arg in "${!PACKAGES[@]}"; do
     out+="version-check: $pkg pinned $pinned, latest $latest: a bump is a PR to .devcontainer/Dockerfile with the changelog read"$'\n'
   fi
 done
+command -v shellcheck >/dev/null || out+="lint-bash: shellcheck is not in this image, so Bash commands run unlinted this session; the sandbox image carries it"$'\n'
 [ -n "$out" ] && printf '%s' "$out"
 exit 0

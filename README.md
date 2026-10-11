@@ -15,8 +15,9 @@ Every `package.json` script, what it does, and where to read more.
 | `npm test`                               | vitest, once                                                                                                           |                                                        |
 | `npm run test:watch`                     | vitest, kept running                                                                                                   |                                                        |
 | `npm run lint`, `npm run lint:fix`       | eslint, report or fix                                                                                                  |                                                        |
+| `npm run lint:sh`                        | shellcheck over the hooks with `.shellcheckrc`; the same linter runs on every Bash command before it runs (the hook)   |                                                        |
 | `npm run knip`                           | unused files, exports and dependencies across the package; `knip.json` names the script entries                        |                                                        |
-| `npm run check`                          | everything a PR must pass, in order: lint, format check, knip, tests, build                                            |                                                        |
+| `npm run check`                          | everything a PR must pass, in order: lint, shell lint, format check, knip, tests, build                                |                                                        |
 | `npm run check:ci`                       | the same check with the tests on two workers, the runner's parallelism; the dry run before every PR                    |                                                        |
 | `npm run test:ci`                        | vitest, once, two workers: what CI's two cores see                                                                     |                                                        |
 | `npm run format`, `npm run format:check` | prettier, write or check                                                                                               |                                                        |
@@ -44,6 +45,8 @@ Three layers, each with its own scope, so a rule lives in one place.
 - **CI.** Runs the build on every PR and on `main`, so "the check passes" is a status on the PR rather than a claim in its body. Made a required status in the ruleset, it binds. Two more statuses guard what the build cannot see: `reviewer-policy`, who may approve whose PR (`.github/workflows/reviewer-policy.yml`), and `dependency-check`, what a lockfile change brings in: GitHub's dependency review, registry signatures and provenance, and the repo's own reader `scripts/lockfile-check.mjs`, which refuses install scripts, releases under seven days old, publisher changes and tarballs off the registry, with reviewed exceptions in `.github/dependency-allow.json`.
 
 There is no pre-commit hook. The check is one command and the review requires it; a hook would be a second copy of the same rules on two machines. If a red commit ever lands, that is the day to add one, and it would run only the fast subset: format, lint, knip.
+
+- **The shell.** Every script passes ShellCheck with [`.shellcheckrc`](.shellcheckrc), each enabled check a class of mistake we made (`npm run lint:sh`, in the check), and every Bash command the agent runs goes through the same linter first: `.claude/hooks/lint-bash.sh`, a PreToolUse hook that blocks at warning or above and hands the findings to the agent before anything runs (Izzy, 2026-10-11: "we never write unlinted code"; the guardrail's catch of an unguarded `rm -rf` is the class it started with). Without shellcheck in the image the hook allows and the session-start hook says so.
 
 ## Consuming the package
 
