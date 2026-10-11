@@ -14,10 +14,11 @@ TOOLS=(
   jq          # the command out of the hook's JSON input
   shellcheck  # the linter; absent means every command runs unlinted, named at session start
 )
-command -v jq >/dev/null || exit 0
+for tool in "${TOOLS[@]}"; do
+  command -v "$tool" >/dev/null || exit 0   # a hook that cannot run must not block every command; the gap is named at session start
+done
 cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
-command -v shellcheck >/dev/null || exit 0
 if findings=$(printf '%s\n' "$cmd" | shellcheck --shell=bash --severity=warning --format=gcc - 2>&1); then
   exit 0
 fi
