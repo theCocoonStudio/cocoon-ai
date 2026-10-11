@@ -4,7 +4,11 @@
   "image": "cocoon-ai-sandbox",
   "account": "theCocoonStudio",
   "workspace": { "repo": "theCocoonStudio/cocoon-ai" },
-  "clones": ["theCocoonStudio/cocoon-ai-records", "theCocoonStudio/cocoon-ml", "theCocoonStudio/cocoon-relations"],
+  "clones": [
+    "theCocoonStudio/cocoon-ai-records",
+    "theCocoonStudio/cocoon-ml",
+    "theCocoonStudio/cocoon-relations"
+  ],
   "profiles": ["research"],
   "agents": {
     "claude": {
@@ -15,7 +19,11 @@
       "container": "cocoon-ai-sandbox",
       "workspace_volume": "cocoon-ai-workspace",
       "config_volume": "cocoon-ai-claude-config:/home/node/.claude",
-      "env": { "CLAUDE_CONFIG_DIR": "/home/node/.claude", "DISABLE_AUTOUPDATER": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1" }
+      "env": {
+        "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+      }
     },
     "gemini": {
       "app_id": "5200600",
