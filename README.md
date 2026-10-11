@@ -143,6 +143,8 @@ This list is not complete yet; add to it as more local files turn up.
 
 ## How Claude and I work together
 
+> The sandbox described below moved to its own repository on 2026-10-11, [cocoon-agent-sandbox](https://github.com/theCocoonStudio/cocoon-agent-sandbox), reusable by any repository through one configuration file; this repository's is [`cocoon-sandbox.json`](cocoon-sandbox.json). The sections below describe the layers as they were built here and stay until `.devcontainer/` is removed in a later change, after the launcher on the box is reinstalled from that repository.
+
 Claude does most of the typing; I direct, review, and merge. The rule is that Claude never runs with more access than the task needs, and every change lands through git so it can be read before it counts.
 
 Two layers, used together:
