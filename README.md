@@ -203,6 +203,8 @@ In order, each a precondition for the one after it:
 
 Security here isn't only about trusting the sandbox or the OS. It's about knowing they're not foolproof and can be broken. Containers escape, VMs have bugs, and an agent reading untrusted content (packages, web pages) can be steered. The layers above exist so that when one fails, the next one limits what's reachable: a scoped token instead of an account, a mounted repo instead of a home directory, a PR instead of a push. Review is the last layer, and it's the one that isn't automated.
 
+One hole is known and kept, named here so it is not pretended away (records, SECURITY-EVENTS, 2026-10-11): the claude.ai account attaches a remote MCP server ("Claude Docs", at the API host) to every Claude session. Nothing in this repo declares it, no PR admitted it, and the wall cannot see it, since it rides the one host the wall must allow; it writes documents to claude.ai. Working with Claude is trusting Anthropic, and this is where that trust sits in the layers. The agent's standing rule is not to call it unless asked for a document there; the switch, if wanted, is on the account side.
+
 The security incident log and per-session transcript exports live in the private [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records) repo. Inside the sandbox it is cloned to `/home/node/cocoon-ai-records` on a container's first start, beside `cocoon-ml` and `cocoon-relations`; none is a volume, so anything not pushed is gone with the container. The workspace itself is a volume, cloned once and kept.
 
 These points shouldn't need be said. They should be salient. But they're often not, even at the Enterprise level, let alone a home office.
