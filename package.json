@@ -25,8 +25,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:sh": "shellcheck .claude/hooks/*.sh",
     "knip": "knip",
-    "check": "npm run lint && npm run format:check && npm run knip && npm test && npm run build",
+    "check": "npm run lint && npm run lint:sh && npm run format:check && npm run knip && npm test && npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets": "npm run assets:icons && npm run assets:logo",
@@ -35,7 +36,7 @@
     "export:logo": "node assets/logo/export.js",
     "export:logo-group": "node assets/logo/export-group.js",
     "test:ci": "vitest run --maxWorkers=2",
-    "check:ci": "npm run lint && npm run format:check && npm run knip && npm run test:ci && npm run build"
+    "check:ci": "npm run lint && npm run lint:sh && npm run format:check && npm run knip && npm run test:ci && npm run build"
   },
   "peerDependencies": {
     "@react-three/fiber": "^9.6.1",
