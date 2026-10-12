@@ -40,6 +40,10 @@ export default defineConfig({
     // A faster runner only makes this more conservative.
     testTimeout: 60_000,
     hookTimeout: 60_000,
-    include: ['src/**/*.test.{js,jsx}', 'assets/**/*.test.js'],
+    include: [
+      'src/**/*.test.{js,jsx}',
+      'assets/**/*.test.js',
+      'scripts/**/*.test.mjs',
+    ],
   },
 })
