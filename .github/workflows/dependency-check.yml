@@ -11,7 +11,10 @@
 #      under seven days old, a publisher change, a tarball off the registry, or an
 #      integrity that changed under the same version or is not the registry's for
 #      that version (any check includes integrity); the report is posted as a
-#      PR comment. Exceptions are reviewed lines in .github/dependency-allow.json.
+#      PR comment; the registry's answer is validated as the packument asked for
+#      before it is judged. Exceptions are reviewed lines in .github/dependency-allow.json,
+#      each naming the one rule it excuses (scripts, age, publisher, source); integrity
+#      and the registry's shape have none.
 #
 # Runs on every PR so it can be a required status in the main ruleset: a workflow
 # skipped by a path filter leaves a required status "expected" forever and blocks the
