@@ -146,63 +146,11 @@ This list is not complete yet; add to it as more local files turn up.
 
 ## How Claude and I work together
 
-> The sandbox described below moved to its own repository on 2026-10-11, [cocoon-agent-sandbox](https://github.com/theCocoonStudio/cocoon-agent-sandbox), reusable by any repository through one configuration file that lives on the host, never in a repository (`~/.config/cocoon/sandbox.json`, copied from that repository's example and edited by hand); this repository holds none. The sections below describe the layers as they were built here and stay until `.devcontainer/` is removed in a later change, after the launcher on the box is reinstalled from that repository.
-
 Claude does most of the typing; I direct, review, and merge. The rule is that Claude never runs with more access than the task needs, and every change lands through git so it can be read before it counts.
 
-Two layers, used together:
+The sandbox the agents run in moved to its own repository on 2026-10-11, [cocoon-agent-sandbox](https://github.com/theCocoonStudio/cocoon-agent-sandbox): a sealed devcontainer for coding agents, default-deny egress, no credentials inside, one configuration file that lives on the host (`~/.config/cocoon/sandbox.json`, copied from that repository's example and edited by hand) and never in a repository; this repository holds none of it since the launcher on the box was reinstalled from there. That repository's README is the implementation doc: the box, the launcher that runs only a reviewed ref, the identity (a GitHub App per agent, the key never inside the container), the container, the wall and the hooks, every security line explained. The layers as they were first built here are in this file's history before 2026-10-11 and in the records. Sessions start with `cocoon claude` or `cocoon gemini` on the box. Next is the gateway, [cocoon-gateway](https://github.com/theCocoonStudio/cocoon-gateway): one host in the wall instead of a list, a policy table that refuses what the rules forbid, and no credential of any kind inside the container.
 
-### Good (temporary): container on my Mac
-
-Claude Code runs inside the sandbox defined in [`.devcontainer/`](.devcontainer/), via Colima (open source, no app, only this repo mounted into the VM):
-
-- non-root user, only `/workspace` (this repo) visible
-- outbound network default-deny; the allowlist is GitHub plus the hosts lists in [`.devcontainer/configs/`](.devcontainer/configs/), one host per line with its purpose: `base.hosts` for every container, the agent's own model and login hosts, and named configs that are off by default and turned on for one session from the host command line, `cocoon claude -- --research` for the four read-only reading hosts of the literature work (arXiv and its API, Semantic Scholar's API, nLab, the Stanford Encyclopedia); two of those sit on shared CDN addresses, a cost the list states beside them
-- no host secrets mounted; GitHub access is a fine-grained PAT scoped to this one repo, passed in the environment for the session only
-- `node_modules` and Claude's own state live in Docker volumes, not in the repo
-
-This was the bridge while the dedicated machine came online. Same sandbox, weaker host.
-
-### Best: dedicated hardware, same container
-
-A separate Debian machine that exists only to run the agent. The container above runs there too; the box is the outer wall, the container is the inner one.
-
-- nothing of mine on the box except the GitHub App's private key and the launcher; no clone of this repo, and the login user has no git, so nothing the agent writes exists on the host
-- Claude Code runs only inside the `.devcontainer/` sandbox, started with `cocoon claude` (and Gemini CLI with `cocoon gemini`, see below): a launcher installed once by hand from [`.devcontainer/host/cocoon-launch.sh`](.devcontainer/host/cocoon-launch.sh) into `~/bin`, which downloads `main` from GitHub as a tarball and runs main's reviewed `.devcontainer/` from that download. The agent's working tree is a container volume the host never reads. Why: when the host built from a mounted tree the agent writes, a restart executed unreviewed sandbox scripts twice (the records' security log, 2026-09-03 and 2026-10-02), and a mounted `.git` would have let git hooks and config do the same
-- nothing in the launcher or the run script is configurable from the environment: every value is hardcoded and a change is a PR, so what runs is always what was reviewed. The agent CLIs are pinned in the Dockerfile; a session-start hook reports when npm has a newer release, and the bump is a PR with the changelog read
-- non-sudo login user that only runs the container; a separate account, used only for maintenance, is the sole sudoer. No Docker on the box: the container runs under rootless podman, so there is no privileged daemon in the path and container root is an unprivileged subordinate uid on the host
-- reached from my Mac over ssh, or remote desktop via the Windows App: directly on the LAN at home, and from outside through Tailscale, which terminates on the NAS and routes to the box locally. The box itself runs no Tailscale. Wake-on-LAN from an always-on LAN device
-- `main` ruleset: PRs only, one approving review, no force-push, no bypass. Authors can't approve their own PRs, so Claude reviews mine and I review Claude's.
-
-### Auth: a GitHub App, not a PAT
-
-Claude acts on GitHub as its own bot user, `cocoon-claude[bot]`, through a GitHub App installed on this org for `cocoon-ai`, `cocoon-ai-records`, `cocoon-ml` and `cocoon-relations` only. The App's private key stays on the box; it is never mounted into the container.
-
-`run.sh` signs a short-lived JWT with the key, exchanges it for a 1-hour installation token, and passes only that token into the container as `GH_TOKEN`. A session that outlives the token loses push/PR access until `run.sh` is started again. Nothing is written to disk inside the sandbox.
-
-Commits, branches, and PRs made by Claude are attributed to the bot, so I can review and approve them as a different user, which the old PAT on my own account never allowed.
-
-### Two agents, one sandbox
-
-Gemini joined in October 2026. Same image, same rules, and nothing shared that would blur who did what:
-
-- a second GitHub App, `cocoon-gemini`, with its own private key on the box and its own bot user, so a review or approval by one agent is never mistakable for the other's; the `reviewer-policy` status says whose approval counts for whom, and Gemini's counts for nobody's
-- `cocoon gemini` mints that App's token the same way, reads the Gemini API key from one line of `~/.tokens` (read, never sourced) into the container's environment only, and starts the container as `cocoon-gemini[bot]` with its own workspace and config volumes; both agents can run at once
-- each agent's container gets only its own model host in the firewall: the Anthropic hosts for Claude, `generativelanguage.googleapis.com` for Gemini; the npm registry and GitHub for both; no telemetry host for either
-- the Gemini CLI is pinned in the Dockerfile and was audited before it went in; its root-owned system settings turn usage statistics and auto-update off and fix API-key auth. Its folder-trust gate stays on: the first start asks once to trust the workspace, and the answer lives in the config volume
-- Claude has the last say on rigour until Gemini is caught up on the review skill and the records; both agents' sessions are exported to the records, one folder each
-
-Neither layer limits what Claude can do to the code: it has the full repo, the full toolchain, and GitHub. What it doesn't have is anything else.
-
-### Next: the layers still to build
-
-In order, each a precondition for the one after it:
-
-1. **The launcher** (this change): the host runs only what is on `main`, and nothing the agent writes exists on the host.
-2. **A second agent.** Gemini joins in the same sandbox with its own GitHub App, its own bot identity, its own API key in the environment, and only its own model host in the firewall (PR #42). Claude has the last say on rigour until Gemini is caught up on the review skill and the records; both agents' sessions are exported to the records.
-3. **A Pi as the network choke point.** The box reaches the world only through a Raspberry Pi 4 that is the firewall, with network intrusion detection and prevention behind it and wireless intrusion prevention beside it. The sandbox's egress wall watches the container; the Pi watches the wire, for the paths neither of us has found yet.
-4. **Unattended time.** Once 1 and 3 are in, each agent gets a scheduled window, about half an hour a day, to update its PRs and the records with nobody watching. The launcher is what makes that safe: a scheduled restart builds from `main`, never from a tree.
-5. **A public mirror of the records**, rendered transcripts only, through a redaction step that refuses what it cannot classify; the raw transcripts stay private; the security log goes public once its open items are closed.
+The hooks under `.claude/hooks/` stay here as this repository's session hooks: the token-expiry reminder, the version check of the CLIs the image carries against npm, and the Bash lint before every command.
 
 ### A note on trust
 

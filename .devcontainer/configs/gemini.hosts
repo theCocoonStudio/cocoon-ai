@@ -1,3 +1,0 @@
-# Gemini's model host, with an API key. play.googleapis.com (usage statistics) is
-# deliberately absent; statistics are off in gemini-settings.json.
-generativelanguage.googleapis.com # the Gemini API
