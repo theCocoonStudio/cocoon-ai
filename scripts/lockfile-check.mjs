@@ -16,19 +16,24 @@
 //   REFUSE  the integrity changed under the same version and URL: the bytes are not the
 //           bytes that were reviewed, whatever the version says
 //   REFUSE  the lockfile's integrity is absent, or is not the registry's for that version
-//           on any hash algorithm the two share, or shares none: the entry was edited or
-//           the registry's tarball is not the one the lockfile pins (any check includes
-//           integrity; the owner, 2026-10-11)
+//           on any hash algorithm the two share, or shares none, or the registry gives no
+//           hash at all: the entry was edited or the registry's tarball is not the one
+//           the lockfile pins (any check includes integrity; the owner, 2026-10-11)
+//   REFUSE  the registry's 200 is not the packument asked for: not an object, another
+//           name, no versions object, a version whose scripts is not an object (a 200 is
+//           not trusted to carry the shape; the owner, 2026-10-11)
 //   WARN    no provenance attestation on the version; many honest packages lack one
 //   WARN    the version is deprecated
-//   WARN    the registry publishes no integrity and no shasum for the version
 //
-// An exception is a line in .github/dependency-allow.json, `"name@version": "why"`,
-// which turns a refusal into a listed exception; the file is code-owned, so the
-// exception is reviewed. Output is markdown for the PR comment; exit 1 on any refusal.
-// Node only, no dependencies, so the check cannot be compromised by what it checks.
-// The functions are exported for the tests; the command runs only when this file is the
-// script invoked.
+// An exception is a line in .github/dependency-allow.json, `"name@version": { "<rule>":
+// "why" }`, the rule one of scripts, age, publisher, source: it excuses that one refusal
+// and nothing else (no blanket exceptions; the owner, 2026-10-11). A refusal the line
+// does not name stays a refusal; integrity and the registry's shape have no exception;
+// the old form, a bare "why", excuses nothing and is said so. The file is code-owned, so
+// every exception is reviewed. Output is markdown for the PR comment; exit 1 on any
+// refusal. Node only, no dependencies, so the check cannot be compromised by what it
+// checks. The functions are exported for the tests; the command runs only when this file
+// is the script invoked.
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -36,6 +41,8 @@ import { pathToFileURL } from 'node:url'
 export const MIN_AGE_DAYS = 7
 export const REGISTRY = 'https://registry.npmjs.org/'
 const ALLOW_FILE = '.github/dependency-allow.json'
+/** The rules an exception may name; the others (missing, integrity, registry, lookup) have none. */
+export const EXCUSABLE = ['scripts', 'age', 'publisher', 'source']
 
 /** "node_modules/a/node_modules/@s/b" → "@s/b" */
 const nameOf = (path) =>
@@ -61,9 +68,14 @@ export function changes(base, head) {
       before !== undefined &&
       before.version === entry.version &&
       before.resolved === entry.resolved
+    // An aliased dependency (`"pad-alias": "npm:left-pad@1"`) sits at the alias's path and carries
+    // the real package in `name`; the registry is asked for that one (the owner, 2026-10-11).
     out.push({
       path,
-      name: nameOf(path),
+      name:
+        typeof entry.name === 'string' && entry.name
+          ? entry.name
+          : nameOf(path),
       from: before?.version ?? null,
       to: entry.version,
       resolved: entry.resolved ?? '',
@@ -87,23 +99,22 @@ const sri = (s) => {
   return out
 }
 
+const isObject = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
+
 /**
  * The lockfile's integrity against the registry's for the version: dist.integrity, and
  * dist.shasum as sha1 where the registry gives only that. Every algorithm both sides carry
- * must agree, and they must share at least one; nothing on the registry's side is a warning,
- * nothing on the lockfile's side a refusal.
+ * must agree, and they must share at least one; nothing on either side is a refusal.
  */
 export function integrityVerdict(lockIntegrity, dist) {
   const lock = sri(lockIntegrity)
   const reg = sri(dist?.integrity)
-  if (dist?.shasum && !reg.sha1)
+  if (typeof dist?.shasum === 'string' && !reg.sha1)
     reg.sha1 = Buffer.from(dist.shasum, 'hex').toString('base64')
   if (!Object.keys(lock).length)
     return { refusal: 'no integrity in the lockfile entry' }
   if (!Object.keys(reg).length)
-    return {
-      warning: 'the registry publishes no integrity for this version',
-    }
+    return { refusal: 'the registry publishes no hash for this version' }
   const common = Object.keys(lock).filter((a) => a in reg)
   if (!common.length)
     return {
@@ -117,51 +128,97 @@ export function integrityVerdict(lockIntegrity, dist) {
   return {}
 }
 
+/** The registry's 200 against the packument shape this reader relies on; null when it holds. */
+export function packumentProblem(meta, name) {
+  if (!isObject(meta)) return 'registry payload is not an object'
+  if (meta.name !== name)
+    return `registry payload is for ${JSON.stringify(meta.name)}, not ${name}`
+  if (!isObject(meta.versions)) return 'registry payload has no versions object'
+  if (meta.time !== undefined && !isObject(meta.time))
+    return 'registry payload has a non-object time'
+  return null
+}
+
+/** Each refusal is { rule, text }; the rule is what an exception may name. */
 export function judge(change, meta) {
-  const v = meta.versions?.[change.to]
   const refusals = []
   const warnings = []
-  if (!v) {
-    refusals.push(`version ${change.to} is not on the registry`)
+  const refuse = (rule, text) => refusals.push({ rule, text })
+  const problem = packumentProblem(meta, change.name)
+  if (problem) {
+    refuse('registry', problem)
     return { refusals, warnings }
   }
-  const scripts = Object.keys(v.scripts ?? {}).filter((s) =>
-    ['preinstall', 'install', 'postinstall'].includes(s),
+  const v = meta.versions[change.to]
+  if (!isObject(v)) {
+    refuse('missing', `version ${change.to} is not on the registry`)
+    return { refusals, warnings }
+  }
+  if (v.scripts !== undefined && !isObject(v.scripts))
+    refuse('registry', 'registry version has a non-object scripts')
+  const scripts = Object.keys(isObject(v.scripts) ? v.scripts : {}).filter(
+    (s) => ['preinstall', 'install', 'postinstall'].includes(s),
   )
-  if (scripts.length) refusals.push(`install scripts: ${scripts.join(', ')}`)
+  if (scripts.length)
+    refuse('scripts', `install scripts: ${scripts.join(', ')}`)
   const published = meta.time?.[change.to]
-  if (published) {
+  if (typeof published === 'string') {
     const ageDays = (Date.now() - Date.parse(published)) / 86_400_000
-    if (ageDays < MIN_AGE_DAYS)
-      refusals.push(
-        `published ${ageDays.toFixed(1)} days ago, under ${MIN_AGE_DAYS}`,
+    if (!(ageDays >= MIN_AGE_DAYS))
+      refuse(
+        'age',
+        `published ${Number.isFinite(ageDays) ? ageDays.toFixed(1) : 'an unreadable number of'} days ago, under ${MIN_AGE_DAYS}`,
       )
   } else {
     warnings.push('no publish time on the registry')
   }
   const publisher = (ver) => {
-    const u = meta.versions?.[ver]?._npmUser
-    if (!u) return null
-    return u.trustedPublisher
+    const u = meta.versions[ver]?._npmUser
+    if (!isObject(u)) return null
+    return isObject(u.trustedPublisher)
       ? `trusted publisher ${u.trustedPublisher.id}`
       : u.name
   }
   const was = change.from ? publisher(change.from) : null
   const now = publisher(change.to)
   if (was && now && was !== now)
-    refusals.push(`publisher changed: ${was} → ${now}`)
+    refuse('publisher', `publisher changed: ${was} → ${now}`)
   if (change.resolved && !change.resolved.startsWith(REGISTRY))
-    refusals.push(`tarball not from the registry: ${change.resolved}`)
+    refuse('source', `tarball not from the registry: ${change.resolved}`)
   if (change.integrityChanged)
-    refusals.push(
+    refuse(
+      'integrity',
       `integrity changed under the same version and URL: ${change.integrityBefore ?? 'none'} → ${change.integrity || 'none'}`,
     )
   const integrity = integrityVerdict(change.integrity, v.dist)
-  if (integrity.refusal) refusals.push(integrity.refusal)
-  if (integrity.warning) warnings.push(integrity.warning)
-  if (!v.dist?.attestations) warnings.push('no provenance attestation')
+  if (integrity.refusal) refuse('integrity', integrity.refusal)
+  if (!isObject(v.dist) || !v.dist.attestations)
+    warnings.push('no provenance attestation')
   if (v.deprecated) warnings.push(`deprecated: ${v.deprecated}`)
   return { refusals, warnings, publisher: now }
+}
+
+/**
+ * The verdict for one package: its refusals against its exception line, which excuses only
+ * the rules it names, among EXCUSABLE. A bare string (the old blanket form) excuses nothing.
+ */
+export function verdictFor(refusals, allowed) {
+  const excuses = isObject(allowed) ? allowed : {}
+  const excused = refusals.filter(
+    (r) => EXCUSABLE.includes(r.rule) && typeof excuses[r.rule] === 'string',
+  )
+  const remaining = refusals.filter((r) => !excused.includes(r))
+  const notes = []
+  if (allowed !== undefined && !isObject(allowed))
+    notes.push('exception ignored: it names no rule')
+  if (remaining.length) return { verdict: 'REFUSED', refused: true, notes }
+  if (excused.length)
+    return {
+      verdict: `exception: ${excused.map((r) => `${r.rule}: ${excuses[r.rule]}`).join('; ')}`,
+      refused: false,
+      notes,
+    }
+  return { verdict: 'ok', refused: false, notes }
 }
 
 async function metadata(name) {
@@ -197,19 +254,15 @@ async function main() {
       result = judge(change, await metadata(change.name))
     } catch (e) {
       result = {
-        refusals: [`registry lookup failed: ${e.message}`],
+        refusals: [
+          { rule: 'lookup', text: `registry lookup failed: ${e.message}` },
+        ],
         warnings: [],
       }
     }
-    const key = `${change.name}@${change.to}`
-    const allowed = allow[key]
-    let verdict
-    if (result.refusals.length && allowed) verdict = `exception: ${allowed}`
-    else if (result.refusals.length) {
-      verdict = 'REFUSED'
-      refused += 1
-    } else verdict = 'ok'
-    rows.push({ change, result, verdict })
+    const v = verdictFor(result.refusals, allow[`${change.name}@${change.to}`])
+    if (v.refused) refused += 1
+    rows.push({ change, result, verdict: v.verdict, notes: v.notes })
   }
 
   const esc = (s) => String(s).replace(/\|/g, '\\|')
@@ -219,11 +272,14 @@ async function main() {
   ]
   if (list.length) {
     lines.push('| package | from → to | verdict | why |', '|---|---|---|---|')
-    for (const { change, result, verdict } of rows) {
+    for (const { change, result, verdict, notes } of rows) {
       const why =
-        [...result.refusals, ...result.warnings.map((w) => `warn: ${w}`)].join(
-          '; ',
-        ) || (result.publisher ? `publisher ${result.publisher}` : '')
+        [
+          ...result.refusals.map((r) => r.text),
+          ...result.warnings.map((w) => `warn: ${w}`),
+          ...notes,
+        ].join('; ') ||
+        (result.publisher ? `publisher ${result.publisher}` : '')
       lines.push(
         `| ${esc(change.name)} | ${change.from ?? 'new'} → ${change.to} | ${verdict} | ${esc(why)} |`,
       )
@@ -233,7 +289,7 @@ async function main() {
   }
   lines.push(
     '',
-    `_Rules: install scripts, age under ${MIN_AGE_DAYS} days, publisher change, tarball off the registry, integrity changed under the same version or not the registry's refuse; missing provenance and deprecation warn; exceptions live in \`${ALLOW_FILE}\`._`,
+    `_Rules: install scripts, age under ${MIN_AGE_DAYS} days, publisher change, tarball off the registry, integrity changed under the same version or not the registry's, a registry answer that is not the packument refuse; missing provenance and deprecation warn; exceptions live in \`${ALLOW_FILE}\`, each naming the one rule it excuses._`,
   )
   console.log(lines.join('\n'))
   process.exit(refused ? 1 : 0)

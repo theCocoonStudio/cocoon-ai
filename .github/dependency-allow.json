@@ -1,4 +1,6 @@
 {
-  "_": "reviewed exceptions to scripts/lockfile-check.mjs, one per line: \"name@version\": \"why\"; this file is code-owned",
-  "fsevents@2.3.3": "macOS-only optional dependency of the dev toolchain (chokidar/vite); never installs on the Linux runner or in the sandbox; its install script is node-gyp. Found by running the reader against an empty base, 2026-10-05."
+  "_": "reviewed exceptions to scripts/lockfile-check.mjs, one per line: \"name@version\": { \"<rule>\": \"why\" }, the rule one of scripts, age, publisher, source; the line excuses that one refusal and nothing else, integrity and the registry's shape have no exception, a bare \"why\" excuses nothing; this file is code-owned",
+  "fsevents@2.3.3": {
+    "scripts": "macOS-only optional dependency of the dev toolchain (chokidar/vite); never installs on the Linux runner or in the sandbox; its install script is node-gyp. Found by running the reader against an empty base, 2026-10-05."
+  }
 }
