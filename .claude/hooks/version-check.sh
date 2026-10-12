@@ -1,28 +1,29 @@
 #!/bin/bash
-# SessionStart hook: the agent CLIs are pinned in .devcontainer/Dockerfile (ARG *_VERSION),
-# so nothing updates itself; this prints, once per session, which pins have a newer
-# release on npm, so the bump can be proposed as a PR with the changelog read.
-# Asked for by Izzy on #42 and #45 (2026-10-02). Output goes to the agent's context.
+# SessionStart hook: the agent CLIs are pinned in the sandbox image (cocoon-agent-sandbox,
+# sandbox/Dockerfile, ARG *_VERSION), so nothing updates itself; this prints, once per session,
+# which installed CLI has a newer release on npm, so the bump can be proposed as a PR there
+# with the changelog read. Asked for by Izzy on #42 and #45 (2026-10-02). The installed
+# version is read from the CLI itself (the image is the pin), since this repository no
+# longer carries the Dockerfile (2026-10-11). Output goes to the agent's context.
 set -uo pipefail
-dockerfile="${CLAUDE_PROJECT_DIR:-/workspace}/.devcontainer/Dockerfile"
-[ -r "$dockerfile" ] || exit 0
 
-# ARG name -> npm package; add a line when a new CLI is pinned
+# command -> npm package; add a line when a new CLI joins the image
 declare -A PACKAGES=(
-  [CLAUDE_CODE_VERSION]=@anthropic-ai/claude-code
-  [GEMINI_CLI_VERSION]=@google/gemini-cli
+  [claude]=@anthropic-ai/claude-code
+  [gemini]=@google/gemini-cli
 )
 
 out=""
-for arg in "${!PACKAGES[@]}"; do
-  pinned=$(sed -n "s/^ARG $arg=\(.*\)$/\1/p" "$dockerfile" | head -1)
+for cmd in "${!PACKAGES[@]}"; do
+  command -v "$cmd" >/dev/null || continue
+  pinned=$(timeout 20 "$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
   [ -n "$pinned" ] || continue
-  pkg=${PACKAGES[$arg]}
+  pkg=${PACKAGES[$cmd]}
   latest=$(timeout 20 npm view "$pkg" version 2>/dev/null || true)
   if [ -z "$latest" ]; then
-    out+="version-check: $pkg pinned $pinned; npm unreachable, latest unknown"$'\n'
+    out+="version-check: $pkg installed $pinned; npm unreachable, latest unknown"$'\n'
   elif [ "$latest" != "$pinned" ]; then
-    out+="version-check: $pkg pinned $pinned, latest $latest: a bump is a PR to .devcontainer/Dockerfile with the changelog read"$'\n'
+    out+="version-check: $pkg installed $pinned, latest $latest: a bump is a PR to cocoon-agent-sandbox's sandbox/Dockerfile with the changelog read"$'\n'
   fi
 done
 command -v shellcheck >/dev/null || out+="lint-bash: shellcheck is not in this image, so Bash commands run unlinted this session; the sandbox image carries it"$'\n'
