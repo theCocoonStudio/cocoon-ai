@@ -7,8 +7,10 @@
 #   2. Registry signatures and provenance attestations verified for every installed
 #      package (`npm audit signatures`).
 #   3. The repo's own reader, scripts/lockfile-check.mjs: every package added or
-#      changed, refused on install scripts, a version under seven days old, a
-#      publisher change or a tarball off the registry; the report is posted as a
+#      changed (by version, URL or integrity), refused on install scripts, a version
+#      under seven days old, a publisher change, a tarball off the registry, or an
+#      integrity that changed under the same version or is not the registry's for
+#      that version (any check includes integrity); the report is posted as a
 #      PR comment. Exceptions are reviewed lines in .github/dependency-allow.json.
 #
 # Runs on every PR so it can be a required status in the main ruleset: a workflow
