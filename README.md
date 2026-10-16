@@ -200,3 +200,79 @@ Security here isn't only about trusting the sandbox or the OS. It's about knowin
 The security incident log and per-session transcript exports live in the private [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records) repo. Inside the sandbox it is cloned to `/home/node/cocoon-ai-records` on a container's first start, beside `cocoon-ml`; neither is a volume, so anything not pushed is gone with the container. The workspace itself is a volume, cloned once and kept.
 
 These points shouldn't need be said. They should be salient. But they're often not, even at the Enterprise level, let alone a home office.
+
+## The Cocoon repositories
+
+The work is split across focused repositories in [`theCocoonStudio`](https://github.com/theCocoonStudio):
+
+| Repository                                                                        | Purpose                                                                                                                                                   | Visibility  |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| [`cocoon-ai`](https://github.com/theCocoonStudio/cocoon-ai)                       | Component and utility library for the studio website (React 19, react-three-fiber, Vite in library mode)                                                  | Public      |
+| [`cocoon-gateway`](https://github.com/theCocoonStudio/cocoon-gateway)             | The owner's API gateway for agent sandboxes: TLS termination, mTLS client certs, role policy tables, egress control, GitHub App token minting & injection | Public      |
+| [`cocoon-agent-sandbox`](https://github.com/theCocoonStudio/cocoon-agent-sandbox) | Sealed rootless devcontainer for coding agents (Claude Code and Gemini CLI) with default-deny egress, loopback relay, no in-container secrets             | Public      |
+| [`cocoon-relations`](https://github.com/theCocoonStudio/cocoon-relations)         | Exploring from first principles: relational theory of measurement and physics (generality, vantage, non-orientable topology, hypersets)                   | Public      |
+| [`cocoon-ml`](https://github.com/theCocoonStudio/cocoon-ml)                       | First-principles ML implementation: autograd, causal attention, loss, in-context learning, decision tables, drift test                                    | Public      |
+| [`cocoon-copula`](https://github.com/theCocoonStudio/cocoon-copula)               | Three-way state vector chat engine connecting Originator, Generator, and Verifier across `[EXT]` and `[INT]` phase boundaries                             | Public      |
+| [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records)       | Security incident logs (`SECURITY-EVENTS.md`, `TRUST-EVENTS.md`), session transcripts (`claude/`, `gemini/`), and session guides                          | **Private** |
+
+## Creating a new Cocoon repository
+
+When standing up a new repository in the organization, configure the codebase, agent sandbox, and GitHub settings to maintain the isolation boundary and review policy.
+
+### 1. GitHub repository setup
+
+1. Create the repository under [`theCocoonStudio`](https://github.com/theCocoonStudio) on GitHub (public or private as required), initializing with an empty `main` branch.
+2. **Install the GitHub Apps**:
+   - Go to **Organization Settings** → **GitHub Apps** → **Installed Apps**.
+   - Configure **`cocoon-claude`**: Add the new repository to its repository access list.
+   - Configure **`cocoon-gemini`**: Add the new repository to its repository access list.
+3. **Audit App Permissions**:
+   - **Required permissions**: Repository contents (`read & write`), Pull requests (`read & write`), Issues (`read & write`).
+   - **Revoke `Workflows: write`**: Both apps must have the `Workflows` permission explicitly revoked (or set to read-only). This prevents agents from pushing arbitrary `.github/workflows/` files that could forge commit statuses or hijack CI runners.
+
+### 2. Branch ruleset on `main`
+
+Configure a ruleset (**Settings** → **Rules** → **Rulesets** → **New ruleset**) on `main`:
+
+- **Enforcement status**: Active.
+- **Target branches**: Default branch (`main`).
+- **Branch rules**:
+  - **Restrict deletions**: Enabled.
+  - **Block force pushes**: Enabled.
+  - **Require a pull request before merging**:
+    - Required approvals: `1`.
+    - Dismiss stale pull request approvals when new commits are pushed: Enabled.
+    - Require review from Code Owners (if `CODEOWNERS` is present).
+  - **Require status checks to pass**:
+    - Require branches to be up to date before merging: Enabled.
+    - Select the native GitHub Actions job names:
+      - `check` (linting, tests, build)
+      - `policy` (the native job from `reviewer-policy.yml`; ensure the source is **GitHub Actions**, avoiding loose commit status strings)
+      - `dependency-check` (if the repo uses package dependencies)
+  - **Do not allow bypassing**: Ensure administrators are subject to the rules.
+
+### 3. CI workflows and review policy
+
+Add the standard Cocoon workflow files in `.github/workflows/`:
+
+- **`check.yml`**: Runs the repository linter, type-check, tests, and ShellCheck.
+- **`reviewer-policy.yml`**: Enforces who may approve whose pull requests:
+  - The human owner's PRs require an agent's review.
+  - The agents' PRs require the human owner's review.
+  - Neither agent may approve its own PR or the other agent's PR.
+  - Uses native exit codes (`exit 0` / `exit 1`) to satisfy the required check without needing write permissions.
+- **`dependency-check.yml`** _(if managing dependencies)_: Runs lockfile verification (`scripts/lockfile-check.mjs`) to block malicious version bumps, unreviewed install scripts, and unexpected registry changes before any package install executes.
+
+### 4. Code and sandbox configuration changes
+
+To make the new repository accessible to agents inside the devcontainer sandbox:
+
+- **`cocoon-agent-sandbox`**:
+  - In `~/.config/cocoon/sandbox.json` on the host:
+    - **As primary workspace**: Set `"workspace": "theCocoonStudio/<new-repo>"` to boot directly into this repository.
+    - **As cloned companion**: Add `"theCocoonStudio/<new-repo>"` to the `"clones"` array so `entrypoint.sh` automatically clones it into `/home/node/<new-repo>` on container start.
+  - If the repository requires specialized network access (e.g., custom documentation domains or APIs), declare the hosts in a dedicated list under `sandbox/configs/<profile>.hosts` and enable that profile at launch (`-- <profile>`).
+- **`cocoon-gateway`**:
+  - In `config/policy.json`: Verify that the upstream policy rules admit git operations and API calls for the new repository path under the `theCocoonStudio` organization.
+- **Box host configuration**:
+  - Run `bash cocoon-launch.sh --dry` on the Debian box to validate that `~/.config/cocoon/sandbox.json` passes schema checks (`check-config.sh`) before launching.
