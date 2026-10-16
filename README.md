@@ -145,6 +145,22 @@ Some files are local to a machine and never committed, like an env file. Recreat
 
 This list is not complete yet; add to it as more local files turn up.
 
+## The repositories
+
+The work is seven repositories under [`theCocoonStudio`](https://github.com/theCocoonStudio), one job each; their descriptions and visibility as GitHub holds them (read 2026-10-16):
+
+| Repository                                                                        | Description                                                       | Visibility |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
+| [`cocoon-ai`](https://github.com/theCocoonStudio/cocoon-ai)                       | library of components and utils developed with Claude (Fable 5.1) | public     |
+| [`cocoon-agent-sandbox`](https://github.com/theCocoonStudio/cocoon-agent-sandbox) | security first sandbox with strict egress controls for agent CLIs | public     |
+| [`cocoon-gateway`](https://github.com/theCocoonStudio/cocoon-gateway)             | cocoon's API gateway                                              | public     |
+| [`cocoon-ml`](https://github.com/theCocoonStudio/cocoon-ml)                       | An ML implementation with Claude. WIP.                            | public     |
+| [`cocoon-relations`](https://github.com/theCocoonStudio/cocoon-relations)         | Exploring from first principles                                   | public     |
+| [`cocoon-copula`](https://github.com/theCocoonStudio/cocoon-copula)               | Connecting information systems                                    | public     |
+| [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records)       | records for Claude and Izzy on their work in cocoon-ai            | private    |
+
+The two agents reach each repository through the gateway with their own GitHub App (`cocoon-claude`, `cocoon-gemini`), and every repository carries the same ruleset on `main`: one approval after the last push, code owners, linear history, rebase only, the checks `check` and `reviewer-policy` required, no bypass. Standing up a new one, in the order the layers refuse, is [docs/new-repository.md](docs/new-repository.md).
+
 ## How Claude and I work together
 
 Claude does most of the typing; I direct, review, and merge. The rule is that Claude never runs with more access than the task needs, and every change lands through git so it can be read before it counts.
