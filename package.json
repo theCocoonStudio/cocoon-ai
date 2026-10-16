@@ -35,6 +35,7 @@
     "assets:logo": "node assets/logo/build.js",
     "export:logo": "node assets/logo/export.js",
     "export:logo-group": "node assets/logo/export-group.js",
+    "verify:repo": "node scripts/verify-repo.mjs",
     "test:ci": "vitest run --maxWorkers=2",
     "check:ci": "npm run lint && npm run lint:sh && npm run format:check && npm run knip && npm run test:ci && npm run build"
   },

@@ -26,6 +26,7 @@ Every `package.json` script, what it does, and where to read more.
 | `npm run assets:logo`                    | the mark, favicons, wordmark, lockups and PNG previews; refuses if the four plain icons or the spec's tier table drift | [assets/logo/README.md](assets/logo/README.md)         |
 | `npm run export:logo -- [params]`        | the mark or lockup at chosen scene values, plus a sheet of neighbours around each value                                | [docs/export-logo.md](docs/export-logo.md)             |
 | `npm run export:logo-group -- [props]`   | the logo mesh rendered by three's WebGLRenderer, screenshot by a headless Chromium, every prop value printed beside it | [docs/export-logo-group.md](docs/export-logo-group.md) |
+| `npm run verify:repo -- <owner>/<repo>`  | a repository's settings, Apps, ruleset and files against the setup page, one line per fact, through `gh api`           | [docs/new-repository.md](docs/new-repository.md)       |
 
 Components are general React 19: nothing in `src/` assumes a bundler. Anything a bundler would normally supply (env values, asset URLs, lazy imports) arrives as an input. The build stamps `"use client"` onto `dist/index.js` so a Next consumer gets a client boundary and a Vite consumer ignores it.
 

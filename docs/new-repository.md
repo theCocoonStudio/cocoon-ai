@@ -60,7 +60,13 @@ The pull request rules can go in at creation. The required checks go in once the
 
 ## 6. Verify (both)
 
-From a container, after the restart that carries the sandbox change:
+One command reads every fact this page states, through `gh api`, and prints a line per fact with `pass`, `FAIL` or `skip` (not checkable with the token in hand: an App's token sees its own installation only; the owner's sees both Apps'), exit 1 on any FAIL:
+
+```
+npm run verify:repo -- theCocoonStudio/<repo>
+```
+
+It is `scripts/verify-repo.mjs` in this repository; run it from a clone of cocoon-ai, inside a container or on the owner's machine. By hand, from a container, after the restart that carries the sandbox change:
 
 ```
 gh api installation/repositories --jq '[.repositories[].full_name] | join(", ")' && cd /home/node/<repo> && git log --oneline -1 && gh pr list --repo theCocoonStudio/<repo> --state all --limit 3
