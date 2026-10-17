@@ -132,7 +132,7 @@ assets/                       the studio's marks, produced by the scripts beside
 
 Some files are local to a machine and never committed, like an env file. Recreate them after a fresh clone:
 
-- `.claude/settings.local.json` — per-machine Claude Code permissions. The committed `.claude/settings.json` carries the shared config (model, hooks); this file adds the read paths Claude needs inside the container without a prompt each time:
+- `.claude/settings.local.json` — per-machine Claude Code permissions. The committed `.claude/settings.json` carries the shared config (model, hooks); this file adds the read paths Claude needs inside the container without a prompt each time: `idleCompaction` is false there (2026-10-17): since Claude Code 2.1.299 a conversation over 200K tokens left idle about 54 minutes is compacted by itself, and the owner's rule is that a compaction is announced, so the agent's context is compacted only when the owner or the agent says so.
 
   ```json
   {
