@@ -37,7 +37,8 @@
     "export:logo-group": "node assets/logo/export-group.js",
     "verify:repo": "node scripts/verify-repo.mjs",
     "test:ci": "vitest run --maxWorkers=2",
-    "check:ci": "npm run lint && npm run lint:sh && npm run format:check && npm run knip && npm run test:ci && npm run build"
+    "check:ci": "npm run lint && npm run lint:sh && npm run format:check && npm run knip && npm run test:ci && npm run build",
+    "manifest": "node scripts/manifest.mjs"
   },
   "peerDependencies": {
     "@react-three/fiber": "^9.6.1",
@@ -83,5 +84,9 @@
     "tunnel-rat": {
       "optional": true
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theCocoonStudio/cocoon-ai.git"
   }
 }
