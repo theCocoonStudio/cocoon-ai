@@ -28,6 +28,9 @@ import {
   followWall,
 } from './boundary.js'
 
+/** The steps the hook runs unconditionally after mount, paused or not, so every pass compiles and every target is written: a demo's compile() waits for them. */
+export const INITIAL_FRAMES = 5
+
 // force calculation default
 const defaultForceCallback = (delta, clock, pointer, pointerDiff) => ({
   force: pointerDiff,
@@ -547,8 +550,8 @@ export const useFluidTexture = (options = {}) => {
   // simulation updates
   const initialFramesRendered = useRef(0)
   useFrame((state, delta) => {
-    // render at least 5 frames to initialize (allows for upfront compilation)
-    if (initialFramesRendered.current > 4) {
+    // render at least INITIAL_FRAMES frames to initialize (allows for upfront compilation)
+    if (initialFramesRendered.current >= INITIAL_FRAMES) {
       if (!manual && !pause && !pauseRef?.current && !manualRef?.current) {
         frameSplitter.frame(state, delta)
       }

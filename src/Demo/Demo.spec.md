@@ -106,3 +106,7 @@ handle.2: materials — every material the scene uses, so a consumer can compile
 handle.3: compile() — compiles the demo's materials and initialises its render targets with the Canvas's renderer and camera, inside the Canvas's context; returns a promise; idempotent
 amend.1: a demo whose entry has scene false takes no tunnel and no loader and exposes no handle.1 to handle.3; the structure test refuses the mismatch
 amend.2: the loading rules of manifest.spec loading.* apply to every demo file
+props.13: ready — boolean, optional, default true; the demo file's, not the consumer's: false from mount until its scene's compile promise resolves, so the wrapper knows when to show props.10 (my call: the spec gives the wrapper the loader and the demo file the handle, and this is the line between them)
+markup.14: props.10, the loader element as given, first in the stage, while props.13 is false; absent otherwise and absent when props.10 is not given (my call: the element is the consumer's to style, so nothing wraps it)
+amend.3: props.11 and props.12 are read by the demo file, which owns the compile; the wrapper never sees them (my call: a prop the wrapper took and ignored would land on the root div as an unknown attribute if a demo file forgot to take it first)
+amend.4: states.pending, amended: markup.14 shown, the rest of the markup as states.default

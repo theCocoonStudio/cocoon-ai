@@ -3,7 +3,8 @@
 // renderer with a perspective camera and the tunnel's Out, and the fluid's
 // demo in a div at `window.__rect` (viewport px). `window.__demo` is what the
 // test calls: a readback of the whole canvas as grey, a pointer stroke across
-// the demo, and a setter that drives the sidebar's inputs the way a hand would.
+// the demo, a setter that drives the sidebar's inputs the way a hand would,
+// and the loading facts: the loader's presence, onReady's time, the handle.
 import { useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useThree } from '@react-three/fiber'
@@ -85,6 +86,25 @@ function Readback() {
       },
       size: { width: size.width, height: size.height },
       rect,
+      /** The loading facts (loading.3, handle.*): whether the loader is in the stage, when onReady fired, what the handle holds. */
+      loading() {
+        const h = window.__handle
+        return {
+          loader: !!document.querySelector('.cocoon-demo__stage > .loader'),
+          readyAt: window.__readyAt ?? null,
+          mountedAt: window.__mountedAt,
+          root: !!h?.root?.isGroup,
+          materials: h?.materials.map((m) => m.type) ?? null,
+        }
+      },
+      /** The handle's compile, called twice more: resolves to whether both calls returned the one promise. */
+      async compileAgain() {
+        const h = window.__handle
+        const a = h.compile()
+        const b = h.compile()
+        await a
+        return a === b
+      },
       /** The stage's rectangle as measured, which shrinks when the sidebar is open. */
       stage() {
         const r = document
@@ -134,12 +154,21 @@ function Page() {
         <FluidTextureDemo
           tunnel={t}
           openSettings={window.__openSettings ?? false}
+          compile={window.__compile ?? true}
+          loader={<div className='loader'>loading</div>}
+          onReady={() => {
+            window.__readyAt = performance.now()
+          }}
+          ref={(h) => {
+            window.__handle = h
+          }}
         />
       </div>
     </>
   )
 }
 
+window.__mountedAt = performance.now()
 document.getElementById('root').style.cssText =
   'position:fixed;inset:0;width:auto;height:auto'
 createRoot(document.getElementById('root')).render(<Page />)

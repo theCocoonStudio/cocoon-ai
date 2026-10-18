@@ -142,4 +142,34 @@ describe.skipIf(!browser)('FluidTextureDemo in the browser', () => {
     expect(inner(await read(), stage)).toBeGreaterThan(20)
     expect(site.errors).toEqual([])
   }, 90_000)
+
+  it('loading.3 and handle.1–3: the loader leaves the stage when the compile resolves, onReady fires, the handle holds the root group, the materials and an idempotent compile', async () => {
+    await site.reload(() => {
+      window.__openSettings = false
+    })
+    await settle()
+    const facts = await site.evaluate(() => window.__demo.loading())
+    expect(facts.loader).toBe(false)
+    expect(facts.readyAt).not.toBeNull()
+    expect(facts.root).toBe(true)
+    expect(facts.materials).toEqual(['MeshBasicNodeMaterial'])
+    expect(await site.evaluate(() => window.__demo.compileAgain())).toBe(true)
+    expect(site.errors).toEqual([])
+  }, 60_000)
+
+  it("props.12 with compile false the loader stays and onReady waits until the consumer calls the handle's compile", async () => {
+    await site.reload(() => {
+      window.__compile = false
+    })
+    await settle()
+    const before = await site.evaluate(() => window.__demo.loading())
+    expect(before.loader).toBe(true)
+    expect(before.readyAt).toBeNull()
+    await site.evaluate(() => window.__demo.compileAgain())
+    await settle(100)
+    const after = await site.evaluate(() => window.__demo.loading())
+    expect(after.loader).toBe(false)
+    expect(after.readyAt).not.toBeNull()
+    expect(site.errors).toEqual([])
+  }, 60_000)
 })

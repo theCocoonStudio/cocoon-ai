@@ -134,14 +134,16 @@ const t = tunnel()
 <FluidTextureDemo tunnel={t} ref={rootRef} openSettings />
 ```
 
-| prop       | default  |                                                                                                      |
-| ---------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| `tunnel`   | required | a tunnel-rat tunnel; the site renders its `Out` in the Canvas                                        |
-| `distance` | 1        | how far in front of the camera the plane sits, world units; the plane scales so the picture does not |
-| `priority` | -1       | useFrame's priority for the placement, as the hook takes one for its step                            |
-| `ref`      |          | the scene's root group, for the site to traverse or raycast                                          |
+| prop       | default  |                                                                                                                                                                                            |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tunnel`   | required | a tunnel-rat tunnel; the site renders its `Out` in the Canvas                                                                                                                              |
+| `distance` | 1        | how far in front of the camera the plane sits, world units; the plane scales so the picture does not                                                                                       |
+| `priority` | -1       | useFrame's priority for the placement, as the hook takes one for its step                                                                                                                  |
+| `compile`  | true     | compile on mount; false when the site calls the handle's `compile()` itself, the home page's batch                                                                                         |
+| `onReady`  |          | called once, when the first compile resolves; the wrapper's `loader` leaves with it                                                                                                        |
+| `ref`      |          | the handle: `root`, the scene's root group, for the site to traverse or raycast; `materials`, the plane's and, under the alpha map, the background's; `compile()`, one promise, idempotent |
 
-The rest of the props are the wrapper's: `openSettings`, `onOpenSettingsChange`, the class and style props, `theme`, `label`.
+The rest of the props are the wrapper's: `openSettings`, `onOpenSettingsChange`, the class and style props, `theme`, `label`, `loader` (`docs/Demo.md`, Loading). `compile()` builds the plane's material against the site's scene, its lights included, then waits for the fluid's initialisation steps (the hook's `INITIAL_FRAMES`), which compile every pass and write every target; a remount for a `live: false` setting (`resolution`, `material`, `map`) compiles again without the loader.
 
 **The scene.** One plane facing the site's perspective camera, placed and sized every frame so it covers the demo's rectangle of the page exactly, with no scissor and no viewport change (`src/utils/placeInView.js`, the camera's own world matrix carrying the offset, so a parented camera is covered). The sizes of the canvas and of the stage come from a `ResizeEventProvider` of the scene's own, inside the tunnel, not from fiber's `size`, which can lag a frame inside a View or a portal; the rectangle's position is re-read on scroll and resize. The fluid's targets are sized from the stage, not the Canvas. The pointer is mapped from the Canvas into the rectangle, so a stroke across the demo moves the fluid under the pointer. The Canvas is assumed to fill the viewport, as the site's does.
 

@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
   EquirectangularReflectionMapping,
@@ -16,7 +23,7 @@ import {
 } from '../ResizeEventProvider/index.jsx'
 import { useSettings } from '../Demo/useSettings.js'
 import { placeInView } from '../utils/placeInView.js'
-import { useFluidTexture } from './useFluidTexture.js'
+import { INITIAL_FRAMES, useFluidTexture } from './useFluidTexture.js'
 
 // The fluid's demo, the demo skill's first run (.claude/skills/demo/SKILL.md):
 // a plane facing the site's perspective camera, covering the demo's area of
@@ -232,14 +239,32 @@ function pointerInRect(pointer, rect, canvas, out) {
  * provider, not from fiber's `size`, which can lag a frame inside a View or a
  * portal (Izzy's review of #67). `rectRef` is the demo's rectangle's position
  * in viewport coordinates, written on the DOM side on scroll and resize;
- * `probe` is the stage-sized element the provider measures.
+ * `probe` is the stage-sized element the provider measures. `ref` takes the
+ * handle (root, materials, compile); `compileOnMount` is the demo's `compile`
+ * prop and `onCompiled` is called once the compile promise resolves, whoever
+ * called it.
  */
-function FluidScene({ values, rectRef, probe, distance, priority, ref }) {
-  const { gl, camera } = useThree(({ gl, camera }) => ({ gl, camera }))
+function FluidScene({
+  values,
+  rectRef,
+  probe,
+  distance,
+  priority,
+  compileOnMount,
+  onCompiled,
+  ref,
+}) {
+  const { gl, camera, scene } = useThree(({ gl, camera, scene }) => ({
+    gl,
+    camera,
+    scene,
+  }))
   const canvas = useResizeEvent('canvas', gl.domElement)
   const stage = useResizeEvent('stage', probe)
+  const group = useRef(null)
   const plane = useRef(null)
   const background = useRef(null)
+  const backgroundMaterial = useRef(null)
   // what the force callback reads: the canvas size, mirrored from the provider in an effect
   const view = useRef({ canvas: { width: 1, height: 1 } })
   useEffect(() => {
@@ -373,9 +398,52 @@ function FluidScene({ values, rectRef, probe, distance, priority, ref }) {
     }
   }, [values.environment, isStandard, gl])
 
+  // the compile (handle.3, loading.3): the plane's material built against the site's scene, its lights
+  // included, the way it will render; then the fluid's own initialisation, the hook's INITIAL_FRAMES
+  // unconditional steps, which compile every pass and write every target, counted by this loop's
+  // frames (one more, since the two loops' order within a frame is the priorities'). One promise,
+  // kept, so the call is idempotent; `onCompiled` once it resolves, whoever called it.
+  const frames = useRef(0)
+  const initialised = useRef([])
+  const compiled = useRef(null)
+  const onCompiledRef = useRef(onCompiled)
+  useEffect(() => {
+    onCompiledRef.current = onCompiled
+  })
+  const compile = useCallback(() => {
+    if (!compiled.current) {
+      compiled.current = (async () => {
+        await gl.compileAsync(group.current, camera, scene)
+        if (frames.current <= INITIAL_FRAMES)
+          await new Promise((resolve) => initialised.current.push(resolve))
+        onCompiledRef.current?.()
+      })()
+    }
+    return compiled.current
+  }, [gl, camera, scene])
+  useEffect(() => {
+    if (compileOnMount) compile()
+  }, [compileOnMount, compile])
+  useImperativeHandle(
+    ref,
+    () => ({
+      get root() {
+        return group.current
+      },
+      get materials() {
+        return [materialRef.current, backgroundMaterial.current].filter(Boolean)
+      },
+      compile,
+    }),
+    [compile],
+  )
+
   // placement: the plane covers the demo's rectangle at `distance` in front of the camera, every frame,
   // at the given priority; the rectangle's size is the provider's, its position the DOM side's
   useFrame(() => {
+    frames.current++
+    if (frames.current > INITIAL_FRAMES && initialised.current.length)
+      for (const resolve of initialised.current.splice(0)) resolve()
     const rect = rectRef.current
     const mesh = plane.current
     const size = view.current.canvas
@@ -392,14 +460,17 @@ function FluidScene({ values, rectRef, probe, distance, priority, ref }) {
   }, priority)
 
   return (
-    <group ref={ref}>
+    <group ref={group}>
       <mesh ref={plane}>
         <planeGeometry args={[1, 1]} />
       </mesh>
       {values.map === 'alpha' && (
         <mesh ref={background}>
           <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial color={values.background} />
+          <meshBasicMaterial
+            ref={backgroundMaterial}
+            color={values.background}
+          />
         </mesh>
       )}
       {isStandard && values.directionalLight && (
@@ -414,22 +485,35 @@ function FluidScene({ values, rectRef, probe, distance, priority, ref }) {
 }
 
 /**
+ * @typedef {object} FluidTextureDemoHandle
+ * @property {import('three').Group} root the scene's root group, for the site to traverse or raycast
+ * @property {import('three').Material[]} materials the scene's materials: the plane's and, under the alpha map, the background's
+ * @property {() => Promise<void>} compile compiles the plane's material against the site's scene and waits for the fluid's initialisation steps; one promise, idempotent
+ */
+
+/**
  * @typedef {object} FluidTextureDemoProps
  * @property {{ In: import('react').ComponentType<{children?: import('react').ReactNode}> }} tunnel the site's tunnel; its Out sits in the site's Canvas
  * @property {number} [distance=1] how far in front of the camera the plane sits, world units
  * @property {number} [priority=-1] useFrame's priority for the placement, as the hook takes one for its step
- * @property {import('react').Ref<import('three').Group>} [ref] the scene's root group, for the site to traverse or raycast
+ * @property {boolean} [compile=true] compile on mount; false when the consumer calls the handle's compile itself, the home page's batch
+ * @property {() => void} [onReady] called once, when the first compile resolves; the wrapper's loader leaves with it
+ * @property {import('react').Ref<FluidTextureDemoHandle>} [ref] the handle: root, materials, compile
  */
 
 /**
  * The fluid's demo. Renders the wrapper with the fluid's settings and sends its
- * scene through `tunnel`; the rest of the props are the wrapper's.
+ * scene through `tunnel`; the rest of the props are the wrapper's, `loader`
+ * among them. `ready` for the wrapper is false until the scene's first compile
+ * resolves; a remount for a `live: false` setting compiles again without it.
  * @param {FluidTextureDemoProps & import('../Demo/index.jsx').DemoProps} props
  */
 export function FluidTextureDemo({
   tunnel,
   distance = 1,
   priority = -1,
+  compile = true,
+  onReady,
   ref,
   ...props
 }) {
@@ -439,6 +523,18 @@ export function FluidTextureDemo({
     )
   }
   const settings = useSettings(schema)
+  const [ready, setReady] = useState(false)
+  const onReadyRef = useRef(onReady)
+  useEffect(() => {
+    onReadyRef.current = onReady
+  })
+  const reported = useRef(false)
+  const onCompiled = useCallback(() => {
+    if (reported.current) return
+    reported.current = true
+    setReady(true)
+    onReadyRef.current?.()
+  }, [])
   const probe = useRef(null)
   const [probeEl, setProbeEl] = useState(null)
   const rectRef = useRef(null)
@@ -462,7 +558,7 @@ export function FluidTextureDemo({
   }, [])
   const { In } = tunnel
   return (
-    <Demo settings={settings} {...props}>
+    <Demo settings={settings} ready={ready} {...props}>
       <div
         ref={probe}
         className='cocoon-demo__probe'
@@ -478,6 +574,8 @@ export function FluidTextureDemo({
             probe={probeEl}
             distance={distance}
             priority={priority}
+            compileOnMount={compile}
+            onCompiled={onCompiled}
           />
         </ResizeEventProvider>
       </In>

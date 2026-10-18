@@ -18,6 +18,8 @@ import { useId, useRef, useState } from 'react'
  * @property {object} [settingContainerStyle] merged last onto the sidebar's style
  * @property {string} [theme] lands as data-theme on the root
  * @property {string} [label='Settings'] the toggle's and the sidebar's accessible name
+ * @property {import('react').ReactNode} [loader] shown first in the stage while `ready` is false; the consumer's element, styled by it
+ * @property {boolean} [ready=true] the demo file's: false from mount until its scene's compile resolves
  * @property {import('react').Ref<HTMLDivElement>} [ref] the root div
  * @property {import('react').ReactNode} [children] the demo's markup
  */
@@ -63,6 +65,8 @@ export function Demo({
   settingContainerStyle,
   theme,
   label = 'Settings',
+  loader,
+  ready = true,
   ref,
   children,
   className,
@@ -110,6 +114,7 @@ export function Demo({
       style={{ ...rootStyle, ...style, ...demoContainerStyle }}
     >
       <div className='cocoon-demo__stage' style={stageStyle}>
+        {!ready && loader}
         {children}
         <button
           type='button'

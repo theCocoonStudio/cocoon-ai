@@ -25,6 +25,13 @@ Written with the build, 2026-10-07, from the spec beside it, which came from the
 - `useSettings.key` serialises the values of every `live: false` entry; a demo keys its scene with it so a structural change remounts and a live one does not. Where live and remount values meet in a scene is the demo's own concern.
 - The number control is a range with an `output` beside it. A typed number field is a schema kind that does not exist yet; the first demo that needs one adds it, with the skill.
 
+## amendments, 2026-10-18 (the consumer interface, src/manifest.spec.md)
+
+- The line between the wrapper and the demo file: the wrapper shows `loader` while `ready` is false and knows nothing else; the demo file owns `compile` and `onReady`, holds `ready` and passes it (props.13, amend.3, my call). Test: `markup.14 and props.10, 13 the loader element renders as given, first in the stage, only while ready is false; amend.4` and `props.13 ready defaults to true, and without a loader nothing renders while false`.
+- The loader element renders as given, nothing wrapped around it, first in the stage, so the consumer's styling applies to the element itself (markup.14). Its layering over the stage's children is the consumer's CSS; the stage is position relative.
+- `ready` is true by default, so a demo file that never passes it shows no loader; the fit test's loading case is what catches a scene demo that forgot (src/manifest.browser.test.js).
+- `onReady` fires once per demo life: a remount of the scene for a `live: false` setting compiles again but reports nothing and shows no loader (the fluid demo's `reported` ref; my call: the visitor's own change, not a page load).
+
 ## gaps
 
 - Not tested in a browser: the wrapper has no tunnel and no Canvas of its own, so its browser test comes with the first demo, where the stage, the sidebar and a scene mapping the stage's rect are exercised together.
