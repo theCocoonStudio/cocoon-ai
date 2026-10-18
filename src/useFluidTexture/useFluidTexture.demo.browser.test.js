@@ -147,7 +147,9 @@ describe.skipIf(!browser)('FluidTextureDemo in the browser', () => {
     await site.reload(() => {
       window.__openSettings = false
     })
-    await settle()
+    await site.page.waitForFunction(() => window.__readyAt !== undefined, {
+      timeout: 30_000,
+    })
     const facts = await site.evaluate(() => window.__demo.loading())
     expect(facts.loader).toBe(false)
     expect(facts.readyAt).not.toBeNull()
@@ -166,7 +168,10 @@ describe.skipIf(!browser)('FluidTextureDemo in the browser', () => {
     expect(before.loader).toBe(true)
     expect(before.readyAt).toBeNull()
     await site.evaluate(() => window.__demo.compileAgain())
-    await settle(100)
+    await site.page.waitForFunction(
+      () => !document.querySelector('.cocoon-demo__stage > .loader'),
+      { timeout: 30_000 },
+    )
     const after = await site.evaluate(() => window.__demo.loading())
     expect(after.loader).toBe(false)
     expect(after.readyAt).not.toBeNull()
