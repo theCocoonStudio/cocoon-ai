@@ -95,3 +95,14 @@ library.helper: none
 library.generated: none
 library.script: none
 library.docs: docs/Demo.md — props, the schema format, useSettings, the class names and the inline layout, how a demo file uses it
+
+## Amendments, 2026-10-18 (the consumer interface, src/manifest.spec.md; Izzy's answers, kept one by one)
+
+props.10: loader — element, optional; shown inside the stage until the scene reports ready (handle.3), absent for a demo whose manifest entry has scene false; styled by the consumer like everything else
+props.11: onReady — () => void, optional; fires once when the scene's compile promise resolves (handle.3); never for a markup-only demo
+props.12: compile — boolean, optional, default true; when false the demo does not compile on mount and the consumer calls handle.3 itself, the home page's batch
+handle.1: root — the demo's scene root, the group it sends through the tunnel; the consumer may traverse it
+handle.2: materials — every material the scene uses, so a consumer can compile explicitly and in a batch
+handle.3: compile() — compiles the demo's materials and initialises its render targets with the Canvas's renderer and camera, inside the Canvas's context; returns a promise; idempotent
+amend.1: a demo whose entry has scene false takes no tunnel and no loader and exposes no handle.1 to handle.3; the structure test refuses the mismatch
+amend.2: the loading rules of manifest.spec loading.* apply to every demo file
