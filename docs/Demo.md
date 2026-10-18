@@ -67,16 +67,22 @@ The site renders `<tunnel.Out />` into a full-viewport View in its one Canvas; t
 | `settingContainerStyle` |              | merged last onto the sidebar's inline style                                                         |
 | `theme`                 |              | lands as `data-theme` on the root; absent when not given                                            |
 | `label`                 | `'Settings'` | the toggle's accessible name and the sidebar's                                                      |
+| `loader`                |              | an element shown first in the stage while `ready` is false; the consumer's, styled by it            |
+| `ready`                 | `true`       | the demo file's, not the consumer's: false from mount until its scene's first compile resolves      |
 | `ref`                   |              | the root div                                                                                        |
 | `children`              |              | the demo's markup, inside the stage                                                                 |
 
-Other props are spread onto the root div.
+Other props are spread onto the root div. Two more props every scene demo takes are the demo file's, not the wrapper's: `compile` (default true; false when the consumer calls the handle's `compile()` itself) and `onReady` (called once, when the first compile resolves). See Loading below.
+
+## Loading
+
+Every page compiles on load behind a loader the consumer owns (`src/manifest.spec.md`, loading.\*). A scene demo's `ref` is a handle with `root` (the scene's root group, traversable), `materials` (every material the scene uses) and `compile()`, which compiles the materials against the consumer's scene and initialises the demo's targets with the Canvas's renderer and camera, returns one promise and is idempotent. The demo calls `compile()` on mount unless `compile={false}`; while it runs, the wrapper shows `loader` in the stage; when it resolves, `onReady` fires and the loader leaves. A consumer with a global loader ignores the slot and waits on every demo's `onReady`; a home page that compiles in a batch passes `compile={false}` and calls each handle's `compile()` itself. A markup-only demo has no handle, no loader and no `onReady`.
 
 ## The markup
 
 ```
 div.cocoon-demo[data-theme]            flex row, fills its container, overflow hidden
-  div.cocoon-demo__stage               flex 1, the demo's children, then
+  div.cocoon-demo__stage               flex 1: the loader while not ready, the demo's children, then
     button.cocoon-demo__toggle         aria-expanded, aria-controls the sidebar; top-right of the stage
   aside.cocoon-demo__settings          hidden when closed; at most half the container, scrolling both ways; one fieldset per group
     fieldset.cocoon-demo__group        legend = the group; the ungrouped entries first, with no legend

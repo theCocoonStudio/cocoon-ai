@@ -112,6 +112,35 @@ describe('Demo markup', () => {
     expect(ref.current.getAttribute('data-x')).toBe('1')
   })
 
+  it('markup.14 and props.10, 13 the loader element renders as given, first in the stage, only while ready is false; amend.4', () => {
+    const loader = <div data-testid='loader'>loading</div>
+    const { container, rerender } = render(
+      <Harness loader={loader} ready={false}>
+        <span>child</span>
+      </Harness>,
+    )
+    const stage = container.querySelector('.cocoon-demo__stage')
+    expect(stage.firstElementChild).toBe(screen.getByTestId('loader'))
+    expect(screen.getByTestId('loader').parentElement).toBe(stage)
+    expect(stage.children[1].textContent).toBe('child')
+    rerender(
+      <Harness loader={loader} ready>
+        <span>child</span>
+      </Harness>,
+    )
+    expect(screen.queryByTestId('loader')).toBeNull()
+    expect(stage.firstElementChild.textContent).toBe('child')
+  })
+
+  it('props.13 ready defaults to true, and without a loader nothing renders while false', () => {
+    const loader = <div data-testid='loader'>loading</div>
+    const { container, rerender } = render(<Harness loader={loader} />)
+    expect(screen.queryByTestId('loader')).toBeNull()
+    rerender(<Harness ready={false} />)
+    const stage = container.querySelector('.cocoon-demo__stage')
+    expect(stage.firstElementChild.tagName).toBe('BUTTON')
+  })
+
   it('markup.2 children render inside the stage, before the toggle', () => {
     const { container } = render(
       <Harness>
