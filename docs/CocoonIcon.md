@@ -1,3 +1,11 @@
+---
+title: Cocoon icon
+summary: 'A cocoon icon at text size, in text colour, from the set of thirteen or an inline svg.'
+credits: [Izzy Erlich, Claude Fable 5.1]
+since: 2026-09-06
+tags: [dom, icon, svg]
+---
+
 # CocoonIcon
 
 `src/CocoonIcon/index.jsx`. A cocoon icon at text size, in text colour. Built from `CocoonIcon.spec.md`; `CocoonIcon.resolved.md` records what the build settled.

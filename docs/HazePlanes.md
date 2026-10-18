@@ -1,3 +1,11 @@
+---
+title: Haze planes
+summary: 'Wraps content in the cocoon haze, the plane recession the logo and the icon set are cut from, applied to a live element.'
+credits: [Izzy Erlich, Claude Fable 5.1]
+since: 2026-09-06
+tags: [dom, haze, logo]
+---
+
 # HazePlanes
 
 `src/HazePlanes/index.jsx`. Wraps content in the cocoon haze: the plane recession the logo and the icon set are cut from, applied to a live element. The scene is `src/utils/hazePlanes.js` (`docs/utils/hazePlanes.md`); the component restates none of it. Built from `HazePlanes.spec.md`; `HazePlanes.resolved.md` records what the build settled.

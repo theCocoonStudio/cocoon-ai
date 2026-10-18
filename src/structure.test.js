@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { config } from '../cocoon.config.js'
+import { FIELDS, LISTS, parseFrontMatter } from '../scripts/manifest.mjs'
 
 // The repo's structure as tests: what a script can decide yes or no from the
 // files alone, so a stale entry fails on the author's machine rather than in
@@ -126,6 +127,92 @@ describe('component folders', () => {
           doc.includes(`\`${prop}\``),
           `docs/${name}.md does not mention \`${prop}\`, declared at ${dir}/index.jsx:${line}`,
         ).toBe(true)
+    })
+  }
+})
+
+describe('docs', () => {
+  // What ships to a consumer that renders the docs itself (src/manifest.spec.md,
+  // docs.2 to docs.5): every component doc opens with the front matter the
+  // manifest reads, the body is CommonMark with no raw HTML outside code, and
+  // every relative image is beside the doc. The checks are text only; the
+  // manifest's own checks, which import the module, are src/manifest.test.js.
+  const components = readdirSync(join(ROOT, 'src')).filter(
+    (d) =>
+      d !== 'utils' &&
+      d !== 'test' &&
+      statSync(join(ROOT, 'src', d)).isDirectory(),
+  )
+  const docs = []
+  const walk = (dir) => {
+    for (const entry of readdirSync(join(ROOT, dir))) {
+      const p = `${dir}/${entry}`
+      if (statSync(join(ROOT, p)).isDirectory()) walk(p)
+      else if (entry.endsWith('.md')) docs.push(p)
+    }
+  }
+  walk('docs')
+
+  for (const name of components) {
+    it(`docs.2 docs/${name}.md opens with the front matter: ${FIELDS.join(', ')}`, () => {
+      const doc = `docs/${name}.md`
+      let data
+      expect(() => ({ data } = parseFrontMatter(read(doc), doc))).not.toThrow()
+      for (const field of FIELDS) {
+        expect(
+          field in data,
+          `${doc}: the front matter has no ${field}; the fields are ${FIELDS.join(', ')}`,
+        ).toBe(true)
+        expect(
+          Array.isArray(data[field]),
+          `${doc}: ${field} must be ${LISTS.has(field) ? 'a list' : 'a string'}`,
+        ).toBe(LISTS.has(field))
+      }
+      expect(
+        data.since,
+        `${doc}: since must be a date, YYYY-MM-DD, the day the component first shipped`,
+      ).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      for (const field of ['title', 'summary'])
+        expect(data[field].length, `${doc}: ${field} is empty`).toBeGreaterThan(
+          0,
+        )
+      expect(data.credits.length, `${doc}: credits is empty`).toBeGreaterThan(0)
+    })
+  }
+
+  /** The doc's lines with fenced blocks and inline code blanked, so a check reads prose only. */
+  const prose = (p) => {
+    let fenced = false
+    return lines(p).map((l) => {
+      if (/^\s*(```|~~~)/.test(l)) {
+        fenced = !fenced
+        return ''
+      }
+      return fenced ? '' : l.replace(/`[^`]*`/g, '')
+    })
+  }
+
+  for (const p of docs) {
+    it(`docs.3 ${p} has no raw HTML outside code`, () => {
+      // a tag: a name, then attributes, a slash or the close; an autolink <https://…> has a colon there
+      const tag = /<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*)?\/?>/
+      const at = prose(p).findIndex((l) => tag.test(l))
+      expect(
+        at,
+        `${p}:${at + 1} holds an HTML tag outside a code span or block; the body is CommonMark, so one renderer covers every doc`,
+      ).toBe(-1)
+    })
+    it(`docs.4 ${p} references only images that exist beside it`, () => {
+      const dir = p.slice(0, p.lastIndexOf('/'))
+      prose(p).forEach((l, i) => {
+        for (const m of l.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) {
+          if (/^[a-z]+:/.test(m[1])) continue
+          expect(
+            existsSync(join(ROOT, dir, m[1])),
+            `${p}:${i + 1} references the image ${m[1]}, which is not under ${dir}/`,
+          ).toBe(true)
+        }
+      })
     })
   }
 })

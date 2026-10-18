@@ -1,3 +1,11 @@
+---
+title: Fluid texture
+summary: "A fluid simulation rendered to a texture, for a material's map, bump or alpha, on three's WebGPU renderer."
+credits: [Izzy Erlich, Claude Fable 5.1, 'mnmxmx (fluid-three)']
+since: 2026-09-15
+tags: [three, webgpu, tsl, fluid, texture, hook]
+---
+
 # useFluidTexture
 
 Outputs a fluid simulation to a `THREE.Texture` and returns it. Can be used as a `THREE.Material` `.map`, `.alphaMap`, or anywhere a texture would normally be used.

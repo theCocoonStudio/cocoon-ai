@@ -1,3 +1,11 @@
+---
+title: Cocoon logo group
+summary: "The cocoon logo as a group of extruded meshes for a react-three-fiber scene: the mark's four triangles, and the wordmark in the lockup view."
+credits: [Izzy Erlich, Claude Fable 5.1]
+since: 2026-09-13
+tags: [three, fiber, logo, mesh]
+---
+
 # CocoonLogoGroup
 
 `src/CocoonLogoGroup/index.jsx`. The cocoon logo as a group of extruded meshes for a react-three-fiber scene: the four triangles of the mark, front first, and in the lockup view the wordmark beside them. The recession is the same scene the SVG logo and the icon set are cut from (`src/utils/hazePlanes.js`); the outlines are the shipped artwork's, carried in `logo.js`, which `npm run assets:logo` regenerates. Nothing runs per frame: move the group. Built from `CocoonLogoGroup.spec.md`; `CocoonLogoGroup.resolved.md` records what the build settled.

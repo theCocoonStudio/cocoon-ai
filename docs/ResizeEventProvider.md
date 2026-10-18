@@ -1,3 +1,11 @@
+---
+title: Resize event provider
+summary: 'Declarative size updates for subscribed elements from one ResizeObserver shared under the provider.'
+credits: [Izzy Erlich, Claude Fable 5.1]
+since: 2026-10-02
+tags: [dom, resize, context, hook]
+---
+
 # ResizeEventProvider
 
 `src/ResizeEventProvider/index.jsx`, a context provider and a hook. Declarative size updates (`{ width, height }`) for subscribed elements, from one `ResizeObserver` shared by every subscriber under the provider.
