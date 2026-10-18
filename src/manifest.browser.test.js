@@ -47,7 +47,13 @@ describe.skipIf(!browser)(
   () => {
     beforeAll(async () => {
       site = await openPage(ENTRY, PAGE)
-      await settle(1500)
+      // every scene demo ready, however loaded the machine: the budget is the page's own measure, not this wait
+      await site.page.waitForFunction(
+        () =>
+          window.__fit.entries().every((e) => !e.scene || e.readyMs !== null),
+        { timeout: 60_000 },
+      )
+      await settle(300)
     }, 120_000)
     afterAll(async () => site && (await site.close()))
 
