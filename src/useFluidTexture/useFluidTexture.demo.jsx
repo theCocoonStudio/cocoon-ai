@@ -24,7 +24,10 @@ import { useFluidTexture } from './useFluidTexture.js'
 // under a basic or a standard material with its lights; the settings in the
 // wrapper's sidebar. The scene goes through the site's tunnel into its one
 // Canvas; nothing here renders a Canvas. Built with docs/useFluidTexture.md's
-// Demo section and the resolved file's Demo entries.
+// Demo section and the resolved file's Demo entries. The fixed exports the
+// manifest reads (src/manifest.spec.md; scripts/manifest.mjs): `demo`, the
+// component; `schema`; `scene`, true since the scene goes through the tunnel;
+// `effects`, the enum values this demo accepts in render order, none yet.
 
 /** The environments: one lazy module each, local to the install (the assets package ships them as data URLs). */
 const ENVIRONMENTS = {
@@ -50,8 +53,13 @@ const ENVIRONMENTS = {
 
 const standard = { key: 'material', value: 'standard' }
 
+/** This demo sends a scene through the tunnel (manifest.4). */
+export const scene = true
+/** The effects this demo accepts, in render order: none yet (manifest.11; the resolved file's gap). */
+export const effects = Object.freeze([])
+
 /** The settings, defaults from cocoon.config.js where the hook has one. */
-export const fluidDemoSchema = Object.freeze({
+export const schema = Object.freeze({
   forceValue: {
     kind: 'number',
     default: config.fluid.forceValue,
@@ -430,7 +438,7 @@ export function FluidTextureDemo({
       "FluidTextureDemo: `tunnel` is required, a tunnel-rat tunnel whose Out is rendered in the site's Canvas",
     )
   }
-  const settings = useSettings(fluidDemoSchema)
+  const settings = useSettings(schema)
   const probe = useRef(null)
   const [probeEl, setProbeEl] = useState(null)
   const rectRef = useRef(null)
@@ -476,3 +484,5 @@ export function FluidTextureDemo({
     </Demo>
   )
 }
+
+export { FluidTextureDemo as demo }
