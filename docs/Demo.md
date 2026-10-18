@@ -1,3 +1,11 @@
+---
+title: Demo wrapper
+summary: "The wrapper every demo renders into: a stage for the demo's markup and a settings sidebar rendered from a schema."
+credits: [Izzy Erlich, Claude Fable 5.1]
+since: 2026-10-07
+tags: [dom, demo, settings]
+---
+
 # Demo
 
 `src/Demo/index.jsx` and `src/Demo/useSettings.js`. The wrapper every component's demo renders into on the site: a stage that holds the demo's markup, and a settings sidebar rendered from a schema. Built from `Demo.spec.md`; `Demo.resolved.md` records what the build settled. The demo skill (`.claude/skills/demo/SKILL.md`) says what a `<Name>.demo.jsx` is; this doc is the wrapper's API.

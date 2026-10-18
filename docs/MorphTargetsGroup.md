@@ -1,3 +1,11 @@
+---
+title: Morph targets group
+summary: "Wraps one mesh and turns further geometries into its morph targets, each fitted to the base's vertex count."
+credits: [Izzy Erlich, Claude Fable 5.1]
+since: 2026-09-13
+tags: [three, fiber, geometry, morph]
+---
+
 # MorphTargetsGroup
 
 Wraps one mesh and turns further geometries into its morph targets. The mesh keeps its declared geometry as the base. Every target is fitted to the base's vertex count, so `mesh.morphTargetInfluences[i]` blends the mesh toward target `i`. Nothing runs per frame: the owner drives the influences.

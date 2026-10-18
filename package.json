@@ -4,7 +4,8 @@
   "description": "Components and utilities for the Cocoon creative tech studio site (React 19 + react-three-fiber).",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -1,3 +1,11 @@
+---
+title: Scroll provider
+summary: 'The scroll position of one element, read once per frame into a ref, with optional features computed from it.'
+credits: [Izzy Erlich, Claude Fable 5.1]
+since: 2026-10-02
+tags: [dom, scroll, context, hook]
+---
+
 # ScrollProvider
 
 `src/ScrollProvider/index.jsx`, a context provider and a hook. The current scroll position of one scroll element, read once per frame while scrolling into a ref, plus optional features computed from it. It wraps its own `ResizeEventProvider`, so a layout change re-runs the features.
