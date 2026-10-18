@@ -1,11 +1,13 @@
-# Who may approve whose PR, as a required status rather than a habit.
+# Who may approve whose PR, as a required check rather than a habit.
 #
 # The main ruleset requires one approving review, and GitHub counts any user with
 # write access, bots included. With two agents that would let them approve each
-# other and merge code no human read. This job sets the commit status
-# `reviewer-policy` on the PR's head: success only when an APPROVED review from an
-# allowed reviewer exists for the author. Make it required in the ruleset and the
-# policy binds. Gemini's approval satisfies nobody's PR, by design (Izzy, 2026-10-02).
+# other and merge code no human read. This job exits non-zero until the latest
+# review on the head, per reviewer, is an approval from an account allowed for the
+# author; the main ruleset requires the job (`policy`), so the policy binds. It
+# used to post a commit status instead, which any workflow with `statuses: write`
+# could forge (cocoon-agent-sandbox #13, 2026-10-18). Gemini's approval satisfies
+# nobody's PR, by design (Izzy, 2026-10-02).
 #
 #   author                 allowed approvers
 #   theCocoonStudio        cocoon-claude[bot]
@@ -24,7 +26,6 @@ on:
     types: [submitted, dismissed]
 permissions:
   pull-requests: read
-  statuses: write
 jobs:
   policy:
     runs-on: ubuntu-latest
@@ -54,10 +55,9 @@ jobs:
                 | map(select(.state == "APPROVED" and (.user.login as $u | $allowed | index($u))))
                 | map(.user.login) | join(", ")')
           if [ -n "$approvers" ]; then
-            state=success; desc="approved by $approvers (allowed for $author)"
+            echo "approved by $approvers (allowed for $author)"
+            exit 0
           else
-            state=failure; desc="needs an approval from $(jq -r 'join(" or ")' <<<"$allowed") for a PR by $author"
+            echo "needs an approval from $(jq -r 'join(" or ")' <<<"$allowed") for a PR by $author"
+            exit 1
           fi
-          echo "$desc"
-          gh api -X POST "repos/$REPO/statuses/$head" \
-            -f state="$state" -f context=reviewer-policy -f description="$desc" >/dev/null
