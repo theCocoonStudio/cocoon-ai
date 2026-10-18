@@ -23,11 +23,13 @@ const PAGE = {
 
 /**
  * budget.2: each scene demo's cold compile, mount to onReady on the harness's
- * Chromium under SwiftShader, measured 2026-10-18 on Linux and held to twice
- * the measure; a new scene demo adds its line at its first run.
+ * Chromium under SwiftShader, held to twice the slowest measure seen, which is
+ * GitHub's two-core runner with the other browser tests beside it (the
+ * harness's rule: sized for the slowest runner, with the number and the date);
+ * a new scene demo adds its line at its first run.
  */
 const READY_BUDGET_MS = {
-  useFluidTexture: 1_100, // measured 511 ms; the slowest runner seen sets a new number with its date
+  useFluidTexture: 6_200, // measured 511 ms here and 3,065 ms on GitHub's runner (run 39102297104, 2026-10-18); twice the slowest
 }
 
 const sceneEntries = demos.filter((e) => e.scene)
