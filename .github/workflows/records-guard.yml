@@ -1,0 +1,35 @@
+# The record never reaches a public repository (the owner's decision of 2026-10-19 on the audit's item 7; a
+# private session reached a public branch of another repository on 2026-10-17 and nothing refused it). On every
+# push to a branch other than main this job lists the pushed tree and, finding a record (records/, chat/,
+# exports/, a chat export export-claude.md or export-gemini.md, a session export by its date-and-id name) or a project .npmrc, deletes the branch and opens an issue naming the
+# commit; src/structure.test.js refuses the same at the merge. main is protected by the ruleset and cannot be
+# deleted, and a record there would have passed the structure check and a review first. The deletion removes
+# the branch tip only: the objects stay reachable by their hash until GitHub purges them, which the owner asks
+# for (the records' TODO, 2026-10-17). The token's two permissions are the deletion and the issue.
+name: records-guard
+on:
+  push:
+    branches-ignore: [main]
+permissions:
+  contents: write
+  issues: write
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: refuse a record or a project .npmrc on the pushed branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          hits=$(git ls-files | grep -E '^(records|chat|exports)/|(^|/)export-(claude|gemini)\.md$|(^|/)[0-9]{4}-[0-9]{2}-[0-9]{2}-session-[0-9a-f]{8}\.(md|jsonl)$|(^|/)\.npmrc$' || true)
+          if [ -z "$hits" ]; then echo "records-guard: nothing to refuse on $REF"; exit 0; fi
+          printf 'records-guard: %s at %s carries files that never belong here:\n%s\n' "$REF" "$SHA" "$hits"
+          body=$(printf 'Branch `%s` at %s carried paths that never belong in a public repository and was deleted by the records-guard workflow:\n\n```\n%s\n```\n\nThe branch tip is gone; the objects stay reachable by hash until GitHub purges them, which the owner asks for.' "$REF" "$SHA" "$hits")
+          gh api -X POST "repos/$REPO/issues" -f title="records-guard: branch $REF deleted, it carried a record" -f body="$body" >/dev/null
+          git push origin --delete "$REF"
+          exit 1
