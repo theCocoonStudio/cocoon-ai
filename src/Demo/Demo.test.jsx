@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { act, renderHook } from '@testing-library/react'
 import {
   cleanup,
   fireEvent,
@@ -399,5 +400,59 @@ describe('Demo exits', () => {
     )
     expect(screen.getByRole('alert').textContent).toMatch(/useSettings/)
     spy.mockRestore()
+  })
+})
+
+describe('useSettings initial values (context.hook.2, manifest.spec theme.6)', () => {
+  const schema = Object.freeze({
+    size: { kind: 'number', default: 1, min: 0, max: 2 },
+    on: { kind: 'boolean', default: false },
+    tone: {
+      kind: 'select',
+      default: 'a',
+      options: ['a', { value: 'b', label: 'B' }],
+    },
+    ink: { kind: 'colour', default: '#141414' },
+    at: { kind: 'vector', default: [0, 0, 0] },
+  })
+  it("applies the site's values over the defaults, and reset returns to them", () => {
+    const initial = Object.freeze({ ink: '#ffffff', tone: 'b', at: [1, 2, 3] })
+    const { result } = renderHook(() => useSettings(schema, initial))
+    expect(result.current.values).toEqual({
+      size: 1,
+      on: false,
+      tone: 'b',
+      ink: '#ffffff',
+      at: [1, 2, 3],
+    })
+    act(() => result.current.set('ink', '#000000'))
+    expect(result.current.values.ink).toBe('#000000')
+    act(() => result.current.reset())
+    expect(result.current.values.ink).toBe('#ffffff')
+    expect(result.current.values.at).toEqual([1, 2, 3])
+    expect(result.current.values.at).not.toBe(initial.at)
+  })
+  it('exits.throws a key not in the schema, or a value not of its kind, names the key', () => {
+    const silent = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(() => renderHook(() => useSettings(schema, { nope: 1 }))).toThrow(
+      /initial "nope"/,
+    )
+    expect(() => renderHook(() => useSettings(schema, { size: '1' }))).toThrow(
+      /initial "size" is not a number/,
+    )
+    expect(() => renderHook(() => useSettings(schema, { tone: 'c' }))).toThrow(
+      /initial "tone" is not a select/,
+    )
+    expect(() => renderHook(() => useSettings(schema, { on: 'yes' }))).toThrow(
+      /initial "on" is not a boolean/,
+    )
+    expect(() => renderHook(() => useSettings(schema, { at: 3 }))).toThrow(
+      /initial "at" is not a vector/,
+    )
+    expect(() => renderHook(() => useSettings(schema, 7))).toThrow(
+      /initial must be an object/,
+    )
+    expect(() => renderHook(() => useSettings(schema))).not.toThrow()
+    silent.mockRestore()
   })
 })

@@ -54,6 +54,59 @@ const defaultsOf = (schema) =>
     ]),
   )
 
+/** True when `value` is of the entry's kind: what a control of that kind would produce. */
+const ofKind = (entry, value) => {
+  switch (entry.kind) {
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value)
+    case 'boolean':
+      return typeof value === 'boolean'
+    case 'select':
+      return entry.options.some(
+        (o) => (typeof o === 'string' ? o : o.value) === value,
+      )
+    case 'colour':
+      return typeof value === 'string'
+    case 'vector':
+      return Array.isArray(value)
+    default:
+      return false
+  }
+}
+
+/**
+ * Throws, naming the key, when `initial` names a key the schema lacks or gives a value not of
+ * its entry's kind (context.hook.2); undefined means no initial values.
+ */
+function validateInitial(schema, initial) {
+  if (initial === undefined) return
+  if (!initial || typeof initial !== 'object') {
+    throw new Error('useSettings: initial must be an object keyed by setting')
+  }
+  for (const [key, value] of Object.entries(initial)) {
+    const entry = schema[key]
+    if (!entry) {
+      throw new Error(`useSettings: initial "${key}" is not in the schema`)
+    }
+    if (!ofKind(entry, value)) {
+      throw new Error(
+        `useSettings: initial "${key}" is not a ${entry.kind} the schema's entry accepts`,
+      )
+    }
+  }
+}
+
+/** The defaults with `initial` over them (context.hook.2): the page's own first state. */
+const initialOf = (schema, initial) => ({
+  ...defaultsOf(schema),
+  ...Object.fromEntries(
+    Object.entries(initial ?? {}).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? [...value] : value,
+    ]),
+  ),
+})
+
 /** The remount key: the values of every entry with `live: false`, serialised. */
 const remountKey = (schema, values) =>
   JSON.stringify(
@@ -69,20 +122,28 @@ const remountKey = (schema, values) =>
  * and updates in place for the rest. The schema must be referentially stable
  * (a module constant), or it is validated again each render.
  *
+ * `initial`, optional, is the site's first values over the defaults (its
+ * theme for the scene); `reset` returns to them. Read once, like the schema.
+ *
  * @param {Record<string, SettingEntry>} schema
+ * @param {Record<string, *>} [initial] a partial values object over the defaults
  * @returns {{ schema: Record<string, SettingEntry>, values: Record<string, *>, set: (key: string, value: *) => void, reset: () => void, key: string }}
  */
-export function useSettings(schema) {
+export function useSettings(schema, initial) {
   const defaults = useMemo(() => {
     validate(schema)
-    return defaultsOf(schema)
-  }, [schema])
+    validateInitial(schema, initial)
+    return initialOf(schema, initial)
+  }, [schema, initial])
   const [values, setValues] = useState(defaults)
   const set = useCallback(
     (key, value) => setValues((prev) => ({ ...prev, [key]: value })),
     [],
   )
-  const reset = useCallback(() => setValues(defaultsOf(schema)), [schema])
+  const reset = useCallback(
+    () => setValues(initialOf(schema, initial)),
+    [schema, initial],
+  )
   const key = useMemo(() => remountKey(schema, values), [schema, values])
   return useMemo(
     () => ({ schema, values, set, reset, key }),

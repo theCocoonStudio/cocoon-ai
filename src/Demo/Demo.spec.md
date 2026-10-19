@@ -37,12 +37,13 @@ slots.1: children — the demo's `<tunnel.In>` with its fiber root, rendered ins
 context.consumed: none
 context.provided: none
 context.hook.1: useSettings(schema) — validates the schema once (exits.throws), holds the values, initial every entry's default; returns { schema, values, set(key, value), reset(), key }; `key` is a string that changes only when an entry with `live: false` changes, for a scene to remount on (my call: a demo keys its scene with it)
+context.hook.2: useSettings(schema, initial) — `initial`, optional, a partial values object keyed by setting (the site's theme for the scene: its background, its ink; manifest.spec theme.6), applied over the schema's defaults at the first call; `reset()` returns to these, the page's own first state (my call); a key not in the schema, or a value not of its entry's kind (a number for number, a boolean for boolean, one of the options' values for select, a string for colour, an array for vector), throws at the first call naming the key (exits.throws); `initial` is read once, as the schema is, so it must be referentially stable or a module constant
 
 ## state
 
 state.1: open — boolean, internal, initial false; used only when props.2 is undefined
-state.2: values — object keyed by schema key, in useSettings, initial the defaults
-state.reset: useSettings.reset() returns state.2 to the defaults; nothing else resets
+state.2: values — object keyed by schema key, in useSettings, initial the defaults with `initial` over them (context.hook.2)
+state.reset: useSettings.reset() returns state.2 to the defaults with `initial` over them; nothing else resets
 
 ## markup
 
@@ -83,7 +84,7 @@ effects: none
 
 ## exits
 
-exits.throws: useSettings throws at its first call, naming the key, when an entry has no kind or an unknown one, a select has no options, a number has no default, or a vector's default is not an array; Demo throws from render when props.1 is not what useSettings returns, naming useSettings. Owner: the nearest error boundary
+exits.throws: useSettings throws at its first call, naming the key, when an entry has no kind or an unknown one, a select has no options, a number has no default, or a vector's default is not an array, and when `initial` names a key not in the schema or gives a value not of its kind; Demo throws from render when props.1 is not what useSettings returns, naming useSettings. Owner: the nearest error boundary
 exits.suspends: never
 exits.handler-failures: none
 
