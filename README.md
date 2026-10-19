@@ -118,6 +118,7 @@ src/
   manifest.test.js            the manifest against the files, the drift check, the size budgets
   manifest.browser-entry.jsx  the fit test's page: the consumer's shape with every entry rendered through its demo
   manifest.browser.test.js    the fit test: every entry mounts, a scene demo reports ready, the sidebar follows the schema, the ready budget
+  manifest.consumer.test.js   the consumer test: the package as npm packs it, installed by file link into a minimal consumer that imports `cocoon-ai/demos` and renders every entry with its doc
   <Component>/
     index.jsx                 the component
     <Component>.spec.md       the spec it was built from
