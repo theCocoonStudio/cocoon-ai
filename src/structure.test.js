@@ -85,6 +85,11 @@ describe('no conflict markers', () => {
   })
 })
 
+// A folder holding only its spec is a spec before its run (the spec skill writes the spec first and
+// the build follows in its own pull request): that one state is allowed, and it has no doc yet.
+const specOnly = (name) =>
+  readdirSync(join(ROOT, 'src', name)).join() === `${name}.spec.md`
+
 describe('component folders', () => {
   // utils/ holds React-free functions and test/ holds test helpers; the rest are components.
   const components = readdirSync(join(ROOT, 'src')).filter(
@@ -97,6 +102,12 @@ describe('component folders', () => {
 
   for (const name of components) {
     const dir = `src/${name}`
+    if (specOnly(name)) {
+      it(`${name} is a spec before its run`, () => {
+        expect(existsSync(join(ROOT, `${dir}/${name}.spec.md`))).toBe(true)
+      })
+      continue
+    }
     it(`${name} has its component, spec, resolved spec, tests and doc`, () => {
       for (const file of [
         `${dir}/index.jsx`,
@@ -141,7 +152,8 @@ describe('docs', () => {
     (d) =>
       d !== 'utils' &&
       d !== 'test' &&
-      statSync(join(ROOT, 'src', d)).isDirectory(),
+      statSync(join(ROOT, 'src', d)).isDirectory() &&
+      !specOnly(d),
   )
   const docs = []
   const walk = (dir) => {

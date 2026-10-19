@@ -120,7 +120,7 @@ src/
   manifest.browser.test.js    the fit test: every entry mounts, a scene demo reports ready, the sidebar follows the schema, the ready budget
   <Component>/
     index.jsx                 the component
-    <Component>.spec.md       the spec it was built from
+    <Component>.spec.md       the spec it was built from; a folder holding only this file is a spec before its run, the one state the structure test allows short of the set
     <Component>.resolved.md   what was derived from the spec: contracts, defaults, notes, gaps
     <Component>.test.jsx      tests, named by spec id
     <Component>.demo.jsx      the demo, where one exists: the scene under the site's conditions with its settings; exports demo, schema, scene, effects for the manifest
