@@ -17,6 +17,16 @@ The package bundles none of its peers. The site provides `react`, `react-dom`, `
 - **A loader** element, shown inside the demo's container until the scene has compiled; a site that shows one global loader ignores the slot and waits on every scene's `onReady`.
 - **`onReady`** and the **`ref`**: the ref is a handle with `root` (the scene's root group, traversable with fiber or three), `materials` (every material the scene uses) and `compile()`, which compiles them against the Canvas's renderer and camera and returns a promise.
 
+## Styling
+
+The site's stylesheet is written once against names that hold (`src/manifest.spec.md`, theme.\*). The wrapper's markup is the surface: `cocoon-demo` on the root, then `cocoon-demo__stage`, `cocoon-demo__toggle`, `cocoon-demo__settings`, `cocoon-demo__group`, `cocoon-demo__field` with `data-kind`, `cocoon-demo__vector` and `cocoon-demo__reset`, with the controls inside a field as plain elements. The states to style are the attributes the wrapper sets: `aria-expanded` on the toggle, `hidden` on the sidebar, `data-kind` on a field. A rename is a major version, and the fit test asserts the surface so one fails here first.
+
+`data-theme` on the root carries the `theme` prop as the site gives it; the wrapper reads nothing from it, so `.cocoon-demo[data-theme="dark"] .cocoon-demo__settings { ... }` is the site's to write. The library fixes layout inline and nothing else: the flex row, the stage's growth, the sidebar's bound of half the container and its scroll, the toggle's corner. Everything else is paint and the site's: colours, type, borders, radii, spacing, the controls' look, transitions. The class props land after the internal class and the style props after the internal inline styles, on the root and the sidebar, so utility classes and inline values have the last word there. The wrapper defines and reads no CSS custom property; variables the site uses live on its own root and its rules on the names above read them.
+
+The scene's own colours are settings. A demo's schema carries its colour entries with the library's defaults; the site sets the scene to its theme with `useSettings(schema, initial)`, the second argument its first values over the defaults (a background, an ink), which `reset` returns to. A key not in the schema or a value not of its kind throws at the first call, naming the key.
+
+The docs take the site's prose styles as they are: a body is CommonMark with no classes and no HTML, so its headings, paragraphs, lists, tables, code blocks (with the language the fence names, for the site's highlighter), images, links and block quotes are the site's elements once rendered. The site renders a body inside its own element with its own classes and `data-theme`, and builds the head from the entry's fields as its own markup.
+
 ## The manifest
 
 ```js

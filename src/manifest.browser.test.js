@@ -112,6 +112,40 @@ describe.skipIf(!browser)(
       expect(site.errors).toEqual([])
     })
 
+    it("theme.1, 2 and 4: the styling surface on every root: the class names, data-theme, the site's class after the internal one, the toggle's state", async () => {
+      const surface = await site.evaluate(() =>
+        window.__fit.entries().map((e) => {
+          const root = document.querySelector(`#demo-${e.name} .cocoon-demo`)
+          const q = (sel) => root.querySelector(sel) !== null
+          return {
+            name: e.name,
+            classes: root ? [...root.classList] : null,
+            theme: root?.getAttribute('data-theme'),
+            stage: q('.cocoon-demo__stage'),
+            toggle: q('.cocoon-demo__toggle[aria-expanded]'),
+            settings: q('.cocoon-demo__settings'),
+            reset: q('.cocoon-demo__reset'),
+            fields: root
+              ? [...root.querySelectorAll('.cocoon-demo__field')].every((f) =>
+                  f.hasAttribute('data-kind'),
+                )
+              : null,
+          }
+        }),
+      )
+      for (const f of surface) {
+        expect(f.classes, `${f.name}: no root`).not.toBeNull()
+        expect(f.classes.indexOf('cocoon-demo')).toBe(0)
+        expect(f.classes.indexOf('site-demo')).toBeGreaterThan(0)
+        expect(f.theme).toBe('site')
+        expect(
+          f.stage && f.toggle && f.settings && f.reset,
+          `${f.name}: an element of the surface is missing`,
+        ).toBe(true)
+        expect(f.fields).toBe(true)
+      }
+    })
+
     it('budget.2 each scene demo is ready within its recorded budget', async () => {
       const facts = (await entries()).filter((f) => f.scene)
       for (const f of facts) {
