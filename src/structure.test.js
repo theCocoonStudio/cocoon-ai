@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { config } from '../cocoon.config.js'
@@ -82,6 +83,38 @@ describe('no conflict markers', () => {
         `${p}:${at + 1} is a conflict marker line; resolve the conflict and remove the markers`,
       ).toBe(-1)
     }
+  })
+})
+
+describe('the record and the npm config stay out of this public repository', () => {
+  // Nothing in the setup refused a record on a public repository until 2026-10-19 (the
+  // audit's item 7; a private session reached a public branch of another repository on
+  // 2026-10-17). A tracked path under records/, chat/ or exports/, a chat export
+  // (export-claude.md, export-gemini.md) or a session export by its date-and-id name fails here; so does a tracked .npmrc, which npm reads over the user's
+  // config and would switch install scripts back on at the sandbox's start (the audit's
+  // item 2). The records-guard workflow refuses the same at the push, on every branch.
+  const tracked = execFileSync('git', ['ls-files'], { cwd: ROOT })
+    .toString()
+    .split('\n')
+    .filter(Boolean)
+  it('no tracked path is a record of a session or a chat', () => {
+    const hits = tracked.filter(
+      (p) =>
+        /^(records|chat|exports)\//.test(p) ||
+        /(^|\/)export-(claude|gemini)\.md$/.test(p) ||
+        /(^|\/)\d{4}-\d{2}-\d{2}-session-[0-9a-f]{8}\.(md|jsonl)$/.test(p),
+    )
+    expect(
+      hits,
+      `records belong to the private records repository, never here: ${hits.join(', ')}`,
+    ).toEqual([])
+  })
+  it('no tracked .npmrc', () => {
+    const hits = tracked.filter((p) => /(^|\/)\.npmrc$/.test(p))
+    expect(
+      hits,
+      "a project .npmrc outranks the sandbox's ignore-scripts; the image's npm config is the one source",
+    ).toEqual([])
   })
 })
 
