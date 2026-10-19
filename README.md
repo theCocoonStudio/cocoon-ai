@@ -178,7 +178,7 @@ The work is seven repositories under [`theCocoonStudio`](https://github.com/theC
 | [`cocoon-copula`](https://github.com/theCocoonStudio/cocoon-copula)               | Connecting information systems                                    | public     |
 | [`cocoon-ai-records`](https://github.com/theCocoonStudio/cocoon-ai-records)       | records for Claude and Izzy on their work in cocoon-ai            | private    |
 
-The two agents reach each repository through the gateway with their own GitHub App (`cocoon-claude`, `cocoon-gemini`), and every repository carries the same ruleset on `main`: one approval after the last push, code owners, linear history, rebase only, the checks `check` and `policy` required, no bypass. Standing up a new one, in the order the layers refuse, is [docs/new-repository.md](docs/new-repository.md).
+The two agents reach each repository through the gateway with their own GitHub App (`cocoon-claude`, `cocoon-gemini`), and every public repository carries the same ruleset on `main`: one approval after the last push, code owners, linear history, rebase only, the checks `check` and `policy` required, no bypass (cocoon-ml carried `check` alone and no code-owner file until the audit of 2026-10-19 gave it both; its ruleset's two switches are the owner's). Every public repository also refuses a record of a session or a chat, and a project `.npmrc`, twice: in its structure check at the merge and by the `records-guard` workflow at the push. Standing up a new one, in the order the layers refuse, is [docs/new-repository.md](docs/new-repository.md).
 
 ## How Claude and I work together
 
