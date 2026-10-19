@@ -94,7 +94,7 @@ const MorphTargetsGroup = dynamic(
 
 Lazy is for what sits below the fold. The nav logo is on every page's first paint, so deferring it adds a request and a frame without the logo.
 
-**The demos entry.** `cocoon-ai/demos` is a second bundle, so a site that imports no demo carries none. `demos` is the manifest, one frozen entry per demo with the doc's front matter as data, the component and the demo as direct imports, the settings schema, the scene flag and the effects; a page lists or routes from it, and a route that wants one demo imports it by name from the same entry. The docs ship in the package under `docs/`, CommonMark with front matter, for the site to render with a renderer of its own. A demo takes the site's tunnel when its entry says `scene`, the site's styling through the wrapper's class, style and theme props, a `loader` element shown until its scene has compiled, and `onReady`; its `ref` is a handle with `root`, `materials` and `compile()`. The whole contract, with what a change to it means for the version, is `src/manifest.spec.md`.
+**The demos entry.** `cocoon-ai/demos` is a second bundle, so a site that imports no demo carries none. `demos` is the manifest, one frozen entry per demo with the doc's front matter as data, the component and the demo as direct imports, the settings schema, the scene flag and the effects; a page lists or routes from it, and a route that wants one demo imports it by name from the same entry. The docs ship in the package under `docs/`, CommonMark with front matter, for the site to render with a renderer of its own. A demo takes the site's tunnel when its entry says `scene`, the site's styling through the wrapper's class, style and theme props, a `loader` element shown until its scene has compiled, and `onReady`; its `ref` is a handle with `root`, `materials` and `compile()`. The whole contract, with what a change to it means for the version, is `src/manifest.spec.md`; how a site takes the package, step by step, with the minimal consumer the harness proves it against, is [docs/consuming.md](docs/consuming.md).
 
 ```js
 import { demos, FluidTextureDemo } from 'cocoon-ai/demos'
@@ -118,6 +118,7 @@ src/
   manifest.test.js            the manifest against the files, the drift check, the size budgets
   manifest.browser-entry.jsx  the fit test's page: the consumer's shape with every entry rendered through its demo
   manifest.browser.test.js    the fit test: every entry mounts, a scene demo reports ready, the sidebar follows the schema, the ready budget
+  manifest.consumer.test.js   the consumer test: the package as npm packs it, installed by file link into a minimal consumer that imports `cocoon-ai/demos` and renders every entry with its doc
   <Component>/
     index.jsx                 the component
     <Component>.spec.md       the spec it was built from
@@ -131,6 +132,7 @@ src/
 docs/
   <Component>.md              API doc: props, handle, dispose rules, limits; opens with the front matter the manifest reads (title, summary, credits, since, tags); CommonMark only, shipped in the package
   utils/<util>.md             API doc for a util worth reading about on its own; a folder, so a util and a component of the same name never collide on a case-insensitive disk
+  consuming.md                how a site takes the package: the file link, the one Canvas and the tunnel, the loader, the docs folder, the manifest; the minimal consumer the harness proves it against
   export-logo.md              the export:logo script: grammar, every parameter, output
   export-logo-group.md        the export:logo-group script: the logo mesh rendered by three and screenshot, and the camera to show it with
 scripts/

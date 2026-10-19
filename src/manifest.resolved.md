@@ -34,6 +34,8 @@ Written with the run, 2026-10-18, from the spec beside it (cocoon-ai #84, from I
 - notes.2: the generator writes through prettier's API, so the committed file is the formatted one and the drift test compares formatted text.
 - notes.3: the two props every scene demo takes beyond the wrapper's, `compile` and `onReady`, are the demo file's; the wrapper never sees them (Demo.spec.md amend.3).
 
+- notes.4: tests.3, the consumer test, was added on 2026-10-19 from the owner's release target (records issue #87, target 1) after the first run; `src/manifest.consumer.test.js` builds, packs and consumes the package the way the site does, in the harness; measured on Linux: the whole test under five seconds beside the fit test
+
 ## gaps
 
 - gaps.1: no markup-only demo exists, so the fit test's case for consumer.1 (no tunnel, no loader, no handle, the Canvas untouched) is skipped, visibly, until one does.
