@@ -1,6 +1,6 @@
 # AgentSceneGroup spec: the renderer half of the agent over the home page's scene
 
-Written 2026-10-19 20:48 UTC from records `site/scene-api.md` (layer 6, Claude's proposal for the owner's strike), the service half's spec (cocoon-gateway #20) and the owner's three choices of 2026-10-19 (the words plain and bounded, the scene kept under the cookie, streaming on), the items one by one for the owner's strike. The five proposals of 2026-10-19 07:56 EDT (the name and root; the inputs; a structural change compiles behind a loader, a value change applies in place; the words are the site's markup; the fit test on both backends) are unanswered and stand here marked "Claude's proposal". The theme API is the section the owner asked to be specific (16:5x EDT). Where a line is Claude's call rather than the owner's decision, it says so.
+Written 2026-10-19 20:48 UTC from records `site/scene-api.md` (layer 6, Claude's proposal for the owner's strike), the service half's spec (cocoon-gateway #20) and the owner's three choices of 2026-10-19 (the words plain and bounded, the scene kept under the cookie, streaming on), the items one by one for the owner's strike. The five proposals of 2026-10-19 07:56 EDT (the name and root; the inputs; a structural change compiles behind a loader, a value change applies in place; the words are the site's markup; the fit test on both backends) are unanswered and stand here marked "Claude's proposal". The theme API is the section the owner asked to be specific (16:5x EDT). Where a line is Claude's call rather than the owner's decision, it says so. The list of every choice nothing forces, Buridan's, with the verdicts, is records `claude/notes/2026-10-19-agent-scene-group-choices.md` (records #92), for the strike beside this file.
 
 ## meta
 
@@ -19,14 +19,14 @@ imports.4: from ./apply.js — the pure part (library.helper): the index of a lo
 ## props
 
 props.1: document — object, required; the representation the service composed (the three document at props.2's version), replaced whole at each turn's `done` and after a theme switch (theme.5); never written by the page
-props.2: version — integer, required; the representation's version this build reads; a document of another version throws (exits.throws)
+props.2: version — none as a prop: the representation's version this build reads is a constant of the module, exposed on the handle (handle.6) for the page to declare at layer 2 (records site/scene-api.md: the version is read from the renderer at page load); a document whose version differs throws (exits.throws). Corrected 2026-10-19 after Buridan's X2
 props.3: hash — string, required; the service's hash of props.1, so the component hashes nothing (one hasher, the service's; Claude's call)
 props.4: stream — `{ subscribe(listener): unsubscribe }`, optional, referentially stable; the turn's events as the service emits them (gateway #20 stream.1), read imperatively (refs.1); absent between turns
 props.5: tunnel — the site's tunnel, required; its Out sits in the site's Canvas; the component never renders a Canvas (Claude's proposal, as the demos)
 props.6: tones — `{ ink, surface, ground, accent }`, required (theme.1)
 props.7: compile — boolean, optional, default true; compile on mount; false when the page calls handle.3 itself, the home page's batch over every scene's materials (manifest.spec loading.3)
 props.8: onReady — () => void, optional; once, when the first compile resolves (callbacks.1)
-props.9: onCompile — (pending: boolean) => void, optional; true when a structural event starts a compile, false when it resolves (callbacks.2), so the page shows its own loader; the home page's loader is global (manifest.spec loading.2), so no loader element here. Claude's proposal.
+props.9: onCompile — (pending: boolean) => void, optional; true when a structural event starts a compile, false when it resolves (callbacks.2), so the page shows its own loader; the home page's loader is global (manifest.spec loading.2), so no loader element here. Claude's proposal; the fork with layer 6's own words ("a loader slot shown while a structural change compiles"): a `loader` element the component shows in place, as the demos do (Demo.spec props.10), against this callback the page's loader follows; both texts are mine, one for the strike (Buridan's X1)
 props.passthrough: none
 props.ref: handle
 
@@ -75,7 +75,7 @@ effects.4: `tones` change alone does nothing here: the page sends the service th
 
 ## exits
 
-exits.throws: at mount when `tunnel` is absent or has no `In`; when `tones` is not four hex colours (theme.1); when `document`'s version is not props.2; when the loader refuses the document (the service validated it; a failure here is a bug, not caught)
+exits.throws: at mount when `tunnel` is absent or has no `In`; when `tones` is not four hex colours (theme.1); when `document`'s version is not the build's (props.2); when the loader refuses the document (the service validated it; a failure here is a bug, not caught)
 exits.suspends: never
 exits.handler-failures: a stream listener that throws propagates; not caught
 
@@ -93,6 +93,7 @@ handle.2: materials — every material the loaded document uses, so the home pag
 handle.3: compile() — three's `compileAsync` of the group against the Canvas's scene and camera; one promise, idempotent, re-armed after a structural load
 handle.4: hash — the scene's current hash, for the page to send with the next request (layer 2)
 handle.5: backend — 'webgpu' | 'webgl', read from the renderer (`gl.backend.isWebGPUBackend`), for the page to declare at layer 2
+handle.6: version — integer, the representation's version this build reads (props.2), for the page to declare at layer 2
 
 ## frame
 
@@ -123,7 +124,7 @@ library.script: none
 
 ## theme (the owner, 2026-10-19 16:5x EDT: "let's be a bit more specific about theme api in the spec")
 
-theme.1: `tones` — object, required: `{ ink, surface, ground, accent }`, each a hex colour `#RRGGBB` (the table's colour kind), the library's own tone names (cocoon.config.js: `ink`; the cuts' `surface` and `ground`) plus `accent`; anything else throws at mount (exits.throws). Claude's call: four tones, not a theme name, so the scene holds no palette of its own and the site's CSS custom properties stay the one source (the site reads them off its `data-theme` root and passes the four)
+theme.1: `tones` — object, required: `{ ink, surface, ground, accent }`, each a hex colour `#RRGGBB` (the table's colour kind), the library's own tone names (cocoon.config.js: `ink` and the cuts' `ground`; `surface` is what HazePlanes and CocoonLogoGroup call the tone their copies fade from, docs/HazePlanes.md, docs/CocoonLogoGroup.md) plus `accent`; anything else throws at mount (exits.throws). Claude's call: four tones, not a theme name, so the scene holds no palette of its own and the site's CSS custom properties stay the one source (the site reads them off its `data-theme` root and passes the four)
 theme.2: what each tone paints, by the table's themed paths (scene.json marks a path `themed: "<tone>"`; an amendment to gateway #20 scene.1): `ground` → the scene's background and the fog's colour; `ink` → the main material's colour; `surface` → the main material's emissive; `accent` → the default colour of a node the agent adds (a light's). A path not marked themed is the template's whatever the tones
 theme.3: the tones travel with every request (layer 2 carries them beside the backend and the version; layer 3 validates four hex colours or answers 400; amendments to #20 api.2 and scene.3) and the service composes the base from them, so `read()` shows the agent what the page shows and the hash covers the tones; the renderer composes nothing. Claude's call, against a client-side overlay the agent could not see
 theme.4: precedence: a path the agent has set keeps the agent's value; a path it has not set follows the tones; the template's default holds when neither; the service's state knows which paths the agent set, the renderer need not
@@ -135,7 +136,7 @@ theme.8: the Demo wrapper's `theme` string (Demo.spec props.8, `data-theme`) is 
 ## tests
 
 tests.1: apply.js, no GL (vitest): the index by path over a loaded fixture; `set` for each kind; `add` from a fragment and `remove` by id; the diff by node set; a non-following hash dropped
-tests.2: the test renderer (@react-three/test-renderer, mocked GL): mounts with the template document through a tunnel; the handle's five members; the group's children match the document's; the tones applied to the themed paths; a version mismatch, a malformed `tones` and a missing tunnel throw; dispose on unmount
+tests.2: the test renderer (@react-three/test-renderer, mocked GL): mounts, through a tunnel, with a fixture document composed for the test's tones (the service composes, the component applies nothing: effects.4); the handle's six members; the group's children match the document's and the fixture's themed values sit on the loaded objects; a version mismatch, a malformed `tones` and a missing tunnel throw; dispose on unmount. Corrected 2026-10-19 after Buridan's X4
 tests.3: the fit test (src/test/browser.js, both backends): the consumer-shaped page of manifest.browser-entry.jsx mounts the component through the tunnel with the template document and a recorded stream (the fixture the service's loop test emits, gateway #20 loop.8, the same events), asserts the scene's state after each event and at `done`, onReady once, onCompile in pairs on structural events, a value event visible within one frame, and the compile time against the budget. Claude's proposal.
 
 ## budget
