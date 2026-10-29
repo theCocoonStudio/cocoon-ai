@@ -8,3 +8,5 @@ assets/icons/preview.html
 assets/**/*.ttf
 src/CocoonIcon/icons.js
 src/CocoonLogoGroup/logo.js
+# AgentSceneGroup/fixtures/: recorded data from the service, written by its loop (the source in the file), never hand-edited
+src/AgentSceneGroup/fixtures/

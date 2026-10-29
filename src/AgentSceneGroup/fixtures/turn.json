@@ -1,0 +1,970 @@
+{
+  "source": "cocoon-gateway agent/first-build dcad452: agent/scene.json and the loop over a scripted model (the loop test's shape), recorded 2026-10-29T21:10Z; the renderer's tests replay it (the service spec's stream.5)",
+  "version": 1,
+  "backend": "webgpu",
+  "templateHash": "4a6447a095759c8a69a0af562716fe4f5d0f2350434308b3b54a539fbb01c991",
+  "template": {
+    "metadata": {
+      "version": 4.6,
+      "type": "Object",
+      "generator": "cocoon scene agent template",
+      "cocoon": {
+        "version": 1
+      }
+    },
+    "geometries": [
+      {
+        "uuid": "geometry-main",
+        "type": "BoxGeometry",
+        "width": 1,
+        "height": 1,
+        "depth": 1
+      }
+    ],
+    "materials": [
+      {
+        "uuid": "material-main",
+        "type": "MeshStandardMaterial",
+        "color": 2792847,
+        "roughness": 0.5,
+        "metalness": 0.1,
+        "emissive": 0
+      }
+    ],
+    "object": {
+      "uuid": "scene",
+      "type": "Scene",
+      "background": 1053720,
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "children": [
+        {
+          "uuid": "mesh-main",
+          "type": "Mesh",
+          "name": "main",
+          "geometry": "geometry-main",
+          "material": "material-main",
+          "visible": true,
+          "matrix": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "uuid": "light-ambient",
+          "type": "AmbientLight",
+          "name": "ambient",
+          "color": 16777215,
+          "intensity": 0.6,
+          "matrix": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "make it red and softer, with a light",
+      "events": [
+        {
+          "type": "change",
+          "change": "set",
+          "input": {
+            "path": "main.colour",
+            "value": "#ff0000"
+          },
+          "result": "set main.colour to #ff0000",
+          "before": "4a6447a095759c8a69a0af562716fe4f5d0f2350434308b3b54a539fbb01c991",
+          "writes": [
+            {
+              "pointer": "/materials/0/color",
+              "value": 16711680
+            }
+          ],
+          "hash": "972d7c86ac1179eabcbfc5b37ea448aa97445551759ad0398bac13d3ab9c841d"
+        },
+        {
+          "type": "change",
+          "change": "set",
+          "input": {
+            "path": "main.roughness",
+            "value": 0.2
+          },
+          "result": "set main.roughness to 0.2",
+          "before": "972d7c86ac1179eabcbfc5b37ea448aa97445551759ad0398bac13d3ab9c841d",
+          "writes": [
+            {
+              "pointer": "/materials/0/roughness",
+              "value": 0.2
+            }
+          ],
+          "hash": "f211f63867765abaf3e027e783515142514d1692cc9e017c7671a155d1c8592f"
+        },
+        {
+          "type": "change",
+          "change": "add",
+          "input": {
+            "kind": "point",
+            "slot": "light.key"
+          },
+          "result": "slot:light.key",
+          "before": "f211f63867765abaf3e027e783515142514d1692cc9e017c7671a155d1c8592f",
+          "node": {
+            "type": "PointLight",
+            "color": 16777215,
+            "intensity": 1,
+            "distance": 0,
+            "decay": 2,
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              -4,
+              3,
+              4,
+              1
+            ],
+            "uuid": "slot:light.key",
+            "name": "light.key"
+          },
+          "pointer": "/object/children",
+          "hash": "66c2fc56fe19166c106c9b1efde10c8ce2ab57897ce997ceaa0db8f96181de74"
+        },
+        {
+          "type": "say",
+          "text": "Red it is, with a point light."
+        }
+      ],
+      "done": {
+        "type": "done",
+        "document": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Object",
+            "generator": "cocoon scene agent template",
+            "cocoon": {
+              "version": 1
+            }
+          },
+          "geometries": [
+            {
+              "uuid": "geometry-main",
+              "type": "BoxGeometry",
+              "width": 1,
+              "height": 1,
+              "depth": 1
+            }
+          ],
+          "materials": [
+            {
+              "uuid": "material-main",
+              "type": "MeshStandardMaterial",
+              "color": 16711680,
+              "roughness": 0.2,
+              "metalness": 0.1,
+              "emissive": 0
+            }
+          ],
+          "object": {
+            "uuid": "scene",
+            "type": "Scene",
+            "background": 1053720,
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "children": [
+              {
+                "uuid": "mesh-main",
+                "type": "Mesh",
+                "name": "main",
+                "geometry": "geometry-main",
+                "material": "material-main",
+                "visible": true,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              {
+                "uuid": "light-ambient",
+                "type": "AmbientLight",
+                "name": "ambient",
+                "color": 16777215,
+                "intensity": 0.6,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "PointLight",
+                "color": 16777215,
+                "intensity": 1,
+                "distance": 0,
+                "decay": 2,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  -4,
+                  3,
+                  4,
+                  1
+                ],
+                "uuid": "slot:light.key",
+                "name": "light.key"
+              }
+            ]
+          }
+        },
+        "hash": "66c2fc56fe19166c106c9b1efde10c8ce2ab57897ce997ceaa0db8f96181de74"
+      }
+    },
+    {
+      "prompt": "fog, a second light, then take it away; bigger",
+      "events": [
+        {
+          "type": "change",
+          "change": "set",
+          "input": {
+            "path": "fog",
+            "value": "thin"
+          },
+          "result": "set fog to thin",
+          "before": "66c2fc56fe19166c106c9b1efde10c8ce2ab57897ce997ceaa0db8f96181de74",
+          "writes": [
+            {
+              "pointer": "/object/fog",
+              "value": {
+                "type": "Fog",
+                "color": 1053720,
+                "near": 5,
+                "far": 30
+              }
+            }
+          ],
+          "hash": "1a347d7f82260940c53afce8723aeb08baf735f91221bb8214af71ffd4480f56"
+        },
+        {
+          "type": "change",
+          "change": "add",
+          "input": {
+            "kind": "directional",
+            "slot": "light.fill"
+          },
+          "result": "slot:light.fill",
+          "before": "1a347d7f82260940c53afce8723aeb08baf735f91221bb8214af71ffd4480f56",
+          "node": {
+            "type": "DirectionalLight",
+            "color": 16777215,
+            "intensity": 1,
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              5,
+              8,
+              5,
+              1
+            ],
+            "uuid": "slot:light.fill",
+            "name": "light.fill"
+          },
+          "pointer": "/object/children",
+          "hash": "48f98669c2f84652540400fbe3fb4880762709951aab071bf828b2137021ffd8"
+        },
+        {
+          "type": "change",
+          "change": "remove",
+          "input": {
+            "id": "slot:light.fill"
+          },
+          "result": "light.fill",
+          "before": "48f98669c2f84652540400fbe3fb4880762709951aab071bf828b2137021ffd8",
+          "uuid": "slot:light.fill",
+          "pointer": "/object/children",
+          "hash": "1a347d7f82260940c53afce8723aeb08baf735f91221bb8214af71ffd4480f56"
+        },
+        {
+          "type": "change",
+          "change": "set",
+          "input": {
+            "path": "main.size",
+            "value": 1.5
+          },
+          "result": "set main.size to 1.5",
+          "before": "1a347d7f82260940c53afce8723aeb08baf735f91221bb8214af71ffd4480f56",
+          "writes": [
+            {
+              "pointer": "/geometries/0/width",
+              "value": 1.5
+            },
+            {
+              "pointer": "/geometries/0/height",
+              "value": 1.5
+            },
+            {
+              "pointer": "/geometries/0/depth",
+              "value": 1.5
+            }
+          ],
+          "hash": "7739040b774cdd28b8fa9ae0d7fe1d3cb57c0229d21679db1a4dac85cefe1a13"
+        },
+        {
+          "type": "change",
+          "change": "set",
+          "input": {
+            "path": "main.visible",
+            "value": true
+          },
+          "result": "set main.visible to true",
+          "before": "7739040b774cdd28b8fa9ae0d7fe1d3cb57c0229d21679db1a4dac85cefe1a13",
+          "writes": [
+            {
+              "pointer": "/object/children/0/visible",
+              "value": true
+            }
+          ],
+          "hash": "7739040b774cdd28b8fa9ae0d7fe1d3cb57c0229d21679db1a4dac85cefe1a13"
+        }
+      ],
+      "done": {
+        "type": "done",
+        "document": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Object",
+            "generator": "cocoon scene agent template",
+            "cocoon": {
+              "version": 1
+            }
+          },
+          "geometries": [
+            {
+              "uuid": "geometry-main",
+              "type": "BoxGeometry",
+              "width": 1.5,
+              "height": 1.5,
+              "depth": 1.5
+            }
+          ],
+          "materials": [
+            {
+              "uuid": "material-main",
+              "type": "MeshStandardMaterial",
+              "color": 16711680,
+              "roughness": 0.2,
+              "metalness": 0.1,
+              "emissive": 0
+            }
+          ],
+          "object": {
+            "uuid": "scene",
+            "type": "Scene",
+            "background": 1053720,
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "children": [
+              {
+                "uuid": "mesh-main",
+                "type": "Mesh",
+                "name": "main",
+                "geometry": "geometry-main",
+                "material": "material-main",
+                "visible": true,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              {
+                "uuid": "light-ambient",
+                "type": "AmbientLight",
+                "name": "ambient",
+                "color": 16777215,
+                "intensity": 0.6,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "PointLight",
+                "color": 16777215,
+                "intensity": 1,
+                "distance": 0,
+                "decay": 2,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  -4,
+                  3,
+                  4,
+                  1
+                ],
+                "uuid": "slot:light.key",
+                "name": "light.key"
+              }
+            ],
+            "fog": {
+              "type": "Fog",
+              "color": 1053720,
+              "near": 5,
+              "far": 30
+            }
+          }
+        },
+        "hash": "7739040b774cdd28b8fa9ae0d7fe1d3cb57c0229d21679db1a4dac85cefe1a13"
+      }
+    },
+    {
+      "prompt": "undo that, then start over",
+      "events": [
+        {
+          "type": "change",
+          "change": "undo",
+          "input": {
+            "n": 1
+          },
+          "result": "undone 1",
+          "before": "7739040b774cdd28b8fa9ae0d7fe1d3cb57c0229d21679db1a4dac85cefe1a13",
+          "document": {
+            "metadata": {
+              "version": 4.6,
+              "type": "Object",
+              "generator": "cocoon scene agent template",
+              "cocoon": {
+                "version": 1
+              }
+            },
+            "geometries": [
+              {
+                "uuid": "geometry-main",
+                "type": "BoxGeometry",
+                "width": 1.5,
+                "height": 1.5,
+                "depth": 1.5
+              }
+            ],
+            "materials": [
+              {
+                "uuid": "material-main",
+                "type": "MeshStandardMaterial",
+                "color": 16711680,
+                "roughness": 0.2,
+                "metalness": 0.1,
+                "emissive": 0
+              }
+            ],
+            "object": {
+              "uuid": "scene",
+              "type": "Scene",
+              "background": 1053720,
+              "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+              ],
+              "children": [
+                {
+                  "uuid": "mesh-main",
+                  "type": "Mesh",
+                  "name": "main",
+                  "geometry": "geometry-main",
+                  "material": "material-main",
+                  "visible": true,
+                  "matrix": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "uuid": "light-ambient",
+                  "type": "AmbientLight",
+                  "name": "ambient",
+                  "color": 16777215,
+                  "intensity": 0.6,
+                  "matrix": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "type": "PointLight",
+                  "color": 16777215,
+                  "intensity": 1,
+                  "distance": 0,
+                  "decay": 2,
+                  "matrix": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    -4,
+                    3,
+                    4,
+                    1
+                  ],
+                  "uuid": "slot:light.key",
+                  "name": "light.key"
+                }
+              ],
+              "fog": {
+                "type": "Fog",
+                "color": 1053720,
+                "near": 5,
+                "far": 30
+              }
+            }
+          },
+          "hash": "7739040b774cdd28b8fa9ae0d7fe1d3cb57c0229d21679db1a4dac85cefe1a13"
+        },
+        {
+          "type": "say",
+          "text": "Undone."
+        },
+        {
+          "type": "change",
+          "change": "reset",
+          "input": {},
+          "result": "reset to the template",
+          "before": "7739040b774cdd28b8fa9ae0d7fe1d3cb57c0229d21679db1a4dac85cefe1a13",
+          "document": {
+            "metadata": {
+              "version": 4.6,
+              "type": "Object",
+              "generator": "cocoon scene agent template",
+              "cocoon": {
+                "version": 1
+              }
+            },
+            "geometries": [
+              {
+                "uuid": "geometry-main",
+                "type": "BoxGeometry",
+                "width": 1,
+                "height": 1,
+                "depth": 1
+              }
+            ],
+            "materials": [
+              {
+                "uuid": "material-main",
+                "type": "MeshStandardMaterial",
+                "color": 2792847,
+                "roughness": 0.5,
+                "metalness": 0.1,
+                "emissive": 0
+              }
+            ],
+            "object": {
+              "uuid": "scene",
+              "type": "Scene",
+              "background": 1053720,
+              "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+              ],
+              "children": [
+                {
+                  "uuid": "mesh-main",
+                  "type": "Mesh",
+                  "name": "main",
+                  "geometry": "geometry-main",
+                  "material": "material-main",
+                  "visible": true,
+                  "matrix": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "uuid": "light-ambient",
+                  "type": "AmbientLight",
+                  "name": "ambient",
+                  "color": 16777215,
+                  "intensity": 0.6,
+                  "matrix": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ]
+            }
+          },
+          "hash": "4a6447a095759c8a69a0af562716fe4f5d0f2350434308b3b54a539fbb01c991"
+        }
+      ],
+      "done": {
+        "type": "done",
+        "document": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Object",
+            "generator": "cocoon scene agent template",
+            "cocoon": {
+              "version": 1
+            }
+          },
+          "geometries": [
+            {
+              "uuid": "geometry-main",
+              "type": "BoxGeometry",
+              "width": 1,
+              "height": 1,
+              "depth": 1
+            }
+          ],
+          "materials": [
+            {
+              "uuid": "material-main",
+              "type": "MeshStandardMaterial",
+              "color": 2792847,
+              "roughness": 0.5,
+              "metalness": 0.1,
+              "emissive": 0
+            }
+          ],
+          "object": {
+            "uuid": "scene",
+            "type": "Scene",
+            "background": 1053720,
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "children": [
+              {
+                "uuid": "mesh-main",
+                "type": "Mesh",
+                "name": "main",
+                "geometry": "geometry-main",
+                "material": "material-main",
+                "visible": true,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              {
+                "uuid": "light-ambient",
+                "type": "AmbientLight",
+                "name": "ambient",
+                "color": 16777215,
+                "intensity": 0.6,
+                "matrix": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            ]
+          }
+        },
+        "hash": "4a6447a095759c8a69a0af562716fe4f5d0f2350434308b3b54a539fbb01c991"
+      }
+    }
+  ]
+}
