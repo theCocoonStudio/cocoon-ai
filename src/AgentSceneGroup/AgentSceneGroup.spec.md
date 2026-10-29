@@ -18,7 +18,7 @@ imports.4: from ./apply.js — the pure part (library.helper): the index of a lo
 
 ## props
 
-props.1: document — object, required; the representation the service composed (the three document at props.2's version), replaced whole at each turn's `done` and after a theme switch (theme.5); never written by the page
+props.1: document — object, required; the representation the service composed (the three document at props.2's version, carried in `metadata.cocoon.version`, which the service stamps into the template at load: a gateway #20 amendment, scene.4), replaced whole at each turn's `done` and after a theme switch (theme.5); never written by the page
 props.2: version — none as a prop: the representation's version this build reads is a constant of the module, exposed on the handle (handle.6) for the page to declare at layer 2 (records site/scene-api.md: the version is read from the renderer at page load); a document whose version differs throws (exits.throws). Corrected 2026-10-19 after Buridan's X2
 props.3: hash — string, required; the service's hash of props.1, so the component hashes nothing (one hasher, the service's; Claude's call)
 props.4: stream — `{ subscribe(listener): unsubscribe }`, optional, referentially stable; the turn's events as the service emits them (gateway #20 stream.1), read imperatively (refs.1); absent between turns
@@ -69,8 +69,8 @@ callbacks.neg.1: nothing fires for an event whose hash does not follow the scene
 ## effects
 
 effects.1: `document` change → the diff by node set (apply.js): equal sets, the values applied in place by path with no compile (a colour, a number, a boolean, a vector); different sets, the document loaded into a fresh group by imports.3, compiled (handle.3's promise, re-armed), swapped in when ready, the old group disposed (dispose.loaded); the hash taken from props.3
-effects.2: a `change` event (gateway #20 stream.1): `set` applied in place by path; `add` builds the node from the fragment the event carries (`node`, the composed node's document: an amendment to #20 stream.1, Claude's call, against the alternative of applying structure only at `done`) and compiles it behind callbacks.2; `remove` disposes the node by id; `done` is the whole document and is applied as effects.1 (a page that missed an event is made whole)
-effects.3: an event whose hash does not follow the scene's current hash is dropped (stream.3 of #20); `done` always applies
+effects.2: a `change` event (gateway #20 stream.1, amended 2026-10-29 by this build's pre-flight, since the page holds no table): `set` carries `writes`, the path's targets as JSON pointers into the document with the encoded values, applied in place by pointer (a colour set, a number assigned, a geometry rebuilt from its parameters, the background and fog onto the Canvas's scene); `add` carries `node`, the composed node, and `pointer`, its slot's array: parsed by the loader, appended and compiled behind callbacks.2; `remove` carries `uuid` and `pointer`: the node taken out and disposed; `undo` and `reset` carry `document`, the whole, applied as effects.1; `done` is the whole document and is applied as effects.1 (a page that missed an event is made whole)
+effects.3: a `change` whose `before` (the hash it applied to; the same amendment) is not the hash held here is dropped (stream.3 of #20); a whole document (`done`, `undo`, `reset`) always applies
 effects.4: `tones` change alone does nothing here: the page sends the service the new tones and passes the returned document (theme.5); the component never composes
 
 ## exits
@@ -83,7 +83,7 @@ exits.handler-failures: a stream listener that throws propagates; not caught
 
 refs.1: stream — props.4, subscribed in an effect, unsubscribed on change or unmount; an event never renders by itself (a structural one sets state.2)
 refs.2: root — internal, the group
-refs.3: byPath — internal, the index from the table's paths to the loaded objects' properties, rebuilt at each load (apply.js)
+refs.3: index — internal, the document's mirror and the live objects it names by uuid and position, built at each load and kept in step by every write, so a pointer from the service lands on the right object (apply.js `SceneIndex`; the spec's earlier `byPath` by the table's paths, which the page does not hold)
 refs.4: hash — internal, the scene's current hash, written at props.3 and after each applied event
 
 ## handle
@@ -135,7 +135,7 @@ theme.8: the Demo wrapper's `theme` string (Demo.spec props.8, `data-theme`) is 
 
 ## tests
 
-tests.1: apply.js, no GL (vitest): the index by path over a loaded fixture; `set` for each kind; `add` from a fragment and `remove` by id; the diff by node set; a non-following hash dropped
+tests.1: apply.js, no GL (vitest): the index over a loaded fixture, resolving pointers by the mirror's uuids; every write of the recorded turns (a colour, a number, a fog, a size, a boolean); `add` from a fragment and `remove` by uuid; the diff by node set and the writes between two documents of one set; the refusals by name (the non-following hash is the component's test, tests.2, since the index never sees a hash)
 tests.2: the test renderer (@react-three/test-renderer, mocked GL): mounts, through a tunnel, with a fixture document composed for the test's tones (the service composes, the component applies nothing: effects.4); the handle's six members; the group's children match the document's and the fixture's themed values sit on the loaded objects; a version mismatch, a malformed `tones` and a missing tunnel throw; dispose on unmount. Corrected 2026-10-19 after Buridan's X4
 tests.3: the fit test (src/test/browser.js, both backends): the consumer-shaped page of manifest.browser-entry.jsx mounts the component through the tunnel with the template document and a recorded stream (the fixture the service's loop test emits, gateway #20 loop.8, the same events), asserts the scene's state after each event and at `done`, onReady once, onCompile in pairs on structural events, a value event visible within one frame, and the compile time against the budget. Claude's proposal.
 
