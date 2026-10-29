@@ -86,17 +86,34 @@ describe.skipIf(!browser)('FluidTextureDemo in the browser', () => {
       window.__demo.set('forceValue', '10')
       window.__demo.set('forceSize', '60')
     })
-    for (let i = 0; i < 12; i++) {
-      await site.evaluate(
-        (x, y) => window.__demo.stroke([[x, y]]),
-        cx - 48 + i * 8,
-        cy,
-      )
-      await settle(25)
+    // The stroke is repeated until the centre has darkened or the budget runs out, instead of a fixed
+    // wait: under GitHub's runner with the other browser suites beside it the frame loop ran too few
+    // steps in the fixed 150 ms for the stroke to show (cocoon-ai #89, run 39325365283, 2026-10-19:
+    // the centre read 255), the class the loader's wait left on 2026-10-18. The budget is the ready
+    // budget's size, twice the slowest measure seen on the runner (src/manifest.browser.test.js).
+    const STROKE_BUDGET_MS = 6_200
+    const stroke = async () => {
+      for (let i = 0; i < 12; i++) {
+        await site.evaluate(
+          (x, y) => window.__demo.stroke([[x, y]]),
+          cx - 48 + i * 8,
+          cy,
+        )
+        await settle(25)
+      }
+      await settle(150)
     }
-    await settle(150)
-    const after = await read()
-    const centre = region(after, cx - 8, cy - 8, cx + 8, cy + 8)
+    const started = Date.now()
+    let after = await (async () => {
+      await stroke()
+      return read()
+    })()
+    let centre = region(after, cx - 8, cy - 8, cx + 8, cy + 8)
+    while (centre >= before - 30 && Date.now() - started < STROKE_BUDGET_MS) {
+      await stroke()
+      after = await read()
+      centre = region(after, cx - 8, cy - 8, cx + 8, cy + 8)
+    }
     const corner = region(
       after,
       RECT.x + 2,
