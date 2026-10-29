@@ -46,6 +46,19 @@ How it is painted and how it behaves.
 | `duration`, `easing`                  | `'260ms'`, `'ease'` | the transition; any CSS time and timing function, `ease-in`, `ease-out`, `ease-in-out`, `linear`, a cubic-bezier                           |
 | `className`, `style`, `ref`, the rest |                     | onto the wrapper `<span>`; `style` merges last                                                                                             |
 
+## Demo
+
+`src/HazePlanes/HazePlanes.demo.jsx`, exported as `HazePlanesDemo` from `cocoon-ai/demos` and as the `HazePlanes` entry of its `demos` manifest; a markup-only demo (`scene` false), so it takes no tunnel, no loader and no handle, only the wrapper's props (`openSettings`, `onOpenSettingsChange`, the class and style props, `theme`, `label`; `docs/Demo.md`).
+
+```jsx
+import { HazePlanesDemo } from 'cocoon-ai/demos'
+
+// on the demo page, in the div the demo fills:
+;<HazePlanesDemo openSettings />
+```
+
+The haze around a piece of content in the wrapper's stage, every prop of the component a setting in the sidebar: the content (the mark as `CocoonIcon`, with a select of the icon set; a word; a button, each a different surface the paint applies to), the scene (planes, depth, radius, angle, perspective, cut), the paint (surface, ground, mode, paint, the corner radius with its auto), the motion (fan, duration, easing). The stage takes the ground colour as its background and the surface as its text colour, so the planes' fade reads against them. The defaults are the component's, from `cocoon.config.js`.
+
 ## The two mechanisms
 
 **`transform`, the default.** The children are rendered once per plane, each copy moved along the angle and scaled about its own centre, then the real content on top. Exact for any shape and any aspect, including SVG and type on a transparent ground. Costs `planes − 1` extra nodes. The copies are `aria-hidden`, unselectable and inert to the pointer, so they stay out of the accessibility tree, out of a selection and out of the way of clicks. They carry the children's markup, so **the children must not carry element ids**: a duplicated id resolves every reference to the first copy, which is a plane.
