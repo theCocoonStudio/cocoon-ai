@@ -15,3 +15,4 @@ export {
 export { ScrollProvider, useScroll } from './ScrollProvider/index.jsx'
 export { Demo } from './Demo/index.jsx'
 export { useSettings } from './Demo/useSettings.js'
+export { AgentSceneGroup } from './AgentSceneGroup/index.jsx'
