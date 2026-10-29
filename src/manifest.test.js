@@ -25,6 +25,7 @@ const EFFECT_VALUES = new Set(Object.values(EFFECTS))
  */
 const CHUNK_BUDGET = {
   useFluidTexture: 39_000, // measured 35,318 bytes
+  HazePlanes: 38_000, // measured 34,043 bytes on 2026-10-29
 }
 
 /** The demo module bundled alone, minified, the peers external, in bytes. */

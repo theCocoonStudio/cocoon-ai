@@ -4,11 +4,28 @@
 // One entry per demo, in the order of the folders' names: the doc's front
 // matter as data, the component and the demo module as direct imports, and
 // the demo module's own facts (scene, schema, effects) through them.
+import { HazePlanes } from './HazePlanes/index.jsx'
+import * as HazePlanesDemo from './HazePlanes/HazePlanes.demo.jsx'
 import { useFluidTexture } from './useFluidTexture/index.jsx'
 import * as useFluidTextureDemo from './useFluidTexture/useFluidTexture.demo.jsx'
 
 /** Every demo the package ships, one entry each; see src/manifest.spec.md. */
 export const demos = Object.freeze([
+  Object.freeze({
+    name: 'HazePlanes',
+    title: 'Haze planes',
+    summary:
+      'Wraps content in the cocoon haze, the plane recession the logo and the icon set are cut from, applied to a live element.',
+    since: '2026-09-06',
+    credits: Object.freeze(['Izzy Erlich', 'Claude Fable 5.1']),
+    tags: Object.freeze(['dom', 'haze', 'logo']),
+    doc: 'docs/HazePlanes.md',
+    scene: HazePlanesDemo.scene,
+    component: HazePlanes,
+    demo: HazePlanesDemo.demo,
+    schema: HazePlanesDemo.schema,
+    effects: HazePlanesDemo.effects,
+  }),
   Object.freeze({
     name: 'useFluidTexture',
     title: 'Fluid texture',
