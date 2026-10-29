@@ -20,7 +20,7 @@ const PAGE = { width: 320, height: 240 }
  * Chromium under SwiftShader; the number recorded at the first run and held
  * to twice the slowest measure seen, as the harness sizes every timeout.
  */
-const READY_BUDGET_MS = 6_200 // measured 2026-10-29 here:  on webgpu,  on webgl (Linux, Chromium under SwiftShader); held to the manifest fit test's budget, sized on GitHub's runner on 2026-10-18 (3,065 ms there against 511 here); the runner's own number for this scene recorded at its first run
+const READY_BUDGET_MS = 6_200 // measured 2026-10-29 here: 284 ms on webgpu, 286 ms on webgl (Linux, Chromium under SwiftShader); held to the manifest fit test's budget, sized on GitHub's runner on 2026-10-18 (3,065 ms there against 511 here); the runner's own number for this scene recorded at its first run
 
 const turn = (n) => fixture.turns[n]
 const settle = (ms = 300) => new Promise((r) => setTimeout(r, ms))
