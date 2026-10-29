@@ -33,7 +33,8 @@ function SceneFacts() {
         demos.map((e, i) => {
           const el = document.getElementById(`demo-${e.name}`)
           const stage = el?.querySelector('.cocoon-demo__stage')
-          const h = state[e.name].handle
+          // a markup demo's ref is the wrapper's root node (Demo.spec props.ref), not a handle: amend.1
+          const h = e.scene ? state[e.name].handle : null
           return {
             name: e.name,
             scene: e.scene,
